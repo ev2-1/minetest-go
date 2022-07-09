@@ -11,3 +11,11 @@ working plugins / features:
 	Will probably be renamed to `http_media` and `basic_media` will be "normal" mt-protokoll
 
 - nodemetas from json file (`json_nodemeta`) for documentation please wait or contact me (TODO)
+
+# Thanks to
+
+- anon55555 for the AMAZING mt package
+
+- himbeerserverDE for being able to steal most of the networking code
+
+- **NOT** minetest, as i hate the technical documentation (non existant)
