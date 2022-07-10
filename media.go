@@ -10,8 +10,14 @@ import (
 var itemDefsMu sync.RWMutex
 var itemDefs []mt.ItemDef
 
-var nodeDefsMu sync.RWMutex
-var nodeDefs []mt.NodeDef
+var (
+	nodeDefsMu sync.RWMutex
+	nodeDefs   []*mt.NodeDef
+
+	nodeDefsMapMu sync.RWMutex
+	nodeDefsMap   = make(map[string]*mt.NodeDef)
+	nodeDefID     mt.Content
+)
 
 var aliasesMu sync.RWMutex
 var aliases []struct{ Alias, Orig string }
@@ -31,11 +37,41 @@ func AddItemDef(defs ...mt.ItemDef) {
 
 // Add more item definitions to pool
 // pls only use while init func
-func AddNodeDef(defs ...mt.NodeDef) {
+// Param0 field is overwritten
+func AddNodeDef(defs ...*mt.NodeDef) {
 	nodeDefsMu.Lock()
+	nodeDefsMapMu.Lock()
 	defer nodeDefsMu.Unlock()
+	defer nodeDefsMapMu.Unlock()
+
+	// add id
+	for k := range defs {
+		defs[k].Param0 = getNodeDefID()
+		nodeDefsMap[defs[k].Name] = defs[k]
+	}
 
 	nodeDefs = append(nodeDefs, defs...)
+}
+
+func getNodeDefID() mt.Content {
+	id := nodeDefID
+	nodeDefID++
+
+	return id
+}
+
+// GetNodeDef returns pointer to node def if registerd
+// otherwise nil
+func GetNodeDef(name string) (def *mt.NodeDef) {
+	nodeDefsMapMu.Lock()
+	defer nodeDefsMapMu.Unlock()
+
+	def, found := nodeDefsMap[name]
+	if !found {
+		return nil
+	}
+
+	return def
 }
 
 // Add a Alias to the pool
@@ -79,13 +115,22 @@ func (c *Client) SendItemDefs() {
 
 // Send (cached) NodeDefinitions to client
 func (c *Client) SendNodeDefs() {
-	nodeDefsMu.RLock()
 	cmd := &mt.ToCltNodeDefs{
-		Defs: nodeDefs,
+		Defs: nodeDefReferenced(),
 	}
-	nodeDefsMu.RUnlock()
 
 	c.SendCmd(cmd)
+}
+
+func nodeDefReferenced() (s []mt.NodeDef) {
+	nodeDefsMu.RLock()
+	defer nodeDefsMu.RUnlock()
+
+	for _, v := range nodeDefs {
+		s = append(s, *v)
+	}
+
+	return
 }
 
 // Send (cached) AnnounceMedia to client

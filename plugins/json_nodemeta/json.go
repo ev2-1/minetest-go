@@ -32,7 +32,7 @@ func init() {
 func parseFile(r io.Reader) {
 	d := json.NewDecoder(r)
 
-	var defs []mt.NodeDef
+	var defs []*mt.NodeDef
 
 	err := d.Decode(&defs)
 	if err != nil {
