@@ -13,7 +13,7 @@ var posCh <-chan *minetest.CltPos
 
 var (
 	MapBlkUpdateRate int64 = 2 // in seconds
-	EmptyBlk         MapBlkData
+	EmptyBlk         mt.MapBlk
 )
 
 func init() {
@@ -21,21 +21,21 @@ func init() {
 
 	OpenDB(_minetest.Path("/map.sqlite"))
 
-	exampleBlk := MapBlkData{}
+	exampleBlk := mt.MapBlk{}
 
 	for i := 0; i < 4096; i++ {
-		exampleBlk[i] = 126
+		exampleBlk.Param0[i] = 126
 	}
 
 	for i := 0; i < 16*16; i++ {
-		exampleBlk[i] = 349
+		exampleBlk.Param0[i] = 349
 	}
 
 	// center block is stone:
-	exampleBlk[4096/2+16/2] = 349 // some wool
+	exampleBlk.Param0[4096/2+16/2] = 349 // some wool
 
-	for k := range EmptyBlk {
-		EmptyBlk[k] = mt.Air
+	for k := range EmptyBlk.Param0 {
+		EmptyBlk.Param0[k] = mt.Air
 	}
 
 	/*box := mt.Box{mt.Vec{-0.5, -0.5, -0.5}, mt.Vec{.5, .5, .5}}
@@ -129,9 +129,7 @@ func init() {
 
 				pos.SendCmd(&mt.ToCltBlkData{
 					Blkpos: blkpos,
-					Blk: mt.MapBlk{
-						Param0: blkdata,
-					},
+					Blk:    blkdata,
 				})
 			}
 		}
