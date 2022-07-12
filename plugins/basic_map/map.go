@@ -18,9 +18,12 @@ var joinCh <-chan *_minetest.Client
 var leaveCh <-chan *_minetest.Leave
 
 var (
-	MapBlkUpdateRate  int64 = 2 // in seconds
-	MapBlkUpdateRange       = 5 // in mapblks
-	EmptyBlk          mt.MapBlk
+	MapBlkUpdateRate   int64 = 2        // in seconds
+	MapBlkUpdateRange        = int16(7) // in mapblks
+	MapBlkUpdateHeight       = int16(5) // in mapblks
+
+	heigthOff = -MapBlkUpdateHeight / 2
+	EmptyBlk  mt.MapBlk
 )
 
 var exampleBlk mt.MapBlk
@@ -65,19 +68,21 @@ func init() {
 
 				name := pos.Name
 
-				for _, sp := range spiral(int16(MapBlkUpdateRange)) {
-					// generate absolute position
-					ap := sp.add(blkpos)
+				for _, sp := range spiral(MapBlkUpdateRange) {
+					for i := int16(0); i < MapBlkUpdateRange; i++ {
+						// generate absolute position
+						ap := sp.add(blkpos).add([3]int16{0, heigthOff + i})
 
-					// load block
-					blk := LoadChunk(name, ap)
+						// load block
+						blk := LoadChunk(name, ap)
 
-					// if block has content; send to clt
-					if blk != nil {
-						go pos.SendCmd(&mt.ToCltBlkData{
-							Blkpos: ap,
-							Blk:    *blk,
-						})
+						// if block has content; send to clt
+						if blk != nil {
+							go pos.SendCmd(&mt.ToCltBlkData{
+								Blkpos: ap,
+								Blk:    *blk,
+							})
+						}
 					}
 				}
 			}
