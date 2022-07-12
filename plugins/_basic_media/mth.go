@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -30,9 +31,11 @@ func generateIndex() {
 
 	l := len(files)
 
+	log.Printf("generating media...")
+
 	// generate media
 	for i, file := range files {
-		log.Printf("generating media: %s %d percent (%d/%d)", file.Name(), int(float64(i)/float64(l)*100), i, l)
+		fmt.Fprint(os.Stdout, "\r"+fmt.Sprintf("(%d/%d)", i, l))
 
 		data, err := os.ReadFile(minetest.Path("media/" + file.Name()))
 		if err != nil {
@@ -58,6 +61,7 @@ func generateIndex() {
 	}
 
 	data, _ := indexFile.Stat()
+	fmt.Printf("\n")
 	log.Printf("generating media: done generated %d files; %d bytes mth", l+1, data.Size())
 }
 

@@ -52,7 +52,7 @@ func OpenDB(file string) (err error) {
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS \"blocks\" ( \"pos\" INTEGER, \"param0\" BLOB, \"param1\" BLOB, \"param2\" BLOB, PRIMARY KEY(\"pos\") )")
 	if err != nil {
-		log.Fatal("cant create table: ", err)
+		log.Fatal("cant create table blocks: ", err)
 	}
 
 	// prepare stms:

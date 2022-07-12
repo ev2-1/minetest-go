@@ -26,12 +26,24 @@ var (
 	EmptyBlk  mt.MapBlk
 )
 
+var stone mt.Content
+var grass mt.Content
 var exampleBlk mt.MapBlk
 
 func init() {
 	posCh = minetest.GetPosCh()
 	joinCh = _minetest.JoinChan()
 	leaveCh = _minetest.LeaveChan()
+
+	s := _minetest.GetNodeDef("mcl_core:stone")
+	if s != nil {
+		stone = s.Param0
+	}
+
+	s = _minetest.GetNodeDef("mcl_core:dirt_with_grass")
+	if s != nil {
+		grass = s.Param0
+	}
 
 	loadedChunks = make(map[string]map[pos]int64)
 
@@ -44,11 +56,11 @@ func init() {
 	}
 
 	for i := 0; i < 16*16; i++ {
-		exampleBlk.Param0[i] = 349
+		exampleBlk.Param0[i] = stone
 	}
 
 	// center block is stone:
-	exampleBlk.Param0[4096/2+16/2] = 349 // some wool
+	exampleBlk.Param0[4096/2+16/2] = grass // some wool
 
 	for k := range EmptyBlk.Param0 {
 		EmptyBlk.Param0[k] = mt.Air

@@ -1,5 +1,7 @@
 #! /bin/sh
 
+rm cmd/minetest-go/plugins/*.so
+
 for pl in $(ls plugins/)
 do
 	echo building $pl

@@ -1,4 +1,4 @@
-module github.com/ev2-1/minetest-go/plugins/basic_media
+module github.com/ev2-1/minetest-go/plugins/_basic_media
 
 go 1.18
 

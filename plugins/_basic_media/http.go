@@ -43,11 +43,9 @@ func (f *file) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func init() {
 	fh := &fileHandler{Root: minetest.Path("hashfiles")}
-	index := &file{Path: minetest.Path("hashfiles/index.mth")}
 
 	generateIndex()
 
-	http.Handle("/index.mth", index)
 	http.Handle("/mediafile", fh)
 	go http.ListenAndServe(":8081", nil)
 

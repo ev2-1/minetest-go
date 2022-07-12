@@ -1,4 +1,4 @@
-module github.com/ev2-1/minetest-go/plugins/json_nodemeta
+module github.com/ev2-1/minetest-go/plugins/_json_nodemeta
 
 go 1.18
 
