@@ -90,5 +90,12 @@ func RegisterPlayer(c *Client) {
 	clientsMu.Lock()
 	defer clientsMu.Unlock()
 
+	joinCh <- c
 	clients[c] = struct{}{}
+}
+
+var joinCh = make(chan *Client)
+
+func JoinChan() <-chan *Client {
+	return joinCh
 }

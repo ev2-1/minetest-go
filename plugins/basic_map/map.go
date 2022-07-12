@@ -11,17 +11,30 @@ import (
 
 var posCh <-chan *minetest.CltPos
 
+// a list of all clients and their loaded chunks
+var loadedChunks map[string]map[pos]int64
+
+var joinCh <-chan *_minetest.Client
+var leaveCh <-chan *_minetest.Leave
+
 var (
-	MapBlkUpdateRate int64 = 2 // in seconds
-	EmptyBlk         mt.MapBlk
+	MapBlkUpdateRate  int64 = 2 // in seconds
+	MapBlkUpdateRange       = 5 // in mapblks
+	EmptyBlk          mt.MapBlk
 )
+
+var exampleBlk mt.MapBlk
 
 func init() {
 	posCh = minetest.GetPosCh()
+	joinCh = _minetest.JoinChan()
+	leaveCh = _minetest.LeaveChan()
+
+	loadedChunks = make(map[string]map[pos]int64)
 
 	OpenDB(_minetest.Path("/map.sqlite"))
 
-	exampleBlk := mt.MapBlk{}
+	exampleBlk = mt.MapBlk{}
 
 	for i := 0; i < 4096; i++ {
 		exampleBlk.Param0[i] = 126
@@ -38,77 +51,6 @@ func init() {
 		EmptyBlk.Param0[k] = mt.Air
 	}
 
-	/*box := mt.Box{mt.Vec{-0.5, -0.5, -0.5}, mt.Vec{.5, .5, .5}}
-
-	nbox := mt.NodeBox{
-		Type: mt.CubeBox,
-
-		WallTop:   box,
-		WallBot:   box,
-		WallSides: box,
-	}
-
-	_minetest.AddNodeDef(mt.NodeDef{
-		Param0: 1000,
-
-		Name:     "stone",
-		P1Type:   mt.P1Nothing,
-		P2Type:   mt.P2Nibble,
-		DrawType: mt.DrawCube,
-
-		Scale: 1,
-
-		Tiles: [6]mt.TileDef{
-			mt.TileDef{
-				Scale: 1,
-
-				Texture: "stone.png",
-			},
-			mt.TileDef{
-				Scale: 1,
-
-				Texture: "stone.png",
-			},
-			mt.TileDef{
-				Scale: 1,
-
-				Texture: "stone.png",
-			},
-			mt.TileDef{
-				Scale: 1,
-
-				Texture: "stone.png",
-			},
-			mt.TileDef{
-				Scale: 1,
-
-				Texture: "stone.png",
-			},
-			mt.TileDef{
-				Scale: 1,
-
-				Texture: "stone.png",
-			},
-		},
-
-		Color: color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF},
-
-		Waving: mt.NotWaving,
-
-		GndContent: true,
-		Collides:   true,
-		Pointable:  true,
-		Diggable:   true,
-
-		LiquidType: mt.NotALiquid,
-
-		DrawBox: nbox,
-		ColBox:  nbox,
-		SelBox:  nbox,
-
-		Level: 128,
-	})*/
-
 	go func() {
 		for {
 			pos, ok := <-posCh
@@ -121,20 +63,73 @@ func init() {
 				p := Pos2int(pos.Pos())
 				blkpos, _ := mt.Pos2Blkpos(p)
 
-				blkdata, ok := GetBlk(blkpos)
-				if !ok {
-					SetBlk(blkpos, &exampleBlk)
-					blkdata = exampleBlk
-				}
+				name := pos.Name
 
-				pos.SendCmd(&mt.ToCltBlkData{
-					Blkpos: blkpos,
-					Blk:    blkdata,
-				})
+				for _, sp := range spiral(int16(MapBlkUpdateRange)) {
+					// generate absolute position
+					ap := sp.add(blkpos)
+
+					// load block
+					blk := LoadChunk(name, ap)
+
+					// if block has content; send to clt
+					if blk != nil {
+						go pos.SendCmd(&mt.ToCltBlkData{
+							Blkpos: ap,
+							Blk:    *blk,
+						})
+					}
+				}
 			}
+		}
+	}()
+
+	go func() {
+		for {
+			c, ok := <-joinCh
+			if !ok {
+				log.Fatal("join channel broke")
+			}
+
+			loadedChunks[c.Name] = make(map[pos]int64)
+		}
+	}()
+
+	go func() {
+		for {
+			l, ok := <-leaveCh
+			if !ok {
+				log.Fatal("leave channel broke")
+			}
+
+			c := l.Client
+			delete(loadedChunks, c.Name)
+
 		}
 	}()
 
 	// interactions:
 	initInteractions()
+}
+
+func LoadChunk(name string, p pos) *mt.MapBlk {
+	if loadedChunks[name] == nil {
+		loadedChunks[name] = make(map[pos]int64)
+	}
+
+	t := time.Now().Unix()
+
+	if !(loadedChunks[name][p] < t-MapBlkUpdateRate) {
+		return nil
+	}
+
+	blkdata, ok := GetBlk(p)
+	if !ok {
+		SetBlk(p, &exampleBlk)
+		blkdata = exampleBlk
+	}
+
+	loadedChunks[name][p] = t
+
+	return &blkdata
 }
