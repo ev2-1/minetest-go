@@ -42,10 +42,12 @@ func CltLeave(l *Leave) {
 	clientsMu.RLock()
 	defer clientsMu.RUnlock()
 
-	ack, _ := l.Client.SendCmd(&mt.ToCltKick{
+	cmd := &mt.ToCltKick{
 		Reason: l.Reason,
 		Custom: l.Custom,
-	})
+	}
+
+	ack, _ := l.Client.SendCmd(cmd)
 
 	leaveChan <- l
 
@@ -65,6 +67,7 @@ func Clts() map[*Client]struct{} {
 
 func (c *Client) Kick(r mt.KickReason, Custom string) {
 	CltLeave(&Leave{
+		Client: c,
 		Reason: r,
 		Custom: Custom,
 

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/anon55555/mt"
 )
@@ -47,20 +48,17 @@ func runFunc() {
 		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		<-sig
 
+		log.Print("received SIGINT or other Interrupt")
+
 		clts := Clts()
 
-		var wg sync.WaitGroup
-		wg.Add(len(clts))
-
+		log.Print("sending shutdown to all clients")
 		for c := range clts {
-			go func(c *Client) {
-				c.Kick(mt.Shutdown, "Shutting down.")
-				<-c.Closed()
-				wg.Done()
-			}(c)
+			go c.Kick(mt.Shutdown, "Shutting down.")
 		}
 
-		wg.Wait()
+		time.Sleep(time.Second * 1)
+
 		os.Exit(0)
 	}()
 
