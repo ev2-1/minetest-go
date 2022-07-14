@@ -1,14 +1,11 @@
-package minetest
+package main
 
 import (
-	"github.com/ev2-1/minetest-go"
 	"github.com/anon55555/mt"
+	"github.com/ev2-1/minetest-go"
 
 	"reflect"
-	"log"
 )
-
-
 
 func init() {
 	minetest.RegisterPacketHandler(&minetest.PacketHandler{
@@ -21,21 +18,8 @@ func init() {
 			case *mt.ToSrvPlayerPos:
 				updatePos(c, &cmd.Pos)
 			}
-		
+
 			return false
 		},
 	})
-
-	go func() {
-		for {
-			l, ok := <-minetest.LeaveChan()
-
-			if !ok {
-				log.Print("[ERROR]", "Leave channel closed!")
-				return
-			}
-
-			deleteClt(l.Client)
-		}
-	}()
 }
