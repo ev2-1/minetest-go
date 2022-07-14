@@ -4,8 +4,8 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go"
 
+	//"fmt"
 	"reflect"
-	"fmt"
 )
 
 func init() {
@@ -23,10 +23,12 @@ func init() {
 			case *mt.ToSrvInit:
 				if c.State > minetest.CsCreated {
 					c.Log("->", "duplicate init")
+
+					return true
 				}
 
 				c.SetState(minetest.CsInit)
-				
+
 				if cmd.SerializeVer < minetest.SerializeVer {
 					c.Log("<-", "invalid serializeVer", cmd.SerializeVer)
 					minetest.CltLeave(&minetest.Leave{
@@ -34,6 +36,8 @@ func init() {
 
 						Client: c,
 					})
+
+					return true
 				}
 
 				if cmd.MaxProtoVer < minetest.ProtoVer {
@@ -43,6 +47,8 @@ func init() {
 
 						Client: c,
 					})
+
+					return true
 				}
 
 				if len(cmd.PlayerName) == 0 || len(cmd.PlayerName) > minetest.MaxPlayerNameLen {
@@ -51,11 +57,11 @@ func init() {
 						Reason: mt.BadName,
 
 						Client: c,
-					})					
-				}
+					})
 
+					return true
+				}
 				c.Name = cmd.PlayerName
-				c.Logger.SetPrefix(fmt.Sprintf(""))
 
 				if minetest.PlayerExists(c.Name) {
 					minetest.CltLeave(&minetest.Leave{
@@ -63,11 +69,14 @@ func init() {
 
 						Client: c,
 					})
+
+					return true
 				}
 
 				minetest.RegisterPlayer(c)
 
 				// reply is always FirstSRP
+				c.Log("send to clt hello")
 				c.SendCmd(&mt.ToCltHello{
 					SerializeVer: minetest.SerializeVer,
 					ProtoVer:     minetest.ProtoVer,
@@ -90,9 +99,9 @@ func init() {
 				c.SendNodeDefs()
 				c.SendAnnounceMedia()
 
-				// is ignored anyways			
+				// is ignored anyways
 				c.SendCmd(&mt.ToCltCSMRestrictionFlags{})
-				
+
 			default:
 				return false
 			}

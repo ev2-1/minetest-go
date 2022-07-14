@@ -3,19 +3,12 @@ package main
 import (
 	"github.com/anon55555/mt"
 	_minetest "github.com/ev2-1/minetest-go"
-	"github.com/ev2-1/minetest-go/abstract"
 
-	"log"
 	"time"
 )
 
-var posCh <-chan *minetest.CltPos
-
 // a list of all clients and their loaded chunks
 var loadedChunks map[string]map[pos]int64
-
-var joinCh <-chan *_minetest.Client
-var leaveCh <-chan *_minetest.Leave
 
 var (
 	MapBlkUpdateRate   int64 = 2        // in seconds
@@ -31,10 +24,6 @@ var grass mt.Content
 var exampleBlk mt.MapBlk
 
 func init() {
-	posCh = minetest.GetPosCh()
-	joinCh = _minetest.JoinChan()
-	leaveCh = _minetest.LeaveChan()
-
 	s := _minetest.GetNodeDef("mcl_core:stone")
 	if s != nil {
 		stone = s.Param0
@@ -66,67 +55,37 @@ func init() {
 		EmptyBlk.Param0[k] = mt.Air
 	}
 
-	go func() {
-		for {
-			pos, ok := <-posCh
-			if !ok {
-				log.Print("[ERROR]", "mapblk pos chan not ok")
-				return
-			}
+	// interactions:
+	initInteractions()
+}
 
-			if time.Now().Unix() < pos.LastUpdate+MapBlkUpdateRate {
-				p := Pos2int(pos.Pos())
-				blkpos, _ := mt.Pos2Blkpos(p)
+func PosUpdate(c *_minetest.Client, pos *mt.PlayerPos, LastUpdate int64) {
+	c.Log("pos update")
 
-				name := pos.Name
+	if time.Now().Unix() < LastUpdate+MapBlkUpdateRate {
+		p := Pos2int(pos.Pos())
+		blkpos, _ := mt.Pos2Blkpos(p)
 
-				for _, sp := range spiral(MapBlkUpdateRange) {
-					for i := int16(0); i < MapBlkUpdateRange; i++ {
-						// generate absolute position
-						ap := sp.add(blkpos).add([3]int16{0, heigthOff + i})
+		name := c.Name
 
-						// load block
-						blk := LoadChunk(name, ap)
+		for _, sp := range spiral(MapBlkUpdateRange) {
+			for i := int16(0); i < MapBlkUpdateRange; i++ {
+				// generate absolute position
+				ap := sp.add(blkpos).add([3]int16{0, heigthOff + i})
 
-						// if block has content; send to clt
-						if blk != nil {
-							go pos.SendCmd(&mt.ToCltBlkData{
-								Blkpos: ap,
-								Blk:    *blk,
-							})
-						}
-					}
+				// load block
+				blk := LoadChunk(name, ap)
+
+				// if block has content; send to clt
+				if blk != nil {
+					go c.SendCmd(&mt.ToCltBlkData{
+						Blkpos: ap,
+						Blk:    *blk,
+					})
 				}
 			}
 		}
-	}()
-
-	go func() {
-		for {
-			c, ok := <-joinCh
-			if !ok {
-				log.Fatal("join channel broke")
-			}
-
-			loadedChunks[c.Name] = make(map[pos]int64)
-		}
-	}()
-
-	go func() {
-		for {
-			l, ok := <-leaveCh
-			if !ok {
-				log.Fatal("leave channel broke")
-			}
-
-			c := l.Client
-			delete(loadedChunks, c.Name)
-
-		}
-	}()
-
-	// interactions:
-	initInteractions()
+	}
 }
 
 func LoadChunk(name string, p pos) *mt.MapBlk {
