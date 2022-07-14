@@ -36,7 +36,7 @@ func loadPlugins() {
 				continue
 			}
 
-			log.Print("loading plugin ", file.Name())
+			log.Print("[plugins] loading ", file.Name())
 
 			p, err := plugin.Open(path + "/" + file.Name())
 			if err != nil {
@@ -57,14 +57,14 @@ func loadPlugins() {
 		}
 
 		loadingPlugin = ""
-		log.Print("loaded plugins")
+		log.Print("[plugins] loading done")
 
-		log.Print("after loaded plugins")
+		log.Print("[plugins] PluginsLoaded hooks")
 		for _, l := range loader {
 			l(plugins)
 		}
 
-		log.Print("loaded plugins complete")
+		log.Print("[plugins] PluginsLoaded hooks done]")
 
 	})
 }
