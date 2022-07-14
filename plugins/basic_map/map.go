@@ -2,8 +2,9 @@ package main
 
 import (
 	"github.com/anon55555/mt"
-	_minetest "github.com/ev2-1/minetest-go"
+	"github.com/ev2-1/minetest-go"
 
+	"plugin"
 	"time"
 )
 
@@ -11,9 +12,9 @@ import (
 var loadedChunks map[string]map[pos]int64
 
 var (
-	MapBlkUpdateRate   int64 = 2        // in seconds
-	MapBlkUpdateRange        = int16(7) // in mapblks
-	MapBlkUpdateHeight       = int16(5) // in mapblks
+	MapBlkUpdateRate   int64 = 2         // in seconds
+	MapBlkUpdateRange        = int16(10) // in mapblks
+	MapBlkUpdateHeight       = int16(5)  // in mapblks
 
 	heigthOff = -MapBlkUpdateHeight / 2
 	EmptyBlk  mt.MapBlk
@@ -24,19 +25,23 @@ var grass mt.Content
 var exampleBlk mt.MapBlk
 
 func init() {
-	s := _minetest.GetNodeDef("mcl_core:stone")
+	loadedChunks = make(map[string]map[pos]int64)
+	OpenDB(minetest.Path("/map.sqlite"))
+
+	// interactions:
+	initInteractions()
+}
+
+func PluginsLoaded([]*plugin.Plugin) {
+	s := minetest.GetNodeDef("mcl_core:stone")
 	if s != nil {
 		stone = s.Param0
 	}
 
-	s = _minetest.GetNodeDef("mcl_core:dirt_with_grass")
+	s = minetest.GetNodeDef("mcl_core:dirt_with_grass")
 	if s != nil {
 		grass = s.Param0
 	}
-
-	loadedChunks = make(map[string]map[pos]int64)
-
-	OpenDB(_minetest.Path("/map.sqlite"))
 
 	exampleBlk = mt.MapBlk{}
 
@@ -54,14 +59,9 @@ func init() {
 	for k := range EmptyBlk.Param0 {
 		EmptyBlk.Param0[k] = mt.Air
 	}
-
-	// interactions:
-	initInteractions()
 }
 
-func PosUpdate(c *_minetest.Client, pos *mt.PlayerPos, LastUpdate int64) {
-	c.Log("pos update")
-
+func PosUpdate(c *minetest.Client, pos *mt.PlayerPos, LastUpdate int64) {
 	if time.Now().Unix() < LastUpdate+MapBlkUpdateRate {
 		p := Pos2int(pos.Pos())
 		blkpos, _ := mt.Pos2Blkpos(p)
