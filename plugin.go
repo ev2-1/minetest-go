@@ -36,6 +36,10 @@ func loadPlugins() {
 				continue
 			}
 
+			if pluginNotLoad(file.Name()) {
+				log.Print("[plugins] skipping ", file.Name())
+				continue
+			}
 			log.Print("[plugins] loading ", file.Name())
 
 			p, err := plugin.Open(path + "/" + file.Name())
@@ -65,7 +69,7 @@ func loadPlugins() {
 		}
 		pluginHook(plugins)
 
-		log.Print("[plugins] PluginsLoaded hooks done]")
+		log.Print("[plugins] PluginsLoaded hooks done")
 
 	})
 }
