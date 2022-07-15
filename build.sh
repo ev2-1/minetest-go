@@ -18,3 +18,7 @@ ls cmd/minetest-go/plugins
 cd cmd/minetest-go
 go get github.com/ev2-1/minetest-go
 go build .
+
+echo "[DONE] building"
+echo "<>-------------"
+echo ""
