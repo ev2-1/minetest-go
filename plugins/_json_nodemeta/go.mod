@@ -8,7 +8,7 @@ replace github.com/ev2-1/minetest-go/activeobject => ../../activeobject
 
 require (
 	github.com/anon55555/mt v0.0.0-20210919124550-bcc58cb3048f
-	github.com/ev2-1/minetest-go v0.0.0-20220714192619-f44f43fb83cf
+	github.com/ev2-1/minetest-go v0.0.0-20220715135028-7204f271e645
 )
 
 require (
