@@ -6,6 +6,7 @@ import (
 )
 
 var confMap = make(map[string]string)
+var pluginNoLoad []string
 
 func parseArguments() {
 	var key string
@@ -22,6 +23,18 @@ func parseArguments() {
 		switch k {
 		case "listen":
 			listenAddr = v
+		case "ign-plugin":
+			pluginNoLoad = strings.Split(v, ",")
 		}
 	}
+}
+
+func pluginNotLoad(file string) bool {
+	for _, p := range pluginNoLoad {
+		if p == file || p+".so" == file {
+			return true
+		}
+	}
+
+	return false
 }
