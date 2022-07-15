@@ -9,9 +9,9 @@ import (
 )
 
 func PluginsLoaded(pl []*plugin.Plugin) {
-	log.Print("pluginsLoaded func")
+	log.Print("[testing] pluginsLoaded func")
 }
 
 func ProcessPkt(c *minetest.Client, pkt *mt.Pkt) {
-	c.Log("Packet")
+	c.Log("[testing] Packet")
 }
