@@ -1,38 +1,29 @@
 package main
 
 import (
-	"github.com/ev2-1/minetest-go"
 	"github.com/anon55555/mt"
+	"github.com/ev2-1/minetest-go"
 
-	"reflect"
-	"time"
 	"log"
+	"time"
 )
 
-func init() {
-	minetest.RegisterPacketHandler(&minetest.PacketHandler{
-		Packets: map[reflect.Type]bool{
-			reflect.TypeOf(&mt.ToSrvChatMsg{}): true,
-		},
+func ProcessPkt(c *minetest.Client, pkt *mt.Pkt) {
+	switch cmd := pkt.Cmd.(type) {
+	case *mt.ToSrvChatMsg:
+		log.Printf("[CHAT] <%s> %s", c.Name, cmd.Msg)
 
-		Handle: func(c *minetest.Client, pkt *mt.Pkt) bool {
-			switch cmd := pkt.Cmd.(type) {
-			case *mt.ToSrvChatMsg:
-				log.Printf("[CHAT] <%s> %s", c.Name, cmd.Msg)
+		ts := time.Now().Unix()
 
-				ts := time.Now().Unix()
+		go minetest.Broadcast(&mt.ToCltChatMsg{
+			Sender: c.Name,
+			Text:   cmd.Msg,
 
-				go minetest.Broadcast(&mt.ToCltChatMsg{
-					Sender: c.Name,
-					Text: cmd.Msg,
+			Type: mt.NormalMsg,
 
-					Type: mt.NormalMsg,
+			Timestamp: ts,
+		})
+	}
 
-					Timestamp: ts,
-				})
-			}
-
-			return true
-		},
-	})
+	return
 }

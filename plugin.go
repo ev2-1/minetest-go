@@ -63,6 +63,7 @@ func loadPlugins() {
 		for _, l := range loader {
 			l(plugins)
 		}
+		pluginHook(plugins)
 
 		log.Print("[plugins] PluginsLoaded hooks done]")
 

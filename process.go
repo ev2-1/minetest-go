@@ -10,6 +10,8 @@ import (
 	"fmt"
 )
 
+var pktProcessors []func(*Client, *mt.Pkt)
+
 func (c *Client) process(pkt *mt.Pkt) {
 	t := reflect.TypeOf(pkt.Cmd)
 
@@ -17,12 +19,8 @@ func (c *Client) process(pkt *mt.Pkt) {
 
 	var handled bool
 
-	for _, h := range packetHandlers {
-		if h.Packets[t] && h.Handle != nil {
-			if h.Handle(c, pkt) {
-				handled = true
-			}
-		}
+	for _, h := range pktProcessors {
+		h(c, pkt)
 	}
 
 	if handled {

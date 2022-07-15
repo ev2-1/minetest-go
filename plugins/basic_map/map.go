@@ -27,9 +27,6 @@ var exampleBlk mt.MapBlk
 func init() {
 	loadedChunks = make(map[string]map[pos]int64)
 	OpenDB(minetest.Path("/map.sqlite"))
-
-	// interactions:
-	initInteractions()
 }
 
 func PluginsLoaded([]*plugin.Plugin) {

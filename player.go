@@ -28,12 +28,6 @@ const (
 	NetErr
 )
 
-var leaveChan = make(chan *Leave)
-
-func LeaveChan() <-chan *Leave {
-	return leaveChan
-}
-
 func CltLeave(l *Leave) {
 	clientsMu.Lock()
 	delete(clients, l.Client)
@@ -47,21 +41,10 @@ func CltLeave(l *Leave) {
 		Custom: l.Custom,
 	}
 
-	ack, _ := l.Client.SendCmd(cmd)
-
-	leaveChan <- l
-
-	select {
-	case <-l.Client.Closed():
-	case <-ack:
-		l.Client.Close()
-	}
+	l.Client.SendCmd(cmd)
 }
 
 func Clts() map[*Client]struct{} {
-	clientsMu.Lock()
-	defer clientsMu.Unlock()
-
 	return clients
 }
 
