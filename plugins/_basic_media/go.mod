@@ -8,6 +8,6 @@ replace github.com/ev2-1/minetest-go/activeobject => ../../activeobject
 
 require (
 	github.com/anon55555/mt v0.0.0-20210919124550-bcc58cb3048f // indirect
-	github.com/ev2-1/minetest-go v0.0.0-20220715135028-7204f271e645 // indirect
+	github.com/ev2-1/minetest-go v0.0.0-20220715164224-d10a0aa4d369 // indirect
 	github.com/ev2-1/minetest-go/activeobject v0.0.0-00010101000000-000000000000 // indirect
 )
