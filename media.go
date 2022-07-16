@@ -74,6 +74,19 @@ func GetNodeDef(name string) (def *mt.NodeDef) {
 	return def
 }
 
+func GetNIMap() map[string]mt.Content {
+	m := make(map[string]mt.Content)
+
+	nodeDefsMapMu.RLock()
+	defer nodeDefsMapMu.RUnlock()
+
+	for k, v := range nodeDefsMap {
+		m[k] = v.Param0
+	}
+
+	return m
+}
+
 // Add a Alias to the pool
 // pls only use while init func
 func AddAlias(alias ...struct{ Alias, Orig string }) {
