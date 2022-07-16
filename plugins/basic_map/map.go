@@ -29,7 +29,7 @@ func init() {
 	OpenDB(minetest.Path("/map.sqlite"))
 }
 
-func PluginsLoaded([]*plugin.Plugin) {
+func PluginsLoaded(map[string]*plugin.Plugin) {
 	s := minetest.GetNodeDef("mcl_core:stone")
 	if s != nil {
 		stone = s.Param0

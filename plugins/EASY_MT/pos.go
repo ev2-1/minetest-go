@@ -16,7 +16,7 @@ var posMu sync.RWMutex
 var posUpdate = make(map[*minetest.Client]int64)
 var posUpdateMu sync.RWMutex
 
-func PluginsLoaded(pl []*plugin.Plugin) {
+func PluginsLoaded(pl map[string]*plugin.Plugin) {
 	for _, p := range pl {
 		l, err := p.Lookup("PosUpdate")
 

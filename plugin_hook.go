@@ -7,7 +7,7 @@ import (
 	"github.com/anon55555/mt"
 )
 
-func pluginHook(pl []*plugin.Plugin) {
+func pluginHook(pl map[string]*plugin.Plugin) {
 	for _, p := range pl {
 		l, err := p.Lookup("ProcessPkt")
 

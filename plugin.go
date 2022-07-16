@@ -4,18 +4,13 @@ import (
 	"log"
 	"os"
 	"plugin"
-	"reflect"
 	"sync"
 )
 
 var pluginsOnce sync.Once
-var plugins []*plugin.Plugin
+var plugins = make(map[string]*plugin.Plugin)
 
 var loadingPlugin string
-
-var (
-	pluginLoadFuncType = reflect.TypeOf(func([]*plugin.Plugin) {})
-)
 
 func loadPlugins() {
 	pluginsOnce.Do(func() {
@@ -28,7 +23,7 @@ func loadPlugins() {
 		}
 
 		//var plugins []*plugin.Plugin
-		var loader []func([]*plugin.Plugin)
+		var loader []func(map[string]*plugin.Plugin)
 
 		for _, file := range files {
 			loadingPlugin = file.Name()
@@ -48,16 +43,25 @@ func loadPlugins() {
 				continue
 			}
 
-			plugins = append(plugins, p)
+			pname := file.Name()
+
+			n, err := p.Lookup("Name")
+			if err == nil {
+				name, ok := n.(string)
+				if ok {
+					pname = name
+				}
+			}
+
+			plugins[pname] = p
 
 			l, err := p.Lookup("PluginsLoaded")
 			if err == nil {
 				switch lo := l.(type) {
-				case func([]*plugin.Plugin):
+				case func(map[string]*plugin.Plugin):
 					loader = append(loader, lo)
 				}
 			}
-
 		}
 
 		loadingPlugin = ""

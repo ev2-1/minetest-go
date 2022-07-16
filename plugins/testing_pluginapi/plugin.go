@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func PluginsLoaded(pl []*plugin.Plugin) {
+func PluginsLoaded(pl map[string]*plugin.Plugin) {
 	log.Print("[testing] pluginsLoaded func")
 }
 
