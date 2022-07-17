@@ -15,7 +15,9 @@ var pktProcessors []func(*Client, *mt.Pkt)
 func (c *Client) process(pkt *mt.Pkt) {
 	t := reflect.TypeOf(pkt.Cmd)
 
-	c.Log("->", fmt.Sprintf("%T", pkt.Cmd), t)
+	if verbose {
+		c.Log("->", fmt.Sprintf("%T", pkt.Cmd), t)
+	}
 
 	var handled bool
 

@@ -7,6 +7,7 @@ import (
 
 var confMap = make(map[string]string)
 var pluginNoLoad []string
+var verbose bool = true
 
 func parseArguments() {
 	var key string
@@ -25,6 +26,8 @@ func parseArguments() {
 			listenAddr = v
 		case "ign-plugin":
 			pluginNoLoad = strings.Split(v, ",")
+		case "v":
+			verbose = v == "true"
 		}
 	}
 }
