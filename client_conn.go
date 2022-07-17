@@ -2,13 +2,13 @@ package minetest
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"sync"
 
 	"github.com/anon55555/mt"
 	"github.com/anon55555/mt/rudp"
-	"github.com/ev2-1/minetest-go/activeobject"
 )
 
 type ClientState uint8
@@ -32,10 +32,17 @@ type Client struct {
 	initCh  chan struct{}
 	aoReady sync.Once
 
-	lang string
+	leaveOnce sync.Once // a client only can leave once
 
-	playerAO ao.ActiveObject
-	aos      map[mt.AOID]ao.ActiveObject
+	lang string
+}
+
+func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
+	if verbose {
+		c.Log("<-", fmt.Sprintf("%T", cmd))
+	}
+
+	return c.Peer.SendCmd(cmd)
 }
 
 func (c *Client) SetState(state ClientState) {
