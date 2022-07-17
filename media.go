@@ -3,12 +3,21 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
+	"fmt"
 	"strings"
 	"sync"
 )
 
 var itemDefsMu sync.RWMutex
 var itemDefs []mt.ItemDef
+
+type nodeDefNotFoundErr struct {
+	name string
+}
+
+func (ndnfe nodeDefNotFoundErr) Error() string {
+	return fmt.Sprintf("Node definition not Found: '%s'", ndnfe.name)
+}
 
 var (
 	nodeDefsMu sync.RWMutex
@@ -25,6 +34,9 @@ var aliases []struct{ Alias, Orig string }
 var mediaURLs []string
 var media []struct{ Name, Base64SHA1 string }
 var mediaMu sync.RWMutex
+
+var NodeIdMap map[mt.Content]string
+var IdNodeMap map[string]mt.Content
 
 // Add more item definitions to pool
 // pls only use while init func
@@ -54,6 +66,18 @@ func AddNodeDef(defs ...*mt.NodeDef) {
 }
 
 func getNodeDefID() mt.Content {
+	if nodeDefID == 125 {
+		nodeDefID += 3
+
+		// insert meta defs:
+		// unknown air and ignore
+		nodeDefs = append(nodeDefs,
+			&mt.NodeDef{Param0: mt.Unknown, Name: "unknown"},
+			&mt.NodeDef{Param0: mt.Air, Name: "air"},
+			&mt.NodeDef{Param0: mt.Ignore, Name: "ignore"},
+		)
+	}
+
 	id := nodeDefID
 	nodeDefID++
 
@@ -74,17 +98,29 @@ func GetNodeDef(name string) (def *mt.NodeDef) {
 	return def
 }
 
-func GetNIMap() map[string]mt.Content {
-	m := make(map[string]mt.Content)
+// GetNodeID returns the Param0 of a node
+// panics if not found
+func GetNodeID(name string) mt.Content {
+	def := GetNodeDef(name)
+
+	if def == nil {
+		panic(nodeDefNotFoundErr{name})
+	}
+
+	return def.Param0
+}
+
+func FillNameIdMap() {
+	NodeIdMap = make(map[mt.Content]string)
+	IdNodeMap = make(map[string]mt.Content)
 
 	nodeDefsMapMu.RLock()
 	defer nodeDefsMapMu.RUnlock()
 
 	for k, v := range nodeDefsMap {
-		m[k] = v.Param0
+		IdNodeMap[k] = v.Param0
+		NodeIdMap[v.Param0] = k
 	}
-
-	return m
 }
 
 // Add a Alias to the pool

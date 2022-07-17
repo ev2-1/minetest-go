@@ -19,3 +19,5 @@ working plugins / features:
 - himbeerserverDE for being able to steal most of the networking code
 
 - **NOT** minetest, as i hate the technical documentation (non existant)
+
+- *fuck* fleckenstein i dont like him (also thanks for making this work lol)

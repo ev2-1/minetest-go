@@ -29,6 +29,12 @@ const (
 )
 
 func CltLeave(l *Leave) {
+	l.Client.leaveOnce.Do(func() {
+		for _, h := range leaveHooks {
+			h(l)
+		}
+	})
+
 	clientsMu.Lock()
 	delete(clients, l.Client)
 	clientsMu.Unlock()
@@ -73,8 +79,18 @@ func PlayerExists(name string) bool {
 }
 
 func RegisterPlayer(c *Client) {
+	for _, h := range joinHooks {
+		h(c)
+	}
+
 	clientsMu.Lock()
 	defer clientsMu.Unlock()
 
 	clients[c] = struct{}{}
+}
+
+func InitClient(c *Client) {
+	for _, h := range initHooks {
+		h(c)
+	}
 }
