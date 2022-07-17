@@ -47,9 +47,9 @@ func loadPlugins() {
 
 			n, err := p.Lookup("Name")
 			if err == nil {
-				name, ok := n.(string)
+				name, ok := n.(*string)
 				if ok {
-					pname = name
+					pname = *name
 				}
 			}
 
