@@ -4,5 +4,7 @@ latest.log
 
 plugins/
 media/
+model_media/
 hashfiles/
 itemdefs/
+chars.txt
