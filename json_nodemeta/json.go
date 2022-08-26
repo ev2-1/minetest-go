@@ -12,7 +12,7 @@ import (
 
 func init() {
 	// create folder (if not exists)
-	path := minetest.Path("itemdefs/")
+	path := minetest.Path("nodedefs/")
 	os.Mkdir(path, 0777)
 
 	dir, err := os.ReadDir(path)
@@ -21,7 +21,7 @@ func init() {
 	}
 
 	for _, file := range dir {
-		f, err := os.Open(minetest.Path("itemdefs/" + file.Name()))
+		f, err := os.Open(minetest.Path("nodedefs/" + file.Name()))
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -15,7 +15,7 @@ github.com/ev2-1/minetest-go/http_media
 github.com/ev2-1/minetest-go/mt_media
 
 # json nodemeta loads nodemetadata from json files
-# files located in: `$pwd/itemdefs` (TODO: change name)
+# files located in: `$pwd/nodedefs`
 github.com/ev2-1/minetest-go/json_nodemeta
 
 # ao mgr manages active objects
