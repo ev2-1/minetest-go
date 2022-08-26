@@ -1,14 +1,13 @@
 package minetest
 
 import (
+	"log"
 	"os"
 	"strings"
 	"time"
-	"log"
 )
 
 var confMap = make(map[string]string)
-var pluginNoLoad []string
 var verbose bool = true
 
 func parseArguments() {
@@ -26,8 +25,6 @@ func parseArguments() {
 		switch k {
 		case "listen":
 			listenAddr = v
-		case "ign-plugin":
-			pluginNoLoad = strings.Split(v, ",")
 		case "v":
 			verbose = v == "true"
 		case "tick":
@@ -39,14 +36,4 @@ func parseArguments() {
 			tickDuration = d
 		}
 	}
-}
-
-func pluginNotLoad(file string) bool {
-	for _, p := range pluginNoLoad {
-		if p == file || p+".so" == file {
-			return true
-		}
-	}
-
-	return false
 }

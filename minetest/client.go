@@ -49,9 +49,14 @@ func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 	}
 
 	// packet preprocessor
-	for _, pre := range packetPre {
-		if pre(c, cmd) {
-			return nil, nil
+	{
+		packetPreMu.RLock()
+		defer packetPreMu.RUnlock()
+
+		for _, pre := range packetPre {
+			if pre(c, cmd) {
+				return nil, nil
+			}
 		}
 	}
 

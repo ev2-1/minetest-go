@@ -32,9 +32,11 @@ const (
 
 func CltLeave(l *Leave) {
 	l.Client.leaveOnce.Do(func() {
+		leaveHooksMu.RLock()
 		for _, h := range leaveHooks {
 			h(l)
 		}
+		leaveHooksMu.RUnlock()
 	})
 
 	clientsMu.Lock()
@@ -93,9 +95,11 @@ func PlayerExists(name string) bool {
 }
 
 func registerPlayer(c *Client) {
+	joinHooksMu.RLock()
 	for _, h := range joinHooks {
 		h(c)
 	}
+	joinHooksMu.RUnlock()
 
 	// change prefix to new name
 	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
@@ -107,6 +111,9 @@ func registerPlayer(c *Client) {
 }
 
 func InitClient(c *Client) {
+	initHooksMu.RLock()
+	defer initHooksMu.RUnlock()
+
 	for _, h := range initHooks {
 		h(c)
 	}

@@ -16,13 +16,17 @@ func initTicks() {
 			for {
 				<-ticker
 
+				tickHooksMu.RLock()
 				for _, h := range tickHooks {
 					h()
 				}
+				tickHooksMu.RUnlock()
 
+				pktTickHooksMu.RLock()
 				for _, h := range pktTickHooks {
 					h()
 				}
+				pktTickHooksMu.RUnlock()
 			}
 		}()
 	})

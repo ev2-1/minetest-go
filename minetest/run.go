@@ -23,9 +23,6 @@ func Run() {
 func runFunc() {
 	parseArguments()
 
-	// load plugins
-	loadPlugins()
-
 	// initialize Logging
 	initLog()
 
