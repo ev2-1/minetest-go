@@ -1,6 +1,31 @@
-# this is a load.txt file
-# every line can be a go import path to a module
-# e.g. "github.com/ev2-1/minetest-go/auth_nopass" could be a line
-# comments like these can me made using "#"s
-# to update the init.go file use `./makeinit.sh`
-# for an example file, to setup a base server, check `load.txt.example`
+# this is an example load.txt file
+
+# auth_nopass adds authentication only using FirstSRP
+github.com/ev2-1/minetest-go/auth_nopass
+
+# minetest map can parse minetest's `map.sqlite` files
+# located `$pwd/map.sqlite`
+github.com/ev2-1/minetest-go/minetest_map
+
+# http media serves media in `$pwd/media` to clients using mth
+github.com/ev2-1/minetest-go/http_media
+
+# mt media uses the minetest protocol
+# files located in: `$pwd/model_media`
+github.com/ev2-1/minetest-go/mt_media
+
+# json nodemeta loads nodemetadata from json files
+# files located in: `$pwd/itemdefs` (TODO: change name)
+github.com/ev2-1/minetest-go/json_nodemeta
+
+# ao mgr manages active objects
+github.com/ev2-1/minetest-go/ao_mgr
+
+# playerAO contains a player ActiveObject like the one found in mineclone
+github.com/ev2-1/minetest-go/basic_playerAO
+
+# basic init is a placeholder to initialize the client with mostly default values
+github.com/ev2-1/minetest-go/basic_init
+
+# basic chat just broadcasts chatmessages to all players
+github.com/ev2-1/minetest-go/basic_chat
