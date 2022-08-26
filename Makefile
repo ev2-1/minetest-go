@@ -1,6 +1,10 @@
+.PHONY: run build init
+
 build: init
-	go build ./cmd/minetest-go/
+	cd ./cmd/minetest-go; go build -race
 
 init:
 	./makeinit.sh
 	
+run: build
+	cd ./cmd/minetest-go/; ./minetest-go -v
