@@ -1,0 +1,6 @@
+# this is a load.txt file
+# every line can be a go import path to a module
+# e.g. "github.com/ev2-1/minetest-go/auth_nopass" could be a line
+# comments like these can me made using "#"s
+# to update the init.go file use `./makeinit.sh`
+# for an example file, to setup a base server, check `load.txt.example`
