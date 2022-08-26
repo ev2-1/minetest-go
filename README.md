@@ -14,10 +14,10 @@ working plugins / features:
 
 # Thanks to
 
-- anon55555 for the AMAZING mt package
+- Anon55555 for the AMAZING mt package
 
-- himbeerserverDE for being able to steal most of the networking code
+- HimbeerserverDE for being able to steal most of the networking code
+
+- Fleckenstein for helping me make sense of minetest code
 
 - **NOT** minetest, as i hate the technical documentation (non existant)
-
-- *fuck* fleckenstein i dont like him (also thanks for making this work lol)
