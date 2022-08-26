@@ -102,9 +102,8 @@ func registerPlayer(c *Client) {
 	// change prefix to new name
 	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
 
-	//TODO:::::
-	//clientsMu.Lock()
-	//defer clientsMu.Unlock()
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
 
 	clients[c] = struct{}{}
 }
