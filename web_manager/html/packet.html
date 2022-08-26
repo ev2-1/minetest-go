@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/jq.js"></script>
+    <script src="/js/bootstrap.js"></script>
+
+    <!-- Include the plugin's CSS and JS: -->
+    <script type="text/javascript" src="/js/bootstrap-multiselect.js"></script>
+    <link rel="stylesheet" href="/css/bootstrap-select.css" type="text/css" />
+
+
+    <script src="/js/update.js"></script>
+    <title>client - pkts</title>
+</head>
+
+<body>
+    <div class="filter d-flex justify-content-start">
+        <!-- player -->
+        <span class="input-group mb-3 filter">
+            <label class="input-group-text" for="playerselect">Player</label>
+            <label class="input-group-text">
+
+                <select id="playerselect" multiple="multiple">
+                </select>
+            </label>
+        </span>
+
+        <!-- packet -->
+        <span class="input-group mb-3 filter">
+            <label class="input-group-text" for="packetselect">Packet</label>
+            <label class="input-group-text">
+
+                <select id="packetselect" multiple="multiple">
+                </select>
+            </label>
+        </span>
+    </div>
+    <div class="packetlist" id="list"></div>
+
+</body>
+
+</html>

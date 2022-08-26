@@ -1,0 +1,15 @@
+div.packetlist {
+    padding: 1em;
+    top: 1em;
+}
+
+
+div.filter {
+    padding: 1em;
+    justify-items:flex-start;
+}
+
+div.filter > span.filter {
+    padding: 0.5em;
+    width: auto;
+}
