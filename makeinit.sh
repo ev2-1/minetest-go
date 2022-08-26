@@ -8,35 +8,14 @@ echo "package main
 import (" >> cmd/minetest-go/init.go
 
 while read import; do
-	echo "	pl$ii \"$import\"" >> cmd/minetest-go/init.go
+	if [ "$import" != "" ] && [ ${import:0:1} != "#"  ]; then	
+		echo "	_ \"$import\"" >> cmd/minetest-go/init.go
+
+		go get "$import"
 	
-	ii=$(echo "$ii + 1" | bc)
+		ii=$(echo "$ii + 1" | bc)
+	fi
 done < load.txt
 
-# first func
-
-
 echo ")
-
-func stage1() {" >> cmd/minetest-go/init.go
-
-i=0
-while [ "$i" != "$ii" ]; do
-	echo "	pl$i.Stage1()" >> cmd/minetest-go/init.go
-
-	i=$(echo "$i + 1" | bc)
-done
-
-echo "}
-
-func stage2() {" >> cmd/minetest-go/init.go
-
-i=0
-while [ "$i" != "$ii" ]; do
-	echo "	pl$i.Stage2()" >> cmd/minetest-go/init.go
-
-	i=$(echo "$i + 1" | bc)
-done
-
-echo "}
 " >> cmd/minetest-go/init.go
