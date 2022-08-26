@@ -39,7 +39,20 @@ type Client struct {
 
 func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 	if verbose {
-		c.Log("<-", fmt.Sprintf("%T", cmd))
+		switch cmd.(type) {
+		case *mt.ToCltBlkData:
+			break
+
+		default:
+			c.Log("<-", fmt.Sprintf("%T", cmd))
+		}
+	}
+
+	// packet preprocessor
+	for _, pre := range packetPre {
+		if pre(c, cmd) {
+			return nil, nil
+		}
 	}
 
 	return c.Peer.SendCmd(cmd)

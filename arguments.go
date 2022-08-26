@@ -3,6 +3,8 @@ package minetest
 import (
 	"os"
 	"strings"
+	"time"
+	"log"
 )
 
 var confMap = make(map[string]string)
@@ -28,6 +30,13 @@ func parseArguments() {
 			pluginNoLoad = strings.Split(v, ",")
 		case "v":
 			verbose = v == "true"
+		case "tick":
+			d, err := time.ParseDuration(v)
+			if err != nil {
+				log.Fatal("Error parsing duration \"-tick\"", err)
+			}
+
+			tickDuration = d
 		}
 	}
 }

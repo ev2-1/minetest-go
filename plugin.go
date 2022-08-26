@@ -23,7 +23,7 @@ func loadPlugins() {
 		}
 
 		//var plugins []*plugin.Plugin
-		var loader []func(map[string]*plugin.Plugin)
+		var loader = make(map[string]func(map[string]*plugin.Plugin))
 
 		for _, file := range files {
 			loadingPlugin = file.Name()
@@ -59,7 +59,7 @@ func loadPlugins() {
 			if err == nil {
 				switch lo := l.(type) {
 				case func(map[string]*plugin.Plugin):
-					loader = append(loader, lo)
+					loader[pname] = lo
 				}
 			}
 		}
@@ -67,8 +67,13 @@ func loadPlugins() {
 		loadingPlugin = ""
 		log.Print("[plugins] loading done")
 
+		log.Print("[media] filling NameID map")
+		FillNameIdMap()
+		log.Print("[media] filling NameID map done")
+
 		log.Print("[plugins] PluginsLoaded hooks")
-		for _, l := range loader {
+		for name, l := range loader {
+			log.Print("[plugins] PluginsLoaded - ", name)
 			l(plugins)
 		}
 		pluginHook(plugins)

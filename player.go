@@ -2,6 +2,8 @@ package minetest
 
 import (
 	"github.com/anon55555/mt"
+
+	"fmt"
 )
 
 type Leave struct {
@@ -42,16 +44,28 @@ func CltLeave(l *Leave) {
 	clientsMu.RLock()
 	defer clientsMu.RUnlock()
 
-	cmd := &mt.ToCltKick{
-		Reason: l.Reason,
-		Custom: l.Custom,
-	}
+	// Do not send clt kick if disconnected by self
+	if l.AbstrReason == Kick {
+		cmd := &mt.ToCltKick{
+			Reason: l.Reason,
+			Custom: l.Custom,
+		}
 
-	l.Client.SendCmd(cmd)
+		l.Client.SendCmd(cmd)
+	}
 }
 
 func Clts() map[*Client]struct{} {
-	return clients
+	clientsMu.RLock()
+	defer clientsMu.RLock()
+
+	c := make(map[*Client]struct{}, len(clients))
+
+	for k, v := range clients {
+		c[k] = v
+	}
+
+	return c
 }
 
 func (c *Client) Kick(r mt.KickReason, Custom string) {
@@ -78,10 +92,13 @@ func PlayerExists(name string) bool {
 	return PlayerByName(name) != nil
 }
 
-func RegisterPlayer(c *Client) {
+func registerPlayer(c *Client) {
 	for _, h := range joinHooks {
 		h(c)
 	}
+
+	// change prefix to new name
+	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
 
 	clientsMu.Lock()
 	defer clientsMu.Unlock()

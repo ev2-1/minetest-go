@@ -15,10 +15,6 @@ var pktProcessors []func(*Client, *mt.Pkt)
 func (c *Client) process(pkt *mt.Pkt) {
 	t := reflect.TypeOf(pkt.Cmd)
 
-	if verbose {
-		c.Log("->", fmt.Sprintf("%T", pkt.Cmd), t)
-	}
-
 	var handled bool
 
 	for _, h := range pktProcessors {
@@ -31,9 +27,25 @@ func (c *Client) process(pkt *mt.Pkt) {
 
 	switch pkt.Cmd.(type) {
 	case *mt.ToSrvCltReady:
-		c.SetState(CsActive)
+		if c.State == CsActive {
+			registerPlayer(c)
+		} else {
+			CltLeave(&Leave{
+				Reason: mt.UnexpectedData,
+
+				Client: c,
+			})
+		}
+
 		close(c.initCh)
 		return
 
+	case *mt.ToSrvGotBlks:
+		return
 	}
+
+	if verbose {
+		c.Log("->", fmt.Sprintf("%T", pkt.Cmd), t)
+	}
+
 }

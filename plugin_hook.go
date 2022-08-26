@@ -10,6 +10,9 @@ import (
 var leaveHooks []func(*Leave)
 var joinHooks []func(*Client)
 var initHooks []func(*Client)
+var tickHooks []func()
+var pktTickHooks []func()
+var packetPre []func(*Client, mt.Cmd) bool
 
 func pluginHook(pl map[string]*plugin.Plugin) {
 	for _, p := range pl { // no need for Mutexes as are only written once at startup
@@ -59,6 +62,42 @@ func pluginHook(pl map[string]*plugin.Plugin) {
 			}
 
 			initHooks = append(initHooks, f)
+		}
+
+		// func(*Client, mt.Pkt)
+		l, err = p.Lookup("PacketPre")
+		if err == nil {
+			f, ok := l.(func(*Client, mt.Cmd) bool)
+			if !ok {
+				log.Println("plugin has wrong 'PacketPre' type please check")
+				return
+			}
+
+			packetPre = append(packetPre, f)
+		}
+
+		// func()
+		l, err = p.Lookup("Tick")
+		if err == nil {
+			f, ok := l.(func())
+			if !ok {
+				log.Println("plugin has wrong 'Tick' type please check")
+				return
+			}
+
+			tickHooks = append(tickHooks, f)
+		}
+
+		// func()
+		l, err = p.Lookup("PktTick")
+		if err == nil {
+			f, ok := l.(func())
+			if !ok {
+				log.Println("plugin has wrong 'PktTick' type please check")
+				return
+			}
+
+			pktTickHooks = append(pktTickHooks, f)
 		}
 	}
 }
