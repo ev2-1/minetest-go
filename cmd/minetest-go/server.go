@@ -5,8 +5,9 @@ import (
 )
 
 func main() {
-	stage1() // generated to init.go by makeinit.sh
-	stage2() // generated to init.go by makeinit.sh
+	minetest.Stage1()
+	minetest.FillNameIdMap()
+	minetest.Stage2()
 
 	// final step
 	minetest.Run()
