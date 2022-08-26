@@ -46,7 +46,7 @@ var (
 	tickHooksMu sync.RWMutex
 )
 
-func RegisterRickHook(h func()) {
+func RegisterTickHook(h func()) {
 	tickHooksMu.Lock()
 	defer tickHooksMu.Unlock()
 
@@ -75,4 +75,16 @@ func RegisterPacketPre(h func(*Client, mt.Cmd) bool) {
 	defer packetPreMu.Unlock()
 
 	packetPre = append(packetPre, h)
+}
+
+var (
+	pktProcessors   []func(*Client, *mt.Pkt)
+	pktProcessorsMu sync.RWMutex
+)
+
+func RegisterPktProcessor(p func(*Client, *mt.Pkt)) {
+	pktProcessorsMu.Lock()
+	defer pktProcessorsMu.Unlock()
+
+	pktProcessors = append(pktProcessors, p)
 }

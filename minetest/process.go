@@ -2,24 +2,28 @@ package minetest
 
 import (
 	"github.com/anon55555/mt"
-	//	"github.com/anon55555/mt/rudp"
 
-	"reflect"
-	//	"strings"
-	//	"net"
 	"fmt"
 )
 
-var pktProcessors []func(*Client, *mt.Pkt)
-
 func (c *Client) process(pkt *mt.Pkt) {
-	t := reflect.TypeOf(pkt.Cmd)
+	if verbose {
+		c.Log("->", fmt.Sprintf("%T", pkt.Cmd))
+	}
+
+	defer func() {
+		if verbose {
+			c.Log("->", fmt.Sprintf("%T done", pkt.Cmd))
+		}
+	}()
 
 	var handled bool
 
+	pktProcessorsMu.RLock()
 	for _, h := range pktProcessors {
 		h(c, pkt)
 	}
+	pktProcessorsMu.RUnlock()
 
 	if handled {
 		return
@@ -43,9 +47,4 @@ func (c *Client) process(pkt *mt.Pkt) {
 	case *mt.ToSrvGotBlks:
 		return
 	}
-
-	if verbose {
-		c.Log("->", fmt.Sprintf("%T", pkt.Cmd), t)
-	}
-
 }

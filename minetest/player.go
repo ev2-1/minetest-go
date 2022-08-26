@@ -36,15 +36,13 @@ func CltLeave(l *Leave) {
 		for _, h := range leaveHooks {
 			h(l)
 		}
+
 		leaveHooksMu.RUnlock()
 	})
 
 	clientsMu.Lock()
 	delete(clients, l.Client)
 	clientsMu.Unlock()
-
-	clientsMu.RLock()
-	defer clientsMu.RUnlock()
 
 	// Do not send clt kick if disconnected by self
 	if l.AbstrReason == Kick {
@@ -59,7 +57,7 @@ func CltLeave(l *Leave) {
 
 func Clts() map[*Client]struct{} {
 	clientsMu.RLock()
-	defer clientsMu.RLock()
+	defer clientsMu.RUnlock()
 
 	c := make(map[*Client]struct{}, len(clients))
 
@@ -104,8 +102,9 @@ func registerPlayer(c *Client) {
 	// change prefix to new name
 	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
 
-	clientsMu.Lock()
-	defer clientsMu.Unlock()
+	//TODO:::::
+	//clientsMu.Lock()
+	//defer clientsMu.Unlock()
 
 	clients[c] = struct{}{}
 }
