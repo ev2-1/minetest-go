@@ -55,6 +55,39 @@ func AOMsg(msgs ...mt.IDAOMsg) {
 	}
 }
 
+// GetAllAOIDs returns a slice of all ActiveObjects' ids
+func GetAllAOIDs() []mt.AOID {
+	activeObjectsMu.RLock()
+	activeObjectsMu.RUnlock()
+
+	s := make([]mt.AOID, len(activeObjects))
+	i := 0
+
+	for id := range activeObjects {
+		s[i] = id
+		i++
+	}
+
+	return s
+}
+
+func GetCltAOIDs(c *minetest.Client) []mt.AOID {
+	clientsMu.RLock()
+	defer clientsMu.RUnlock()
+
+	if cd, ok := clients[c]; ok {
+		s := make([]mt.AOID, len(cd.aos))
+		i := 0
+
+		for id := range cd.aos {
+			s[i] = id
+			i++
+		}
+	}
+
+	return []mt.AOID{}
+}
+
 // - abstr -
 
 // RegisterAO registers a initialized ActiveObject

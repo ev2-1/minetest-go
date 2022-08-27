@@ -83,4 +83,14 @@ func init() {
 			cd.initialized = true
 		}(id, cd)
 	})
+
+	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
+		clientsMu.RLock()
+		defer clientsMu.RUnlock()
+		if cd, ok := clients[l.Client]; ok {
+			RmAO(cd.id)
+
+			delete(clients, l.Client)
+		}
+	})
 }

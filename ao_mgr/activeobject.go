@@ -22,5 +22,3 @@ const (
 	Client aoidType = true
 	Global          = false
 )
-
-// TODO clear all client aoids
