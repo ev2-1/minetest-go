@@ -83,6 +83,8 @@ func GetCltAOIDs(c *minetest.Client) []mt.AOID {
 			s[i] = id
 			i++
 		}
+
+		return s
 	}
 
 	return []mt.AOID{}

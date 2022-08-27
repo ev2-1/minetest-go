@@ -6,16 +6,18 @@ import (
 
 	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 // Data kept per client
 type ClientData struct {
 	clt *minetest.Client
 
-	initialized bool // player AO initialized; wont send anything until true (gets set true when `queueAddSelf` is invoked)
+	initialized atomic.Bool // player AO initialized; wont send anything until true (gets set true when `queueAddSelf` is invoked)
 
 	// which AOs do you have?
-	aos map[mt.AOID]struct{}
+	aosMu sync.RWMutex
+	aos   map[mt.AOID]struct{}
 
 	// the id you have yourself
 	id mt.AOID
@@ -64,7 +66,10 @@ func init() {
 		id := RegisterAO(ao)
 
 		// forceignore id for self:
+		cd.aosMu.Lock()
 		cd.aos[id] = struct{}{}
+		cd.aosMu.Unlock()
+
 		cd.id = id
 
 		// add self to schedule first:
@@ -80,7 +85,8 @@ func init() {
 
 			<-ack
 
-			cd.initialized = true
+			cd.clt.Log("initialized!")
+			cd.initialized.Store(true)
 		}(id, cd)
 	})
 
@@ -90,7 +96,11 @@ func init() {
 		if cd, ok := clients[l.Client]; ok {
 			RmAO(cd.id)
 
+			clientsMu.RUnlock()
+			clientsMu.Lock()
 			delete(clients, l.Client)
+			clientsMu.Unlock()
+			clientsMu.RLock()
 		}
 	})
 }
