@@ -8,7 +8,7 @@ import (
 )
 
 var confMap = make(map[string]string)
-var verbose bool = true
+var verbose bool = false
 
 func parseArguments() {
 	var key string

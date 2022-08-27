@@ -9,13 +9,9 @@ import (
 func (c *Client) process(pkt *mt.Pkt) {
 	if verbose {
 		c.Log("->", fmt.Sprintf("%T", pkt.Cmd))
-	}
 
-	defer func() {
-		if verbose {
-			c.Log("->", fmt.Sprintf("%T done", pkt.Cmd))
-		}
-	}()
+		defer c.Log("->", fmt.Sprintf("%T done", pkt.Cmd))
+	}
 
 	var handled bool
 
