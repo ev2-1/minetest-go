@@ -28,4 +28,4 @@ github.com/ev2-1/minetest-go/basic_playerAO
 github.com/ev2-1/minetest-go/basic_init
 
 # basic chat just broadcasts chatmessages to all players
-github.com/ev2-1/minetest-go/basic_chat
+github.com/ev2-1/minetest-go/chat
