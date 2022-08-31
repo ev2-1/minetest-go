@@ -38,18 +38,18 @@ func FilterRelevantRms(pos mt.Pos, rms []mt.AOID) (r []mt.AOID) {
 }
 
 func FilterRelevantMsgs(pos mt.Pos, msgs []mt.IDAOMsg) (r []mt.IDAOMsg) {
-	for _, msg := range msgs {
-		f, p := GetAOPos(msg.ID)
-		if !f {
-			break
-		}
+	/*	for _, msg := range msgs {
+			f, p := GetAOPos(msg.ID)
+			if !f {
+				break
+			}
 
-		if Distance(mt.Vec(pos), mt.Vec(p.Pos)) > ReleventDistance {
-			r = append(r, msg)
+			if Distance(mt.Vec(pos), mt.Vec(p.Pos)) > ReleventDistance {
+				r = append(r, msg)
+			}
 		}
-	}
-
-	return
+	*/
+	return msgs
 }
 
 func Distance(a, b mt.Vec) float32 {

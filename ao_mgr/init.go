@@ -27,14 +27,20 @@ type ClientData struct {
 	queueRm  []mt.AOID
 }
 
+func (cd *ClientData) GetID() mt.AOID {
+	return cd.id
+}
+
 func (cd *ClientData) QueueAdd(adds ...mt.AOID) {
 	cd.clt.Log(fmt.Sprintf("Adding AOIDs %v to client add queue", adds))
 
 	cd.queueAdd = append(cd.queueAdd, adds...)
+}
 
-	for _, id := range adds {
-		cd.aos[id] = struct{}{}
-	}
+func (cd *ClientData) QueueRm(rms ...mt.AOID) {
+	cd.clt.Log(fmt.Sprintf("Adding AOIDs %v to client rm queue", rms))
+
+	cd.queueRm = append(cd.queueRm, rms...)
 }
 
 func makeClientData(c *minetest.Client) *ClientData {
@@ -50,35 +56,37 @@ var clientsMu sync.RWMutex
 
 func init() {
 	minetest.RegisterJoinHook(func(clt *minetest.Client) {
-		cd := makeClientData(clt)
+		go func() {
+			cd := makeClientData(clt)
 
-		// give client data
-		clientsMu.Lock()
-		clients[clt] = cd
-		clientsMu.Unlock()
+			// give client data
+			clientsMu.Lock()
+			clients[clt] = cd
+			clientsMu.Unlock()
 
-		if ao0maker == nil {
-			panic(fmt.Errorf("no AO0Maker registerd, please ensure you have a player managing plugin installed."))
-		}
+			if ao0maker == nil {
+				panic(fmt.Errorf("no AO0Maker registerd, please ensure you have a player managing plugin installed."))
+			}
 
-		// make playerAO
-		ao := ao0maker(clt)
-		id := RegisterAO(ao)
+			// make playerAO (for the others)
+			id := GetAOID()
+			ao := ao0maker(clt, id)
+			RegisterAO(ao)
 
-		// forceignore id for self:
-		cd.aosMu.Lock()
-		cd.aos[id] = struct{}{}
-		cd.aosMu.Unlock()
+			// forceignore id for self:
+			cd.aosMu.Lock()
+			cd.aos[id] = struct{}{}
+			cd.aosMu.Unlock()
 
-		cd.id = id
+			// make playerAO for self:
+			ao = ao0maker(clt, 0)
 
-		// add self to schedule first:
-		go func(id mt.AOID, cd *ClientData) {
+			// add self to schedule first:
 			ack, _ := clt.SendCmd(&mt.ToCltAORmAdd{
 				Add: []mt.AOAdd{
 					mt.AOAdd{
 						ID:       0,
-						InitData: ao.InitPkt(0, cd.clt),
+						InitData: ao.InitPkt(cd.clt),
 					},
 				},
 			})
@@ -87,7 +95,7 @@ func init() {
 
 			cd.clt.Log("initialized!")
 			cd.initialized.Store(true)
-		}(id, cd)
+		}()
 	})
 
 	minetest.RegisterLeaveHook(func(l *minetest.Leave) {

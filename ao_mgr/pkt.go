@@ -3,7 +3,7 @@ package ao
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
-	"github.com/ev2-1/minetest-go/tools/pos"
+	//	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"sync"
 )
@@ -26,15 +26,15 @@ func (cd *ClientData) doAddQueue() (a []mt.AOAdd) {
 
 	activeObjectsMu.RLock()
 	for _, id := range cd.queueAdd {
-		if id != 0 {
+		if id != 0 && activeObjects[id] != nil {
 			a = append(a, mt.AOAdd{
 				ID:       id,
-				InitData: activeObjects[id].InitPkt(id, cd.clt),
+				InitData: activeObjects[id].InitPkt(cd.clt),
 			})
 		} else {
 			a = append(a, mt.AOAdd{
 				ID:       0,
-				InitData: ao0maker(cd.clt).InitPkt(0, cd.clt),
+				InitData: ao0maker(cd.clt, 0).InitPkt(cd.clt),
 			})
 		}
 	}
@@ -45,11 +45,36 @@ func (cd *ClientData) doAddQueue() (a []mt.AOAdd) {
 
 func init() {
 	minetest.RegisterPktTickHook(func() {
+		activeObjectsMu.RLock()
+		defer activeObjectsMu.RUnlock()
+
+		for _, ao := range activeObjects {
+			msgs, f := ao.Pkts()
+			if f {
+				id := ao.GetID()
+
+				idmsgs := make([]mt.IDAOMsg, len(msgs))
+
+				for i := 0; i < len(msgs); i++ {
+					idmsgs[i] = mt.IDAOMsg{
+						ID:  id,
+						Msg: msgs[i],
+					}
+				}
+
+				AOMsg(idmsgs...)
+			}
+		}
+	})
+
+	minetest.RegisterPktTickHook(func() {
 		// adds / rm
 		clientsMu.RLock()
 
 		for clt, cd := range clients {
 			if !cd.initialized.Load() {
+				clt.Log("not yet initialized")
+
 				continue
 			}
 
@@ -62,31 +87,33 @@ func init() {
 					Remove: rm,
 				})
 
-				if err == nil {
-					<-ack
+				if err != nil {
+					clt.Log("error sending AOS, retrying next tick")
+				}
 
-					// clear data & update c.aos (if needed)
-					if len(add) != 0 {
-						cd.aosMu.Lock()
-						for _, msg := range add {
-							cd.aos[msg.ID] = struct{}{}
-						}
-						cd.aosMu.Unlock()
+				<-ack
 
-						cd.queueAdd = nil
+				// clear data & update c.aos (if needed)
+				if len(add) != 0 {
+					cd.aosMu.Lock()
+					for _, msg := range add {
+						cd.aos[msg.ID] = struct{}{}
 					}
+					cd.aosMu.Unlock()
 
-					if len(rm) != 0 {
-						cd.queueRm = nil
+					cd.queueAdd = nil
+				}
 
-						cd.aosMu.Lock()
-						for _, id := range rm {
-							if _, ok := cd.aos[id]; ok {
-								delete(cd.aos, id)
-							}
+				if len(rm) != 0 {
+					cd.queueRm = nil
+
+					cd.aosMu.Lock()
+					for _, id := range rm {
+						if _, ok := cd.aos[id]; ok {
+							delete(cd.aos, id)
 						}
-						cd.aosMu.Unlock()
 					}
+					cd.aosMu.Unlock()
 				}
 			}
 		}
@@ -94,21 +121,19 @@ func init() {
 		clientsMu.RUnlock()
 
 		// msgs
-		globalMsgsMu.RLock()
+		globalMsgsMu.Lock()
 		cltMsgsMu.RLock()
 		for clt := range minetest.Clts() {
-			msgs := FilterRelevantMsgs(pos.GetPos(clt).Pos(), append(globalMsgs, cltMsgs[clt]...))
-
+			//			msgs := FilterRelevantMsgs(pos.GetPos(clt).Pos(), append(globalMsgs, cltMsgs[clt]...))
+			msgs := globalMsgs
 			if len(msgs) != 0 {
 				clt.SendCmd(&mt.ToCltAOMsgs{
 					Msgs: msgs,
 				})
 			}
 		}
-		globalMsgsMu.RUnlock()
 		cltMsgsMu.RUnlock()
 
-		globalMsgsMu.Lock()
 		if len(globalMsgs) != 0 {
 			globalMsgs = make([]mt.IDAOMsg, 0)
 		}

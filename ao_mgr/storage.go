@@ -34,14 +34,21 @@ type ActiveObject interface {
 	SetID(mt.AOID)
 	GetID() mt.AOID
 
+	// Pkts retruns all changed aofields as msgs and a boolean if any changed
+	Pkts() ([]mt.AOMsg, bool)
+
 	GetPos() mt.AOPos
+	SetPos(mt.AOPos)
+
 	GetBonePos(string) (mt.AOBonePos, bool)
+	SetBonePos(string, mt.AOBonePos)
+
 	GetBones() map[string]mt.AOBonePos
 
 	GetProps() mt.AOProps
 	GetArmor() []mt.Group
 
-	InitPkt(mt.AOID, *minetest.Client) mt.AOInitData
+	InitPkt(*minetest.Client) mt.AOInitData
 
 	Interact(AOInteract)
 
@@ -62,17 +69,20 @@ type AOInteract struct {
 	Action   mt.Interaction
 	ItemSlot uint16
 	Pos      mt.PlayerPos
-}
 
-type AnimState struct {
-	Active bool
-
-	mt.AOAnim
-	Speed float32
+	Anim mt.AOAnim
 }
 
 type AOPhys struct {
 	Walk, Jump, Gravity float32
+}
+
+func (p AOPhys) AOPhysOverride() mt.AOPhysOverride {
+	return mt.AOPhysOverride{
+		Walk:    p.Walk,
+		Jump:    p.Jump,
+		Gravity: p.Gravity,
+	}
 }
 
 // returns true if Walk|Jump|Gravety is not 1
@@ -92,15 +102,18 @@ func (p AOPhys) Pkt() *mt.AOCmdPhysOverride {
 }
 
 type AOState struct {
-	Anim AnimState
+	Anim mt.AOAnim
 
-	Pos mt.AOPos
+	PosMu sync.RWMutex
+	Pos   mt.AOPos
 
 	Armor  []mt.Group
 	Attach mt.AOAttach
 
-	Phys  AOPhys
-	Bones map[string]mt.AOBonePos
+	Phys AOPhys
+
+	BonesMu sync.RWMutex
+	Bones   map[string]mt.AOBonePos
 
 	HP uint16
 
@@ -111,7 +124,7 @@ func (s *AOState) GetPhys() AOPhys {
 	return s.Phys
 }
 
-func (s *AOState) GetAnimState() AnimState {
+func (s *AOState) GetAnimState() mt.AOAnim {
 	return s.Anim
 }
 
@@ -124,7 +137,16 @@ func (s *AOState) GetAttach() mt.AOAttach {
 }
 
 func (s *AOState) GetBones() map[string]mt.AOBonePos {
-	return s.Bones
+	m := make(map[string]mt.AOBonePos)
+
+	s.BonesMu.RLock()
+	defer s.BonesMu.RUnlock()
+
+	for k, v := range s.Bones {
+		m[k] = v
+	}
+
+	return m
 }
 
 func (s *AOState) GetHP() uint16 {
@@ -136,5 +158,15 @@ func (s *AOState) GetTextureMod() mt.Texture {
 }
 
 func (s *AOState) GetPos() mt.AOPos {
+	s.PosMu.RLock()
+	defer s.PosMu.RUnlock()
+
 	return s.Pos
+}
+
+func (s *AOState) SetPos(p mt.AOPos) {
+	s.PosMu.Lock()
+	defer s.PosMu.Unlock()
+
+	s.Pos = p
 }

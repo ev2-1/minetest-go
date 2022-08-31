@@ -39,7 +39,9 @@ func RmAO(ids ...mt.AOID) {
 		}
 
 		FreeAOID(id)
-		rmQueue = append(rmQueue, id)
+		rmQueueMu.Lock()
+		rmQueue[id] = struct{}{}
+		rmQueueMu.Unlock()
 	}
 }
 
@@ -49,9 +51,9 @@ func AOMsg(msgs ...mt.IDAOMsg) {
 			continue
 		}
 
-		globalMsgsMu.RLock()
+		globalMsgsMu.Lock()
 		globalMsgs = append(globalMsgs, msg)
-		globalMsgsMu.RUnlock()
+		globalMsgsMu.Unlock()
 	}
 }
 
@@ -90,6 +92,19 @@ func GetCltAOIDs(c *minetest.Client) []mt.AOID {
 	return []mt.AOID{}
 }
 
+// GetCltAOID returns the AOID of the clients AO
+func GetCltAOID(clt *minetest.Client) mt.AOID {
+	clientsMu.RLock()
+	defer clientsMu.RUnlock()
+
+	id, ok := clients[clt]
+	if !ok {
+		return 0
+	} else {
+		return id.GetID()
+	}
+}
+
 // - abstr -
 
 // RegisterAO registers a initialized ActiveObject
@@ -105,11 +120,11 @@ func RegisterAO(ao ActiveObject) mt.AOID {
 	return ao.GetID()
 }
 
-var ao0maker func(clt *minetest.Client) ActiveObject
+var ao0maker func(clt *minetest.Client, id mt.AOID) ActiveObject
 
 // Register player AO0 / self
 // RegisterSelfAOMaker is used to register the AO maker for each client
-func RegisterAO0Maker(f func(clt *minetest.Client) ActiveObject) {
+func RegisterAO0Maker(f func(clt *minetest.Client, id mt.AOID) ActiveObject) {
 	if ao0maker == nil {
 		ao0maker = f
 	} else {
