@@ -15,6 +15,8 @@ type player struct {
 	name string
 }
 
+func (p *player) DoPhysics(dtime float32) {}
+
 func (p *player) InitPkt(clt *minetest.Client) mt.AOInitData {
 	data := p.ActiveObjectS.InitPkt(clt)
 

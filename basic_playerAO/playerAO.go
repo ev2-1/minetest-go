@@ -49,9 +49,14 @@ func init() {
 
 		// TODO: make ao_mgr/ao deal with positions so you just have to say: ao.UpdatePos(id, pos)
 		a := ao.GetAO(id)
+		if a == nil {
+			return
+		}
+
 		a.SetPos(mt.AOPos{
 			Pos: p.Pos(),
 			Rot: mt.Vec{0, p.Yaw()},
+			Vel: p.Vel(),
 
 			Interpolate: true,
 		})
