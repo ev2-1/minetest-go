@@ -68,11 +68,12 @@ func init() {
 
 // GetPos returns pos os player / client
 func GetPos(c *minetest.Client) mt.PlayerPos {
-	posMu.RLock()
-	defer posMu.RUnlock()
+	posMu.Lock()
+	defer posMu.Unlock()
 
 	if pos[c] == nil {
 		pos[c] = &mt.PlayerPos{}
+
 		pos[c].SetPos(mt.Pos{0, 100, 0})
 	}
 
