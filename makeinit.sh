@@ -9,6 +9,8 @@ import (" >> cmd/minetest-go/init.go
 
 while read import; do
 	if [ "$import" != "" ] && [ ${import:0:1} != "#"  ]; then	
+		echo "$import"
+
 		echo "	_ \"$import\"" >> cmd/minetest-go/init.go
 
 		go get "$import"
