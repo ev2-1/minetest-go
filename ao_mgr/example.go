@@ -190,11 +190,16 @@ func (ao *ActiveObjectS) GetBonePos(str string) (p mt.AOBonePos, ok bool) {
 
 func (ao *ActiveObjectS) SetBonePos(str string, p mt.AOBonePos) {
 	ao.BonesMu.Lock()
+	ao.BonePosChangedMu.Lock()
 	defer ao.BonesMu.Unlock()
+	defer ao.BonePosChangedMu.Unlock()
 
 	if _, ok := ao.Bones[str]; ok {
 		ao.Bones[str] = p
 	}
+
+	ao.BonePosChanged = append(ao.BonePosChanged, str)
+	ao.changed(FieldBonePos)
 }
 
 func (ao *ActiveObjectS) GetProps() mt.AOProps {
