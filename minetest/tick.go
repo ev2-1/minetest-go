@@ -16,6 +16,19 @@ func initTicks() {
 			for {
 				<-ticker
 
+				go func() {
+					physHooksMu.Lock()
+					now := float32(time.Now().UnixMilli() / 1000)
+					dtime := now - physHooksLast
+
+					for _, h := range physHooks {
+						go h(dtime)
+					}
+
+					physHooksLast = now
+					physHooksMu.Unlock()
+				}()
+
 				tickHooksMu.RLock()
 				for _, h := range tickHooks {
 					h()

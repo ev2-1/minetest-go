@@ -54,6 +54,19 @@ func RegisterTickHook(h func()) {
 }
 
 var (
+	physHooksLast float32
+	physHooks     []func(dtime float32)
+	physHooksMu   sync.RWMutex
+)
+
+func RegisterPhysTickHook(h func(dtime float32)) {
+	physHooksMu.Lock()
+	defer physHooksMu.Unlock()
+
+	physHooks = append(physHooks, h)
+}
+
+var (
 	pktTickHooks   []func()
 	pktTickHooksMu sync.RWMutex
 )

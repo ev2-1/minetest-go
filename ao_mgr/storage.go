@@ -37,6 +37,9 @@ type ActiveObject interface {
 	// Pkts retruns all changed aofields as msgs and a boolean if any changed
 	Pkts() ([]mt.AOMsg, bool)
 
+	// DoPhysics gets called at most once per tick with dtime to do physics
+	DoPhysics(dtime float32)
+
 	GetPos() mt.AOPos
 	SetPos(mt.AOPos)
 

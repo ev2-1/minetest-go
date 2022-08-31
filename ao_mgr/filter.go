@@ -3,8 +3,6 @@ package ao
 import (
 	"github.com/anon55555/mt"
 	//	"github.com/ev2-1/minetest-go-plugins/tools/pos"
-
-	"github.com/g3n/engine/math32"
 )
 
 var (
@@ -50,14 +48,4 @@ func FilterRelevantMsgs(pos mt.Pos, msgs []mt.IDAOMsg) (r []mt.IDAOMsg) {
 		}
 	*/
 	return msgs
-}
-
-func Distance(a, b mt.Vec) float32 {
-	var number float32
-
-	number += math32.Pow((a[0] - b[0]), 2)
-	number += math32.Pow((a[1] - b[1]), 2)
-	number += math32.Pow((a[2] - b[2]), 2)
-
-	return math32.Sqrt(number)
 }
