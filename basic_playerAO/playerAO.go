@@ -44,7 +44,6 @@ func init() {
 		id, ok := clients[clt]
 
 		if !ok || id == 0 {
-			clt.Log("pos@id=0; this is very bad")
 			return
 		}
 
