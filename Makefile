@@ -7,4 +7,4 @@ init:
 	./makeinit.sh
 	
 run: build
-	cd ./cmd/minetest-go/; ./minetest-go -v
+	cd ./cmd/minetest-go/; ./minetest-go
