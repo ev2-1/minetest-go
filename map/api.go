@@ -52,7 +52,7 @@ func LoadBlk(c *minetest.Client, p [3]int16, force bool) {
 
 // GetNode returns the given mt.Content at a specified spot
 // returns nil if blk does not exist
-func GetNode(pos [3]int16) *mt.Node {
+func GetNode(pos [3]int16) *Node {
 	p, i := mt.Pos2Blkpos(pos)
 	blk := <-GetBlk(p)
 
@@ -60,10 +60,14 @@ func GetNode(pos [3]int16) *mt.Node {
 		return nil
 	}
 
-	return &mt.Node{
-		Param0: blk.Param0[i],
-		Param1: blk.Param1[i],
-		Param2: blk.Param2[i],
+	return &Node{
+		mt.Node{
+			Param0: blk.Param0[i],
+			Param1: blk.Param1[i],
+			Param2: blk.Param2[i],
+		},
+
+		nil, // TODO: nodemeta
 	}
 }
 
