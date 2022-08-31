@@ -15,22 +15,29 @@ type player struct {
 	name string
 }
 
-func (p *player) InitPkt(id mt.AOID, clt *minetest.Client) mt.AOInitData {
-	data := p.ActiveObjectS.InitPkt(id, clt)
+func (p *player) InitPkt(clt *minetest.Client) mt.AOInitData {
+	data := p.ActiveObjectS.InitPkt(clt)
 
 	data.Name = p.name
 	data.IsPlayer = true
 
-	data.Pos = mt.Pos{0, 100, 0}
-
 	return data
 }
 
-func makeAO(clt *minetest.Client) ao.ActiveObject {
+func makeAO(clt *minetest.Client, id mt.AOID) ao.ActiveObject {
+	if id != 0 {
+		clientsMu.Lock()
+		clients[clt] = id
+		clt.Log("aoid:", id)
+		clientsMu.Unlock()
+	}
+
 	return &player{
 		name: clt.Name,
 
 		ActiveObjectS: ao.ActiveObjectS{
+			ID: id,
+
 			AOState: ao.AOState{
 				Bones: map[string]mt.AOBonePos{
 					"Body_Control": mt.AOBonePos{
