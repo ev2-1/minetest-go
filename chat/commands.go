@@ -9,6 +9,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"time"
 )
 
 var cmdPrefix = "/"
@@ -40,7 +41,8 @@ func handleCmd(c *minetest.Client, msg string) {
 		c.SendCmd(&mt.ToCltChatMsg{
 			Type: mt.SysMsg,
 
-			Text: "Invalid Comand",
+			Text:      "Invalid Comand",
+			Timestamp: time.Now().Unix(),
 		})
 	}
 }

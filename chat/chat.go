@@ -6,10 +6,22 @@ import (
 
 	"log"
 	"strings"
-	"time"
 )
 
+var logger *log.Logger
+
+const loggingSuffix = "[CHAT] "
+
+// Log loggs like its a chat msg
+func Log(str string) {
+	log.Println(loggingSuffix + str)
+}
+
 func init() {
+	minetest.RegisterStage1(func() {
+		logger = log.New(log.Writer(), "", log.Flags())
+	})
+
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		cmd, ok := pkt.Cmd.(*mt.ToSrvChatMsg)
 		if ok {
@@ -17,20 +29,16 @@ func init() {
 			if strings.HasPrefix(cmd.Msg, cmdPrefix) {
 				handleCmd(c, cmd.Msg)
 			} else {
-
-				log.Printf("[CHAT] <%s> %s", c.Name, cmd.Msg)
-
-				ts := time.Now().Unix()
-
-				go minetest.Broadcast(&mt.ToCltChatMsg{
-					Sender: c.Name,
-					Text:   cmd.Msg,
-
-					Type: mt.NormalMsg,
-
-					Timestamp: ts,
-				})
+				BroadcastMsg(c.Name, cmd.Msg)
 			}
 		}
+	})
+
+	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
+		Broadcastf(mt.SysMsg, "%s left the game.", l.Client.Name)
+	})
+
+	minetest.RegisterJoinHook(func(clt *minetest.Client) {
+		Broadcastf(mt.SysMsg, "%s joined the game.", clt.Name)
 	})
 }
