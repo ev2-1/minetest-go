@@ -9,7 +9,7 @@ import (
 
 func init() {
 	minetest.RegisterInitHook(func(c *minetest.Client) {
-		c.SendCmd(&mt.ToCltPrivs{Privs: []string{"fly", "interact", "fast"}})
+		c.SendCmd(&mt.ToCltPrivs{Privs: []string{"fly", "interact", "fast", "noclip"}})
 		c.SendCmd(&mt.ToCltDetachedInv{})
 		c.SendCmd(&mt.ToCltMovement{
 			DefaultAccel: 2.4,
