@@ -37,7 +37,7 @@ func init() {
 		}()
 	})
 
-	pos.RegisterPosUpdater(func(clt *minetest.Client, p *mt.PlayerPos, dt int64) {
+	pos.RegisterPosUpdater(func(clt *minetest.Client, p mt.PlayerPos, dt int64) {
 		clientsMu.RLock()
 		defer clientsMu.RUnlock()
 

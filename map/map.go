@@ -59,7 +59,7 @@ func stage2() {
 }
 
 func init() {
-	toolspos.RegisterPosUpdater(func(c *minetest.Client, pos *mt.PlayerPos, LastUpdate int64) {
+	toolspos.RegisterPosUpdater(func(c *minetest.Client, pos mt.PlayerPos, LastUpdate int64) {
 		p := Pos2int(pos.Pos())
 		blkpos, _ := mt.Pos2Blkpos(p)
 

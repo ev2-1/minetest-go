@@ -8,16 +8,16 @@ import (
 	"time"
 )
 
-var pos = make(map[*minetest.Client]*mt.PlayerPos)
+var pos = make(map[*minetest.Client]mt.PlayerPos)
 var posMu sync.RWMutex
 
 var posUpdate = make(map[*minetest.Client]int64)
 var posUpdateMu sync.RWMutex
 
 var posUpdatersMu sync.RWMutex
-var posUpdaters []func(c *minetest.Client, pos *mt.PlayerPos, lu int64)
+var posUpdaters []func(c *minetest.Client, pos mt.PlayerPos, lu int64)
 
-func RegisterPosUpdater(pu func(c *minetest.Client, pos *mt.PlayerPos, lu int64)) {
+func RegisterPosUpdater(pu func(c *minetest.Client, pos mt.PlayerPos, lu int64)) {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
 
@@ -29,7 +29,7 @@ func init() {
 		pp, ok := pkt.Cmd.(*mt.ToSrvPlayerPos)
 
 		if ok {
-			p := &pp.Pos
+			p := pp.Pos
 
 			// (c *minetest.Client, p *mt.PlayerPos) {
 			posUpdateMu.RLock()
@@ -71,13 +71,13 @@ func GetPos(c *minetest.Client) mt.PlayerPos {
 	posMu.Lock()
 	defer posMu.Unlock()
 
-	if pos[c] == nil {
-		pos[c] = &mt.PlayerPos{}
+	if _, ok := pos[c]; !ok {
+		pos[c] = mt.PlayerPos{}
 
-		pos[c].SetPos(mt.Pos{0, 100, 0})
+		pos[c] = mt.PlayerPos{}
 	}
 
-	return *pos[c]
+	return pos[c]
 }
 
 // SetPos sets position
@@ -85,5 +85,5 @@ func SetPos(c *minetest.Client, p mt.PlayerPos) {
 	posMu.Lock()
 	defer posMu.Unlock()
 
-	pos[c] = &p
+	pos[c] = p
 }
