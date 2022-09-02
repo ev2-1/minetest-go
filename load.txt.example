@@ -25,7 +25,7 @@ github.com/ev2-1/minetest-go/ao_mgr
 github.com/ev2-1/minetest-go/basic_playerAO
 
 # basic init is a placeholder to initialize the client with mostly default values
-github.com/ev2-1/minetest-go/basic_init
+github.com/ev2-1/minetest-go/init
 
 # basic chat just broadcasts chatmessages to all players
 github.com/ev2-1/minetest-go/chat
