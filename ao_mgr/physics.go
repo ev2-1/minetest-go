@@ -23,6 +23,9 @@ func (ao *ActiveObjectS) DoPhysics(dtime float32) {
 		),
 	),
 	)
+
+	ao.SetPosPhys(pos)
+	//ao.SetPos(pos)
 }
 
 /*

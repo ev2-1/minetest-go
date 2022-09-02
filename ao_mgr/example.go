@@ -67,6 +67,10 @@ func (ao *ActiveObjectS) SetPos(p mt.AOPos) {
 	ao.changed(FieldPos)
 }
 
+func (ao *ActiveObjectS) SetPosPhys(p mt.AOPos) {
+	ao.AOState.SetPos(p)
+}
+
 func (ao *ActiveObjectS) Pkts() (m []mt.AOMsg, b bool) {
 	ao.ChangedMu.Lock()
 	defer ao.ChangedMu.Unlock()
