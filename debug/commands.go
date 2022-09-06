@@ -11,6 +11,20 @@ import (
 )
 
 func init() {
+	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
+		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos().Int())
+
+		<-mmap.LoadBlk(c, blkpos)
+
+		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d)", blkpos[0], blkpos[1], blkpos[2])
+	})
+
+	chat.RegisterChatCmd("cleanmapcache", func(c *minetest.Client, args []string) {
+		mmap.CleanCache()
+
+		chat.SendMsgf(c, mt.RawMsg, "cleaning map cache done")
+	})
+
 	chat.RegisterChatCmd("nodeinfo", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage nodeinfo <[name] [param0_raw] [param1] [param2] [meta] | all>", mt.RawMsg)
@@ -36,10 +50,9 @@ func init() {
 		}
 
 		var msg string
-		ablk := <-blk
-		param0 := ablk.Param0[pi]
-		param1 := ablk.Param1[pi]
-		param2 := ablk.Param2[pi]
+		param0 := blk.Param0[pi]
+		param1 := blk.Param1[pi]
+		param2 := blk.Param2[pi]
 
 		for info := range argsMap {
 			switch info {
@@ -60,7 +73,7 @@ func init() {
 				break
 
 			case "meta":
-				meta, ok := ablk.NodeMetas[pi]
+				meta, ok := blk.NodeMetas[pi]
 				if !ok {
 					msg += "Meta: nil\n"
 				} else {
