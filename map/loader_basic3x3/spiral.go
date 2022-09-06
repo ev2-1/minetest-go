@@ -1,4 +1,24 @@
-package minetest_map
+package mapLoader
+
+import (
+	"github.com/ev2-1/minetest-go/map"
+	"github.com/ev2-1/minetest-go/minetest"
+)
+
+func loadAround(pp pos, c *minetest.Client) {
+	s := spiral(3)
+
+	for _, p := range s {
+		mmap.LoadBlk(c, p.add(pp))
+	}
+	for _, p := range s {
+		mmap.LoadBlk(c, p.add(pp).add(pos{0, -1, 0}))
+	}
+	for _, p := range s {
+		mmap.LoadBlk(c, p.add(pp).add(pos{0, 1, 0}))
+	}
+
+}
 
 type pos [3]int16
 
