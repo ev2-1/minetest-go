@@ -1,0 +1,56 @@
+List main 32
+Width 0
+Item 
+Item basetools:axe_steel
+Item basetools:shovel_steel
+Item bucket:bucket
+Item testnodes:light 14
+Item basenodes:mossycobble 11
+Empty
+Item chest_of_everything:chest
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+EndInventoryList
+List craft 9
+Width 3
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+EndInventoryList
+List craftpreview 1
+Width 0
+Empty
+EndInventoryList
+List craftresult 1
+Width 0
+Empty
+EndInventoryList
+EndInventory

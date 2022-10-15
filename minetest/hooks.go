@@ -101,3 +101,27 @@ func RegisterPktProcessor(p func(*Client, *mt.Pkt)) {
 
 	pktProcessors = append(pktProcessors, p)
 }
+
+var (
+	shutdownHooks   []func()
+	shutdownHooksMu sync.RWMutex
+)
+
+func RegisterShutdownHooks(p func()) {
+	shutdownHooksMu.Lock()
+	defer shutdownHooksMu.Unlock()
+
+	shutdownHooks = append(shutdownHooks, p)
+}
+
+var (
+	saveFileHooks   []func()
+	saveFileHooksMu sync.RWMutex
+)
+
+func RegisterSaveFileHooks(p func()) {
+	saveFileHooksMu.Lock()
+	defer saveFileHooksMu.Unlock()
+
+	saveFileHooks = append(saveFileHooks, p)
+}

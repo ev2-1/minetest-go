@@ -10,7 +10,6 @@ import (
 func init() {
 	minetest.RegisterInitHook(func(c *minetest.Client) {
 		c.SendCmd(&mt.ToCltPrivs{Privs: []string{"fly", "interact", "fast", "noclip"}})
-		c.SendCmd(&mt.ToCltDetachedInv{})
 		c.SendCmd(&mt.ToCltMovement{
 			DefaultAccel: 2.4,
 			AirAccel:     1.2,
@@ -24,9 +23,6 @@ func init() {
 			Smoothing:    0.5,
 			Sink:         23,
 			Gravity:      10.4,
-		})
-		c.SendCmd(&mt.ToCltInvFormspec{
-			Formspec: "List main 1\nWidth 5\nEmpty\nEmpty\nEmpty\nEmpty\nEmpty\nEndInventory\n",
 		})
 		c.SendCmd(&mt.ToCltHP{
 			HP: 20,

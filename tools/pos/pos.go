@@ -72,9 +72,7 @@ func GetPos(c *minetest.Client) mt.PlayerPos {
 	defer posMu.Unlock()
 
 	if _, ok := pos[c]; !ok {
-		pos[c] = mt.PlayerPos{}
-
-		pos[c] = mt.PlayerPos{}
+		pos[c] = mt.PlayerPos{Pos100: [3]int32{0, 900, 0}}
 	}
 
 	return pos[c]

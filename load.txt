@@ -5,7 +5,8 @@ github.com/ev2-1/minetest-go/auth_nopass
 
 # minetest map can parse minetest's `map.sqlite` files
 # located `$pwd/map.sqlite`
-github.com/ev2-1/minetest-go/minetest_map
+github.com/ev2-1/minetest-go/map
+github.com/ev2-1/minetest-go/map/loader_basic3x3
 
 # http media serves media in `$pwd/media` to clients using mth
 github.com/ev2-1/minetest-go/http_media
@@ -14,9 +15,8 @@ github.com/ev2-1/minetest-go/http_media
 # files located in: `$pwd/model_media`
 github.com/ev2-1/minetest-go/mt_media
 
-# json nodemeta loads nodemetadata from json files
-# files located in: `$pwd/itemdefs` (TODO: change name)
-github.com/ev2-1/minetest-go/json_nodemeta
+# json nodemeta loads nodemetadata and itemmetadata from json files
+github.com/ev2-1/minetest-go/json_meta
 
 # ao mgr manages active objects
 github.com/ev2-1/minetest-go/ao_mgr
@@ -25,7 +25,17 @@ github.com/ev2-1/minetest-go/ao_mgr
 github.com/ev2-1/minetest-go/basic_playerAO
 
 # basic init is a placeholder to initialize the client with mostly default values
-github.com/ev2-1/minetest-go/basic_init
+github.com/ev2-1/minetest-go/init
 
 # basic chat just broadcasts chatmessages to all players
-github.com/ev2-1/minetest-go/basic_chat
+github.com/ev2-1/minetest-go/chat
+
+# inventory tools
+github.com/ev2-1/minetest-go/inventory
+
+# testing:
+github.com/ev2-1/minetest-go/tnt_ao
+github.com/ev2-1/minetest-go/debug
+github.com/ev2-1/minetest-go/inventory/example
+
+

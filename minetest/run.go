@@ -52,6 +52,23 @@ func runFunc() {
 
 		log.Print("received SIGINT or other Interrupt")
 
+		shutdownHooksMu.RLock()
+		defer shutdownHooksMu.RUnlock()
+
+		wg := sync.WaitGroup{}
+
+		log.Println("executing shutdown Hooks")
+
+		for _, h := range shutdownHooks {
+			go func(h func()) {
+				wg.Add(1)
+				h()
+				wg.Done()
+			}(h)
+		}
+
+		wg.Wait()
+
 		go func() {
 			clts := Clts()
 
