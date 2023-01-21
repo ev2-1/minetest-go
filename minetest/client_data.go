@@ -3,12 +3,14 @@
 package minetest
 
 import (
+	"errors"
 	"io"
 )
 
+var ErrClientDataNotFound = errors.New("ClientData not found!")
+var ErrClientDataInvalidType = errors.New("ClientData has invalid type!")
+
 type ClientData interface {
-	// Desc should return a short description about the Data
-	Desc() string
 }
 
 // If a ClientDataSerialize is used as ClientData it will be serialized and saved in the players table
