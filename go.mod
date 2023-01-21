@@ -14,10 +14,8 @@ require github.com/gorilla/websocket v1.5.0
 
 require github.com/mattn/go-shellwords v1.0.12
 
-require github.com/go-errors/errors v1.4.2
-
 require (
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
-	golang.org/x/tools v0.1.12 // indirect
+	github.com/go-yaml/yaml v2.1.0+incompatible
+	github.com/kevinburke/nacl v0.0.0-20210405173606-cd9060f5f776
+	github.com/spf13/pflag v1.0.5
 )
