@@ -3,6 +3,7 @@ package debug
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/chat"
+	"github.com/ev2-1/minetest-go/inventory"
 	mmap "github.com/ev2-1/minetest-go/map"
 	"github.com/ev2-1/minetest-go/minetest"
 	"github.com/ev2-1/minetest-go/tools/pos"
@@ -149,6 +150,25 @@ func init() {
 		}
 
 		chat.SendMsg(c, msg, mt.RawMsg)
+	})
+
+	chat.RegisterChatCmd("inv", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: inv <name>")
+			return
+		}
+
+		inv, err := inventory.GetInv(c)
+		if err != nil {
+			chat.SendMsgf(c, mt.RawMsg, "Error: %v", err)
+			return
+		}
+
+		inv.RLock()
+		defer inv.RUnlock()
+		i := inv.M[args[0]]
+
+		chat.SendMsgf(c, mt.RawMsg, "value: %v", i)
 	})
 }
 
