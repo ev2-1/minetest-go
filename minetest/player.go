@@ -142,7 +142,23 @@ func firstJoin(c *Client) error {
 	return nil
 }
 
+// register Player as active
 func registerPlayer(c *Client) {
+	clientsMu.Lock()
+	clients[c] = struct{}{}
+	clientsMu.Unlock()
+
+	joinHooksMu.RLock()
+	for _, h := range joinHooks {
+		h(c)
+	}
+	joinHooksMu.RUnlock()
+
+	// change prefix to new name
+	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
+}
+
+func InitClient(c *Client) {
 	var err error
 
 	// get UUID:
@@ -174,22 +190,6 @@ func registerPlayer(c *Client) {
 		panic("Failed to get Player data!")
 	}
 
-	joinHooksMu.RLock()
-	for _, h := range joinHooks {
-		h(c)
-	}
-	joinHooksMu.RUnlock()
-
-	// change prefix to new name
-	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
-
-	clientsMu.Lock()
-	defer clientsMu.Unlock()
-
-	clients[c] = struct{}{}
-}
-
-func InitClient(c *Client) {
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()
 
