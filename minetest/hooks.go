@@ -10,6 +10,7 @@ var (
 	leaveHooksMu sync.RWMutex
 )
 
+// Gets called after client has left (*Client struct still exists)
 func RegisterLeaveHook(h func(*Leave)) {
 	leaveHooksMu.Lock()
 	defer leaveHooksMu.Unlock()
@@ -22,6 +23,8 @@ var (
 	joinHooksMu sync.RWMutex
 )
 
+// Gets called after client is initialized
+// After player is given controll
 func RegisterJoinHook(h func(*Client)) {
 	joinHooksMu.Lock()
 	defer joinHooksMu.Unlock()
@@ -34,6 +37,8 @@ var (
 	registerHooksMu sync.RWMutex
 )
 
+// Gets called at registrationtime
+// intended to initialize client data
 func RegisterRegisterHook(h func(*Client)) {
 	registerHooksMu.Lock()
 	defer registerHooksMu.Unlock()
@@ -46,6 +51,7 @@ var (
 	initHooksMu sync.RWMutex
 )
 
+// Gets called as soon as client authentication is successfull
 func RegisterInitHook(h func(*Client)) {
 	initHooksMu.Lock()
 	defer initHooksMu.Unlock()
@@ -58,6 +64,7 @@ var (
 	tickHooksMu sync.RWMutex
 )
 
+// Gets called each tick
 func RegisterTickHook(h func()) {
 	tickHooksMu.Lock()
 	defer tickHooksMu.Unlock()
@@ -71,6 +78,8 @@ var (
 	physHooksMu   sync.RWMutex
 )
 
+// Gets called each tick
+// dtime is time since last tick
 func RegisterPhysTickHook(h func(dtime float32)) {
 	physHooksMu.Lock()
 	defer physHooksMu.Unlock()
@@ -83,6 +92,8 @@ var (
 	pktTickHooksMu sync.RWMutex
 )
 
+// Gets called at end of each tick
+// If you can, send packets in here
 func RegisterPktTickHook(h func()) {
 	pktTickHooksMu.Lock()
 	defer pktTickHooksMu.Unlock()
@@ -95,6 +106,8 @@ var (
 	packetPreMu sync.RWMutex
 )
 
+// Gets called before packet reaches Processors
+// If (one) func returns false packet is dropped
 func RegisterPacketPre(h func(*Client, mt.Cmd) bool) {
 	packetPreMu.Lock()
 	defer packetPreMu.Unlock()
@@ -107,6 +120,7 @@ var (
 	pktProcessorsMu sync.RWMutex
 )
 
+// Gets called for each packet received
 func RegisterPktProcessor(p func(*Client, *mt.Pkt)) {
 	pktProcessorsMu.Lock()
 	defer pktProcessorsMu.Unlock()
@@ -119,6 +133,8 @@ var (
 	shutdownHooksMu sync.RWMutex
 )
 
+// Gets called when server shuts down
+// NOTE: (Leave hooks also get called)
 func RegisterShutdownHooks(p func()) {
 	shutdownHooksMu.Lock()
 	defer shutdownHooksMu.Unlock()
