@@ -7,4 +7,7 @@ init:
 	./makeinit.sh
 	
 run: build
+	cd ./cmd/minetest-go/; ./minetest-go
+
+runv: build
 	cd ./cmd/minetest-go/; ./minetest-go -v true
