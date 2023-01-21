@@ -8,6 +8,7 @@ import (
 	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"fmt"
+	"strings"
 )
 
 func init() {
@@ -17,6 +18,66 @@ func init() {
 		<-mmap.LoadBlk(c, blkpos)
 
 		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d)", blkpos[0], blkpos[1], blkpos[2])
+	})
+
+	chat.RegisterChatCmd("kickme", func(c *minetest.Client, args []string) {
+		var msg string
+
+		if len(args) != 0 {
+			msg = strings.Join(args, " ")
+		} else {
+			msg = "You kicked yourself!"
+		}
+
+		c.Kick(mt.Custom, msg)
+	})
+
+	chat.RegisterChatCmd("config", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: config <key>")
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "value: %v", minetest.GetConfig(args[0]))
+	})
+
+	chat.RegisterChatCmd("savedata", func(c *minetest.Client, args []string) {
+		if len(args) < 2 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: savedata <field> <data>...")
+			return
+		}
+
+		field := args[0]
+		data := strings.Join(args[1:], " ")
+
+		chat.SendMsgf(c, mt.RawMsg, "Setting field '%s' to '%s'", field, data)
+		c.SetData(field, &minetest.ClientDataString{String: data})
+
+		return
+	})
+
+	chat.RegisterChatCmd("getdata", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: getdat <field>")
+		}
+
+		field := args[0]
+
+		data, ok := c.GetData(field)
+		if !ok {
+			chat.SendMsgf(c, mt.RawMsg, "Field '%s' is empty!", field)
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Getting field '%s'", field)
+		d := minetest.TryClientDataString(c, field)
+		if d == nil {
+			chat.SendMsgf(c, mt.RawMsg, "Field '%s' is empty! (type: %T)", field, data)
+
+			return
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Content: %s", d.String)
+
+		return
 	})
 
 	chat.RegisterChatCmd("cleanmapcache", func(c *minetest.Client, args []string) {

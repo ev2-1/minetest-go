@@ -20,6 +20,14 @@ const (
 	CsSudo
 )
 
+type UUID [16]byte
+
+func (u UUID) String() string {
+	return fmt.Sprintf("%x-%x-%x-%x", u[0:3], u[4:8], u[9:12], u[13:16])
+}
+
+var UUIDNil = [16]byte{}
+
 // A Client represents a client
 type Client struct {
 	mt.Peer
@@ -27,18 +35,27 @@ type Client struct {
 
 	Logger *log.Logger
 
+	UUID UUID
+	Name string
+
 	State   ClientState
-	Name    string
 	initCh  chan struct{}
 	aoReady sync.Once
+
+	data   map[string]ClientData
+	dataMu sync.RWMutex
 
 	leaveOnce sync.Once // a client only can leave once
 
 	lang string
 }
 
+func (c *Client) Logf(format string, v ...any) {
+	c.Log(fmt.Sprintf(format, v...))
+}
+
 func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
-	if verbose {
+	if ConfigVerbose() {
 		switch cmd.(type) {
 		case *mt.ToCltBlkData:
 			break

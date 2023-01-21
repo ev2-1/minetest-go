@@ -30,6 +30,18 @@ func RegisterJoinHook(h func(*Client)) {
 }
 
 var (
+	registerHooks   []func(*Client)
+	registerHooksMu sync.RWMutex
+)
+
+func RegisterRegisterHook(h func(*Client)) {
+	registerHooksMu.Lock()
+	defer registerHooksMu.Unlock()
+
+	registerHooks = append(registerHooks, h)
+}
+
+var (
 	initHooks   []func(*Client)
 	initHooksMu sync.RWMutex
 )
