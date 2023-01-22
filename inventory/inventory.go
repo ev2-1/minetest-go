@@ -18,101 +18,30 @@ func init() {
 		case *mt.ToSrvInvAction:
 			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
 			if err != nil {
-				c.Logf("ERROR: %s\n", err)
+				c.Logf("Error: %s", err)
 				break
 			}
 
-			switch act := action.(type) {
-			case *InvActionMove:
-				// current_player can all be handled here
-				if act.From.Location == "current_player" && act.To.Location == "current_player" {
-					Inv, err := GetInv(c)
-					if err != nil {
-						c.Logf("Error: %s\n", err)
-						return
-					}
-
-					Inv.Lock()
-					defer Inv.Unlock()
-
-					var moveItem string
-
-					// validate source:
-					fromInv := Inv.M[act.From.Name]
-					if len(fromInv.Stacks) < act.From.Stack || fromInv.Width < act.From.Stack {
-						c.Logf("Error: From:_len(stacks) < stack or width < stack")
-						return
-					}
-
-					moveItem = fromInv.Stacks[act.From.Stack].Name
-					c.Logf("Trying to move %d %s", act.Count, moveItem)
-
-					// ensure quantity
-					if fromInv.Stacks[act.From.Stack].Count < act.Count {
-						c.Log("Error: stack move count > stack count")
-						return
-					}
-
-					// validate destination
-					toInv := Inv.M[act.To.Name]
-					if len(toInv.Stacks) < act.To.Stack || toInv.Width < act.To.Stack {
-						c.Log("Error: To:_len(stacks) < stack or width < stack")
-						return
-					}
-
-					// check if slot is empty or same item:
-					if !(toInv.Stacks[act.To.Stack].Count == 0 || toInv.Stacks[act.To.Stack].Name == moveItem) {
-						c.Log("Error: destination contains other item!")
-						return
-					}
-
-					// move:
-					fromInv.Stacks[act.From.Stack].Count -= act.Count
-					toInv.Stacks[act.To.Stack].Name = moveItem
-					toInv.Stacks[act.To.Stack].Count += act.Count
-
-					Inv.M[act.To.Name] = toInv
-					Inv.M[act.From.Name] = fromInv
-
-					c.Log("Sucessfully did so :)")
-
-					// updating client:
-					str, err := Inv.String()
-					if err != nil {
-						c.Logf("Error: %s", err)
-						return
-					}
-
-					c.SendCmd(&mt.ToCltInv{
-						Inv: str,
-					})
-				}
+			if _, err := action.Apply(c); err != nil {
+				c.Logf("Error: %s", err)
 			}
-
-			c.Logf("Action: %s\n", action)
 		}
 	})
 
-	minetest.RegisterRegisterHook(func(c *minetest.Client) {
-		GetInv(c) // Pre-Initialize clients Inventory
-	})
-
 	minetest.RegisterInitHook(func(c *minetest.Client) {
-		c.Logf("Hi!")
+		// Send client inventory formspec
+		c.SendCmd(&mt.ToCltInvFormspec{
+			Formspec: formspec,
+		})
 
 		Inv, err := GetInv(c)
 		if err != nil {
-			c.Logf("Error: %s\n", err)
+			c.Logf("Error: %s", err)
 			return
 		}
 
 		Inv.RLock()
 		defer Inv.RUnlock()
-
-		// Send client inventory formspec
-		c.SendCmd(&mt.ToCltInvFormspec{
-			Formspec: formspec,
-		})
 
 		str, err := Inv.String()
 		if err != nil {

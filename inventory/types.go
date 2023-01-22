@@ -2,22 +2,138 @@ package inventory
 
 import (
 	"github.com/anon55555/mt"
+	"github.com/ev2-1/minetest-go/minetest"
 
 	"bytes"
 	"io"
+	"strconv"
+	"strings"
 	"sync"
 )
 
+type InvIdentifier interface {
+	InvIdentifier() string
+}
+
+// InvIdentifierCurrentPlayer
+func (*InvIdentifierCurrentPlayer) Deserialize(io.Reader) {}
+
+type InvIdentifierCurrentPlayer struct{}
+
+func (*InvIdentifierCurrentPlayer) InvIdentifier() string {
+	return "current_player"
+}
+
+// InvIdentifierUndefined
+type InvIdentifierUndefined struct{}
+
+func (*InvIdentifierUndefined) InvIdentifier() string {
+	return "undefined"
+}
+
+func (*InvIdentifierUndefined) Deserialize(io.Reader) {}
+
+// InvIdentifierPlayer
+type InvIdentifierPlayer struct {
+	name string
+}
+
+func (*InvIdentifierPlayer) InvIdentifier() string {
+	return "player"
+}
+
+func (i *InvIdentifierPlayer) Deserialize(r io.Reader) {
+	i.name = ReadString(r, false)
+}
+
+// InvIdentifierNodeMeta
+type InvIdentifierNodeMeta struct {
+	X, Y, Z int16
+}
+
+func (*InvIdentifierNodeMeta) InvIdentifier() string {
+	return "nodemeta"
+}
+
+func (i *InvIdentifierNodeMeta) Deserialize(r io.Reader) {
+	cords := ReadString(r, false)
+	vec := strings.SplitN(cords, ",", 4)
+	if len(vec) != 3 {
+		panic(SerializationError{ErrInvalidPos})
+	}
+
+	x, err := strconv.ParseInt(vec[0], 10, 16)
+	if err != nil {
+		panic(SerializationError{err})
+	}
+
+	y, err := strconv.ParseInt(vec[1], 10, 16)
+	if err != nil {
+		panic(SerializationError{err})
+	}
+
+	z, err := strconv.ParseInt(vec[2], 10, 16)
+	if err != nil {
+		panic(SerializationError{err})
+	}
+
+	i.X, i.Y, i.Z = int16(x), int16(y), int16(z)
+}
+
+// InvIdentifierDetached
+type InvIdentifierDetached struct {
+	name string
+}
+
+func (*InvIdentifierDetached) InvIdentifier() string {
+	return "detached"
+}
+
+func (i *InvIdentifierDetached) Deserialize(r io.Reader) {
+	i.name = ReadString(r, false)
+}
+
+var newInvIdentifier = map[string]func() InvIdentifier{
+	"undefined":      func() InvIdentifier { return new(InvIdentifierUndefined) },
+	"current_player": func() InvIdentifier { return new(InvIdentifierCurrentPlayer) },
+	"player":         func() InvIdentifier { return new(InvIdentifierPlayer) },
+	"nodemeta":       func() InvIdentifier { return new(InvIdentifierNodeMeta) },
+	"detached":       func() InvIdentifier { return new(InvIdentifierDetached) },
+}
+
+// InvLocation
 type InvLocation struct {
-	Location string
-	Name     string
-	Stack    int
+	Identifier InvIdentifier
+	Name       string
+	Stack      int
 }
 
 func (l *InvLocation) Deserialize(r io.Reader) {
-	l.Location = ReadString(r)
-	l.Name = ReadString(r)
-	l.Stack = ReadInt(r)
+	ident := ReadString(r, true)
+
+	newId, ok := newInvIdentifier[ident]
+	if !ok {
+		newId = newInvIdentifier["undefined"]
+	}
+
+	newIdent := newId()
+	newIdent.(Deserializer).Deserialize(r)
+
+	l.Identifier = newIdent
+
+	l.Name = ReadString(r, false)
+	l.Stack = ReadInt(r, false)
+}
+
+func (l *InvLocation) Aquire(c *minetest.Client) (*RWInv, error) {
+	switch indent := l.Identifier.(type) {
+	case *InvIdentifierCurrentPlayer:
+		return GetInv(c)
+
+	default:
+		_ = indent
+		return nil, ErrInvalidLocation
+	}
 }
 
 type RWInv struct {

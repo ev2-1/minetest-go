@@ -15,8 +15,8 @@ func (err *ErrInvalidInvAction) Error() string {
 	return fmt.Sprintf("Invalid Inventory Action '%s'!", err.Action)
 }
 
-// Reads space speperated strings from io.Reader
-func ReadString(r io.Reader) (str string) {
+// Reads space or colon speperated strings from io.Reader
+func ReadString(r io.Reader, colon bool) (str string) {
 	var p = make([]byte, 1)
 
 	for {
@@ -29,7 +29,7 @@ func ReadString(r io.Reader) (str string) {
 			}
 		}
 
-		if p[0] == " "[0] {
+		if p[0] == " "[0] || (colon && p[0] == ":"[0]) {
 			return
 		} else {
 			str += string(p[0])
@@ -38,8 +38,8 @@ func ReadString(r io.Reader) (str string) {
 }
 
 // Reads space speperated uint16 from io.Reader
-func ReadUint16(r io.Reader) (i uint16) {
-	str := ReadString(r)
+func ReadUint16(r io.Reader, colon bool) (i uint16) {
+	str := ReadString(r, colon)
 	ii, err := strconv.ParseUint(str, 10, 16)
 	if err != nil {
 		panic(SerializationError{err})
@@ -48,8 +48,8 @@ func ReadUint16(r io.Reader) (i uint16) {
 	return uint16(ii)
 }
 
-func ReadInt(r io.Reader) (i int) {
-	str := ReadString(r)
+func ReadInt(r io.Reader, colon bool) (i int) {
+	str := ReadString(r, colon)
 	ii, err := strconv.ParseUint(str, 10, 32)
 	if err != nil {
 		panic(SerializationError{err})
