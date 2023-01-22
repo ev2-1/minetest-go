@@ -10,4 +10,4 @@ run: build
 	cd ./cmd/minetest-go/; ./minetest-go
 
 runv: build
-	cd ./cmd/minetest-go/; ./minetest-go -v true
+	cd ./cmd/minetest-go/; ./minetest-go -config verbose:true
