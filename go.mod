@@ -10,8 +10,6 @@ require (
 
 require github.com/g3n/engine v0.2.0
 
-require github.com/gorilla/websocket v1.5.0
-
 require github.com/mattn/go-shellwords v1.0.12
 
 require (

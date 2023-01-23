@@ -8,8 +8,6 @@ github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210410170116-ea3d685f79fb/go.mod h1:tQ2
 github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
 github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
-github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
-github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/kevinburke/nacl v0.0.0-20210405173606-cd9060f5f776 h1:W8T7zJRO9imecUZySwPkuXHosjp2MloqAY1eSAEEOIo=
 github.com/kevinburke/nacl v0.0.0-20210405173606-cd9060f5f776/go.mod h1:VUp2yfq+wAk8hMl3NNN34fXjzUD9xMpGvUL8eSJz9Ns=
 github.com/mattn/go-shellwords v1.0.12 h1:M2zGm7EW6UQJvDeQxo4T51eKPurbeFbe8WtebGE2xrk=
