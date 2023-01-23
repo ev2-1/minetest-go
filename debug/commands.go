@@ -36,6 +36,7 @@ func init() {
 	chat.RegisterChatCmd("config", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: config <key>")
+			return
 		}
 
 		chat.SendMsgf(c, mt.RawMsg, "value: %v", minetest.GetConfig(args[0]))
@@ -58,7 +59,8 @@ func init() {
 
 	chat.RegisterChatCmd("getdata", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
-			chat.SendMsgf(c, mt.RawMsg, "Usage: getdat <field>")
+			chat.SendMsgf(c, mt.RawMsg, "Usage: getdata <field>")
+			return
 		}
 
 		field := args[0]
@@ -160,7 +162,7 @@ func init() {
 
 		inv, err := inventory.GetInv(c)
 		if err != nil {
-			chat.SendMsgf(c, mt.RawMsg, "Error: %v", err)
+			chat.SendMsgf(c, mt.RawMsg, "Error: %s", err)
 			return
 		}
 
@@ -168,7 +170,7 @@ func init() {
 		defer inv.RUnlock()
 		i := inv.M[args[0]]
 
-		chat.SendMsgf(c, mt.RawMsg, "value: %v", i)
+		chat.SendMsgf(c, mt.RawMsg, "value: %+v", i)
 	})
 }
 
