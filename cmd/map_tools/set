@@ -1,0 +1,37 @@
+go build
+./map_tools ../minetest-go/map.sqlite SETINV 1,2,3 "List main 32
+Width 32
+Item basenodes:cobble 3
+Empty
+Item basenodes:cobble
+Empty
+Empty
+Empty
+Item basenodes:cobble
+Item basenodes:cobble
+Item basenodes:cobble 2
+Item basenodes:cobble 3
+Item basenodes:cobble 3
+Item basenodes:cobble 3
+Item basenodes:cobble 4
+Item basenodes:cobble 2
+Item basenodes:cobble 2
+Item basenodes:cobble 4
+Item basenodes:cobble 2
+Item basenodes:cobble 2
+Item basenodes:cobble 3
+Item basenodes:cobble 2
+Item basenodes:cobble 2
+Item basenodes:cobble 3
+Item basenodes:cobble 2
+Item basenodes:cobble 3
+Item basenodes:cobble
+Item basenodes:cobble 2
+Item basenodes:cobble
+Item basenodes:cobble 3
+Item basenodes:cobble 5
+Item basenodes:cobble 2
+Item basenodes:cobble
+Item basenodes:cobble 2
+EndInventoryList
+EndInventory"
