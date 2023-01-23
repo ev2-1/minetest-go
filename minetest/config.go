@@ -18,12 +18,6 @@ var (
 	verbose        = pflag.BoolP("verbose", "v", false, "Turn on verbose logging mode")
 	configPath     = pflag.StringP("config-path", "c", "config.yml", "Set path of config.yml file")
 	confOverwrites = pflag.StringSliceP("config", "o", []string{}, "Overwrite configuration values at startup (gets overwritten by subsequent ReloadConfig calls)")
-
-	_ = func() bool { // jank way to gurantee this code gets executed first
-		pflag.Parse()
-
-		return false
-	}
 )
 
 var (
@@ -36,6 +30,7 @@ var loadConfigOnce sync.Once
 // LoadConfig ensures the config is loaded
 func LoadConfig() {
 	loadConfigOnce.Do(func() {
+		pflag.Parse()
 		loadConfig()
 
 		configMu.Lock()
