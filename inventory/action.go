@@ -1,7 +1,6 @@
 package inventory
 
 import (
-	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"fmt"
@@ -82,10 +81,7 @@ func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 		return
 	}
 
-	return c.SendCmd(
-		&mt.ToCltInv{
-			Inv: str,
-		})
+	return act.From.SendUpdate(str, c)
 }
 
 type InvActionMove struct {
@@ -218,12 +214,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 
 	ack := make(chan struct{})
 
-	go func(a1, a2 <-chan struct{}, ack chan struct{}) {
-		<-ack1
-		<-ack2
-
-		close(ack)
-	}(ack1, ack2, ack)
+	go Acks(ack, ack1, ack2)
 
 	return ack, err
 }
