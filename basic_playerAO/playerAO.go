@@ -7,11 +7,24 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 	"github.com/ev2-1/minetest-go/tools/pos"
 
-	"sync"
+	"log"
 )
 
-var clients = make(map[*minetest.Client]mt.AOID)
-var clientsMu sync.RWMutex
+func GetAOID(c *minetest.Client) (mt.AOID, bool) {
+	dat, ok := c.GetData("aoid")
+	if !ok {
+		return 0, false
+	}
+
+	id, ok := dat.(mt.AOID)
+	if ok {
+		return id, true
+	} else {
+		log.Fatalf("ClientData has unexpected Type expected %T got %T!\n", mt.AOID(0), dat)
+	}
+
+	return 0, false
+}
 
 func init() {
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
@@ -26,22 +39,15 @@ func init() {
 
 	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
 		go func() {
-			clientsMu.Lock()
-			defer clientsMu.Unlock()
-
-			if _, ok := clients[l.Client]; ok {
-				ao.RmAO(clients[l.Client])
-
-				delete(clients, l.Client)
+			id, ok := GetAOID(l.Client)
+			if ok {
+				ao.RmAO(id)
 			}
 		}()
 	})
 
 	pos.RegisterPosUpdater(func(clt *minetest.Client, p mt.PlayerPos, dt int64) {
-		clientsMu.RLock()
-		defer clientsMu.RUnlock()
-
-		id, ok := clients[clt]
+		id, ok := GetAOID(clt)
 
 		if !ok || id == 0 {
 			return

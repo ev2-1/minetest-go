@@ -28,10 +28,8 @@ func (p *player) InitPkt(clt *minetest.Client) mt.AOInitData {
 
 func makeAO(clt *minetest.Client, id mt.AOID) ao.ActiveObject {
 	if id != 0 {
-		clientsMu.Lock()
-		clients[clt] = id
+		clt.SetData("aoid", id)
 		clt.Log("aoid:", id)
-		clientsMu.Unlock()
 	}
 
 	return &player{
