@@ -41,7 +41,7 @@ func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 		c.Logf("[INV] %s", act.String())
 	}
 
-	var fromInv *RWInv
+	var fromInv RWInv
 
 	// collect inventory
 	fromInv, err = act.From.Aquire(c)
@@ -52,24 +52,31 @@ func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 	fromInv.Lock()
 	defer fromInv.Unlock()
 
-	fromInvList := fromInv.M[act.From.Name]
-	if len(fromInvList.Stacks) < act.From.Stack || fromInvList.Width < act.From.Stack {
-		return
+	fromInvList, ok := fromInv.Get(act.From.Name)
+	if !ok {
+		return nil, ErrInvalidInv
+	}
+
+	// Ensure stack exists
+	fromStack, ok := fromInvList.GetStack(act.From.Stack)
+	if !ok {
+		return nil, ErrInvalidStack
 	}
 
 	// ensure quantity
-	if fromInvList.Stacks[act.From.Stack].Count < act.Count {
+	if fromStack.Count < act.Count {
 		return nil, ErrStackInsufficient
 	}
 
 	// Drop: TODO: make item actually drop though magic
-	fromInvList.Stacks[act.From.Stack].Count -= act.Count
+	fromStack.Count -= act.Count
+	fromInvList.SetStack(act.From.Stack, fromStack)
 
-	fromInv.M[act.From.Name] = fromInvList
+	fromInv.Set(act.From.Name, fromInvList)
 
 	// updating client:
 	var str string
-	str, err = fromInv.String()
+	str, err = SerializeString(fromInv.Serialize)
 	if err != nil {
 		c.Logf("Error: %s", err)
 		return
@@ -110,91 +117,123 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 		c.Logf("[INV] %s", act.String())
 	}
 
-	var fromInv, toInv *RWInv
+	var fromInv, toInv RWInv
+
+	println(1)
 
 	// collect inventories
 	fromInv, err = act.From.Aquire(c)
 	if err != nil {
 		return
 	}
+	println(2)
 
 	fromInv.Lock()
 	defer fromInv.Unlock()
+	println(3)
 
 	// only get a inv once, otherwise its gonna deadlock
-	if act.From.Identifier == act.To.Identifier {
+	if act.From.Identifier.Equals(act.To.Identifier) { // doesnt work for detached inv (atm)!
 		toInv = fromInv
 	} else {
+		println(4)
 		toInv, err = act.To.Aquire(c)
 		if err != nil {
 			return
 		}
+		println(5)
 
 		toInv.Lock()
 		defer toInv.Unlock()
 	}
+	println(6)
 
 	// validate source:
-	var moveItem string
-
-	fromInvList := fromInv.M[act.From.Name]
-	if len(fromInvList.Stacks) < act.From.Stack || fromInvList.Width < act.From.Stack {
-		return
+	fromInvList, ok := fromInv.Get(act.From.Name)
+	if !ok {
+		return nil, ErrInvalidInv
 	}
+	println(7)
 
-	moveItem = fromInvList.Stacks[act.From.Stack].Name
+	fromStack, ok := fromInvList.GetStack(act.From.Stack)
+	if !ok {
+		return nil, ErrInvalidStack
+	}
+	println(8)
+
+	moveItem := fromStack.Name
 
 	// ensure quantity
-	if fromInvList.Stacks[act.From.Stack].Count < act.Count {
+	if fromStack.Count < act.Count {
 		return nil, ErrStackInsufficient
 	}
 
 	// validate destination
-	toInvList := toInv.M[act.To.Name]
-	if len(toInvList.Stacks) < act.To.Stack || toInvList.Width < act.To.Stack {
+	toInvList, ok := toInv.Get(act.To.Name)
+	if !ok {
+		return nil, ErrInvalidInv
+	}
+
+	if toInvList.Width() < act.To.Stack {
+		return nil, ErrInvalidStack
+	}
+
+	toStack, ok := toInvList.GetStack(act.To.Stack)
+	if !ok {
 		return nil, ErrInvalidStack
 	}
 
 	// check if slot is empty or same item:
-	if !(toInvList.Stacks[act.To.Stack].Count == 0 || toInvList.Stacks[act.To.Stack].Name == moveItem) {
+	if !(toStack.Count == 0 || toStack.Name == moveItem) {
 		return nil, ErrStackNotEmpty
 	}
 
 	// move:
-	fromInvList.Stacks[act.From.Stack].Count -= act.Count
-	toInvList.Stacks[act.To.Stack].Name = moveItem
-	toInvList.Stacks[act.To.Stack].Count += act.Count
+	//fromInvList.Stacks[act.From.Stack].Count -= act.Count
+	fromStack.Count -= act.Count
+	fromInvList.SetStack(act.From.Stack, fromStack)
 
-	toInv.M[act.To.Name] = toInvList
-	fromInv.M[act.From.Name] = fromInvList
+	toStack.Name = moveItem
+	toStack.Count += act.Count
+	toInvList.SetStack(act.To.Stack, toStack)
+
+	toInv.Set(act.To.Name, toInvList)
+	fromInv.Set(act.From.Name, fromInvList)
+
+	println(9)
 
 	// updating client:
-	var str string
-	str, err = fromInv.String()
+	fromStr, err := SerializeString(fromInv.Serialize)
 	if err != nil {
 		c.Logf("Error: %s", err)
 		return
 	}
+	println(10)
 
-	var ack1 <-chan struct{}
+	ack1, err := act.From.SendUpdate(fromStr, c)
+
+	var ack2 <-chan struct{}
 
 	// only send other inventory if inventories are different
 	if fromInv != toInv {
-		var str string
-		str, err = fromInv.String()
+		println(101)
+
+		var toStr string
+		toStr, err = SerializeString(toInv.Serialize)
 		if err != nil {
 			c.Logf("Error: %s", err)
 			return
 		}
+		println(102)
 
-		ack1, err = c.SendCmd(&mt.ToCltInv{
-			Inv: str,
-		})
+		ack2, err = act.To.SendUpdate(toStr, c)
+		if err != nil {
+			return
+		}
+		println(103)
+
 	}
-
-	ack2, err := c.SendCmd(&mt.ToCltInv{
-		Inv: str,
-	})
+	println(11)
 
 	ack := make(chan struct{})
 
@@ -204,6 +243,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 
 		close(ack)
 	}(ack1, ack2, ack)
+	println(12)
 
 	return ack, err
 }

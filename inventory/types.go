@@ -4,7 +4,6 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
-	"bytes"
 	"io"
 	"strconv"
 	"strings"
@@ -13,15 +12,8 @@ import (
 
 type InvIdentifier interface {
 	InvIdentifier() string
-}
 
-// InvIdentifierCurrentPlayer
-func (*InvIdentifierCurrentPlayer) Deserialize(io.Reader) {}
-
-type InvIdentifierCurrentPlayer struct{}
-
-func (*InvIdentifierCurrentPlayer) InvIdentifier() string {
-	return "current_player"
+	Equals(InvIdentifier) bool
 }
 
 // InvIdentifierUndefined
@@ -31,7 +23,26 @@ func (*InvIdentifierUndefined) InvIdentifier() string {
 	return "undefined"
 }
 
+func (*InvIdentifierUndefined) Equals(InvIdentifier) bool {
+	return false // TODO
+}
+
 func (*InvIdentifierUndefined) Deserialize(io.Reader) {}
+
+// InvIdentifierCurrentPlayer
+func (*InvIdentifierCurrentPlayer) Deserialize(io.Reader) {}
+
+type InvIdentifierCurrentPlayer struct{}
+
+func (*InvIdentifierCurrentPlayer) Equals(i InvIdentifier) bool {
+	_, ok := i.(*InvIdentifierCurrentPlayer)
+
+	return ok
+}
+
+func (*InvIdentifierCurrentPlayer) InvIdentifier() string {
+	return "current_player"
+}
 
 // InvIdentifierPlayer
 type InvIdentifierPlayer struct {
@@ -40,6 +51,10 @@ type InvIdentifierPlayer struct {
 
 func (*InvIdentifierPlayer) InvIdentifier() string {
 	return "player"
+}
+
+func (*InvIdentifierPlayer) Equals(i InvIdentifier) bool {
+	return false // TODO
 }
 
 func (i *InvIdentifierPlayer) Deserialize(r io.Reader) {
@@ -53,6 +68,10 @@ type InvIdentifierNodeMeta struct {
 
 func (*InvIdentifierNodeMeta) InvIdentifier() string {
 	return "nodemeta"
+}
+
+func (*InvIdentifierNodeMeta) Equals(i InvIdentifier) bool {
+	return false // TODO
 }
 
 func (i *InvIdentifierNodeMeta) Deserialize(r io.Reader) {
@@ -89,6 +108,19 @@ func (*InvIdentifierDetached) InvIdentifier() string {
 	return "detached"
 }
 
+func (d *InvIdentifierDetached) Equals(i InvIdentifier) bool {
+	detached, ok := i.(*InvIdentifierDetached)
+	if !ok {
+		return ok
+	}
+
+	if detached.name == d.name {
+		return true
+	}
+
+	return false
+}
+
 func (i *InvIdentifierDetached) Deserialize(r io.Reader) {
 	i.name = ReadString(r, false)
 }
@@ -108,6 +140,28 @@ type InvLocation struct {
 	Stack      int
 }
 
+func (l *InvLocation) SendUpdate(list string, c *minetest.Client) (<-chan struct{}, error) {
+	switch ident := l.Identifier.(type) {
+	case *InvIdentifierCurrentPlayer:
+		return c.SendCmd(&mt.ToCltInv{
+			Inv: list,
+		})
+
+	case *InvIdentifierDetached:
+		return c.SendCmd(&mt.ToCltDetachedInv{
+			Name: ident.name,
+			Keep: true,
+
+			Inv: list,
+		})
+
+	default:
+		_ = ident
+	}
+
+	return nil, ErrInvalidLocation
+}
+
 func (l *InvLocation) Deserialize(r io.Reader) {
 	ident := ReadString(r, true)
 
@@ -125,10 +179,13 @@ func (l *InvLocation) Deserialize(r io.Reader) {
 	l.Stack = ReadInt(r, false)
 }
 
-func (l *InvLocation) Aquire(c *minetest.Client) (*RWInv, error) {
+func (l *InvLocation) Aquire(c *minetest.Client) (RWInv, error) {
 	switch indent := l.Identifier.(type) {
 	case *InvIdentifierCurrentPlayer:
 		return GetInv(c)
+
+	case *InvIdentifierDetached:
+		return GetDetached(indent.name, c)
 
 	default:
 		_ = indent
@@ -136,66 +193,125 @@ func (l *InvLocation) Aquire(c *minetest.Client) (*RWInv, error) {
 	}
 }
 
-type RWInv struct {
+type RWInv interface {
+	Inv
+
+	RLock()
+	RUnlock()
+	Lock()
+	Unlock()
+}
+
+type Inv interface {
+	Get(string) (InvList, bool)
+	Set(string, InvList)
+
+	Serialize(io.Writer) error
+}
+
+type InvList interface {
+	Width() int
+	GetStack(int) (mt.Stack, bool)
+	SetStack(int, mt.Stack) bool
+
+	Serialize(io.Writer) error
+
+	InvList() mt.InvList
+}
+
+type SimpleInv struct {
+	M map[string]InvList
+
 	sync.RWMutex
-	*Inv
 }
 
-type Inv struct {
-	M map[string]*mt.InvList
+func (si *SimpleInv) Get(k string) (l InvList, ok bool) {
+	l, ok = si.M[k]
+
+	return
 }
 
-func (inv *Inv) Inv() (r mt.Inv) {
+func (si *SimpleInv) Set(k string, v InvList) {
+	si.M[k] = v
+}
+
+func (si *SimpleInv) Serialize(w io.Writer) error {
+	return si.Inv().Serialize(w)
+}
+
+func (inv *SimpleInv) Deserialize(w io.Reader) (err error) {
+	list := new(mt.Inv)
+	if err = list.Deserialize(w); err != nil {
+		return
+	}
+
+	SimpleInvFromNamedInvList(*list, inv)
+
+	return
+}
+
+type SimpleInvList struct {
+	List mt.InvList
+}
+
+func (il *SimpleInvList) Width() int {
+	if len(il.List.Stacks) > il.List.Width {
+		return len(il.List.Stacks)
+	} else {
+		return il.List.Width
+	}
+}
+
+func (il *SimpleInvList) GetStack(i int) (s mt.Stack, ok bool) {
+	if len(il.List.Stacks) < i {
+		ok = false
+
+		return
+	} else {
+		return il.List.Stacks[i], true
+	}
+}
+
+func (il *SimpleInvList) SetStack(i int, s mt.Stack) bool {
+	if len(il.List.Stacks) < i {
+		return false
+	} else {
+		il.List.Stacks[i] = s
+		return true
+	}
+}
+
+func (il *SimpleInvList) Serialize(w io.Writer) error {
+	return il.List.Serialize(w)
+}
+
+func (il *SimpleInvList) InvList() mt.InvList {
+	return il.List
+}
+
+func (inv *SimpleInv) Inv() (r mt.Inv) {
 	for k, v := range inv.M {
 		r = append(r, mt.NamedInvList{
 			Name:    k,
-			InvList: *v,
+			InvList: v.InvList(),
 		})
 	}
 
 	return
 }
 
-func (inv *Inv) String() (s string, err error) {
-	sbuf := &bytes.Buffer{}
-	if err = inv.Serialize(sbuf); err != nil {
-		return
-	}
-
-	s = sbuf.String()
-
-	return
-}
-
-func (inv *Inv) Set(name string, list mt.NamedInvList) {}
+//func (inv *Inv) Set(name string, list mt.NamedInvList) {}
 
 // fulfills the ClientDataSerialize Interface
-func (inv *Inv) Serialize(w io.Writer) (err error) {
-	return inv.Inv().Serialize(w)
-}
+//func (inv *Inv) Serialize(w io.Writer) (err error) {
+//	return inv.Inv().Serialize(w)
+//}
 
-func (inv *RWInv) Deserialize(w io.Reader) (err error) {
-	inv.Inv = new(Inv)
-
-	return inv.Inv.Deserialize(w)
-}
-
-func (inv *Inv) Deserialize(w io.Reader) (err error) {
-	list := new(mt.Inv)
-	if err = list.Deserialize(w); err != nil {
-		return
-	}
-
-	InvFromNamedInvList(*list, inv)
-
-	return
-}
-
-func InvFromNamedInvList(list mt.Inv, inv *Inv) {
-	inv.M = make(map[string]*mt.InvList)
+func SimpleInvFromNamedInvList(list mt.Inv, inv *SimpleInv) {
+	inv.M = make(map[string]InvList)
 
 	for i := 0; i < len(list); i++ {
-		inv.M[list[0].Name] = &list[0].InvList
+		inv.M[list[0].Name] = &SimpleInvList{list[0].InvList}
 	}
 
 	return

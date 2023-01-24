@@ -1,11 +1,19 @@
 package inventory
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"strconv"
 )
+
+func SerializeString(s func(io.Writer) error) (string, error) {
+	buf := &bytes.Buffer{}
+	err := s(buf)
+
+	return buf.String(), err
+}
 
 type ErrInvalidInvAction struct {
 	Action string

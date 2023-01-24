@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"github.com/anon55555/mt"
+	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"bytes"
@@ -13,17 +14,30 @@ import (
 var formspec string
 
 func init() {
+	RegisterDetached("test", &DetachedInv{
+		SimpleInv{
+			M: map[string]InvList{
+				"main": &SimpleInvList{
+					mt.InvList{
+						Width:  4 * 8,
+						Stacks: make([]mt.Stack, 4*8),
+					},
+				},
+			},
+		},
+	})
+
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInvAction:
 			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
 			if err != nil {
-				c.Logf("Error: %s", err)
+				c.Logger.Printf("Error: %s", err)
 				break
 			}
 
 			if _, err := action.Apply(c); err != nil {
-				c.Logf("Error: %s", err)
+				c.Logger.Printf("Error: %s", err)
 			}
 		}
 	})
@@ -43,19 +57,60 @@ func init() {
 		Inv.RLock()
 		defer Inv.RUnlock()
 
-		str, err := Inv.String()
+		str, err := SerializeString(Inv.Serialize)
 		if err != nil {
-			c.Logf("Error: %s", err)
+			c.Logger.Printf("Error: %s", err)
 			return
 		}
 
-		c.SendCmd(&mt.ToCltInv{
+		ack, _ := c.SendCmd(&mt.ToCltInv{
 			Inv: str,
 		})
+
+		<-ack
+		c.Logger.Printf("Sent CltInv")
+	})
+
+	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
+		c.SendCmd(&mt.ToCltShowFormspec{
+			Formspec: formspec,
+			Formname: "lol",
+		})
+	})
+
+	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)
+			return
+		}
+
+		d, err := GetDetached(args[0], c)
+		if err != nil {
+			c.Logger.Printf("Error: %s", err)
+			return
+		}
+
+		str, err := SerializeString(d.Serialize)
+		if err != nil {
+			c.Logger.Printf("Error: %s", err)
+			return
+		}
+
+		// send detached inv to test:
+		ack, _ := c.SendCmd(&mt.ToCltDetachedInv{
+			Name: "test",
+			Keep: true,
+
+			Inv: str,
+		})
+
+		<-ack
+		c.Logger.Printf("Sent DetachedInv")
+
 	})
 }
 
-func GetInv(c *minetest.Client) (inv *RWInv, err error) {
+func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 	data, ok := c.GetData("inv")
 	if !ok { // => not found, so initialize
 		c.Logf("Client does not have inventory yet, adding")
@@ -69,10 +124,10 @@ func GetInv(c *minetest.Client) (inv *RWInv, err error) {
 		}
 
 		// Send client inventory contents
-		inv = &RWInv{
-			Inv: &Inv{
-				M: map[string]*mt.InvList{
-					"main": &mt.InvList{
+		inv = &SimpleInv{
+			M: map[string]InvList{
+				"main": &SimpleInvList{
+					mt.InvList{
 						Width:  4 * 8,
 						Stacks: stacks,
 					},
@@ -85,12 +140,12 @@ func GetInv(c *minetest.Client) (inv *RWInv, err error) {
 		return inv, nil
 	}
 
-	if inv, ok = data.(*RWInv); ok {
+	if inv, ok = data.(*SimpleInv); ok {
 		return inv, nil
 	}
 
 	if dat, ok := data.(*minetest.ClientDataSaved); ok {
-		inv = new(RWInv)
+		inv = new(SimpleInv)
 
 		buf := bytes.NewBuffer(dat.Bytes())
 
