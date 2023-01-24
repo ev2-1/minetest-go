@@ -38,7 +38,7 @@ func (act *InvActionDrop) String() string {
 
 func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
 	if minetest.ConfigVerbose() {
-		c.Logf("[INV] %s", act.String())
+		c.Logger.Printf("[INV] %s", act.String())
 	}
 
 	var fromInv RWInv
@@ -78,7 +78,7 @@ func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 	var str string
 	str, err = SerializeString(fromInv.Serialize)
 	if err != nil {
-		c.Logf("Error: %s", err)
+		c.Logger.Printf("Error: %s", err)
 		return
 	}
 
@@ -114,7 +114,7 @@ func (act *InvActionMove) String() string {
 
 func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
 	if minetest.ConfigVerbose() {
-		c.Logf("[INV] %s", act.String())
+		c.Logger.Printf("[INV] %s", act.String())
 	}
 
 	var fromInv, toInv RWInv
@@ -194,7 +194,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 	// updating client:
 	fromStr, err := SerializeString(fromInv.Serialize)
 	if err != nil {
-		c.Logf("Error: %s", err)
+		c.Logger.Printf("Error: %s", err)
 		return
 	}
 	ack1, err := act.From.SendUpdate(fromStr, c)
@@ -206,7 +206,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 		var toStr string
 		toStr, err = SerializeString(toInv.Serialize)
 		if err != nil {
-			c.Logf("Error: %s", err)
+			c.Logger.Printf("Error: %s", err)
 			return
 		}
 

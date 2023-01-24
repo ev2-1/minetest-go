@@ -148,12 +148,12 @@ func (l *InvLocation) SendUpdate(list string, c *minetest.Client) (<-chan struct
 		})
 
 	case *InvIdentifierDetached:
-		return c.SendCmd(&mt.ToCltDetachedInv{
-			Name: ident.name,
-			Keep: true,
+		d, err := GetDetached(ident.name, c)
+		if err != nil {
+			return nil, err
+		}
 
-			Inv: list,
-		})
+		return d.SendUpdates()
 
 	default:
 		_ = ident
@@ -315,4 +315,18 @@ func SimpleInvFromNamedInvList(list mt.Inv, inv *SimpleInv) {
 	}
 
 	return
+}
+
+// Combine acks into one ack
+// Waits for all acks to close then closes ack
+func Acks(ack chan struct{}, acks ...<-chan struct{}) {
+	if len(acks) == 0 {
+		close(ack)
+	}
+
+	for i := 0; i < len(acks); i++ {
+		<-acks[i]
+	}
+
+	close(ack)
 }

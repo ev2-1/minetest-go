@@ -15,7 +15,7 @@ var formspec string
 
 func init() {
 	RegisterDetached("test", &DetachedInv{
-		SimpleInv{
+		SimpleInv: SimpleInv{
 			M: map[string]InvList{
 				"main": &SimpleInvList{
 					mt.InvList{
@@ -50,7 +50,7 @@ func init() {
 
 		Inv, err := GetInv(c)
 		if err != nil {
-			c.Logf("Error: %s", err)
+			c.Logger.Printf("Error: %s", err)
 			return
 		}
 
@@ -90,19 +90,11 @@ func init() {
 			return
 		}
 
-		str, err := SerializeString(d.Serialize)
+		ack, err := d.AddClient(c)
 		if err != nil {
 			c.Logger.Printf("Error: %s", err)
 			return
 		}
-
-		// send detached inv to test:
-		ack, _ := c.SendCmd(&mt.ToCltDetachedInv{
-			Name: "test",
-			Keep: true,
-
-			Inv: str,
-		})
 
 		<-ack
 		c.Logger.Printf("Sent DetachedInv")
@@ -113,7 +105,7 @@ func init() {
 func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 	data, ok := c.GetData("inv")
 	if !ok { // => not found, so initialize
-		c.Logf("Client does not have inventory yet, adding")
+		c.Logger.Printf("Client does not have inventory yet, adding")
 
 		stacks := make([]mt.Stack, 4*8)
 		stacks[5] = mt.Stack{
