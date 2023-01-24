@@ -36,6 +36,6 @@ github.com/ev2-1/minetest-go/inventory
 # testing:
 github.com/ev2-1/minetest-go/tnt_ao
 github.com/ev2-1/minetest-go/debug
-github.com/ev2-1/minetest-go/inventory/example
+#github.com/ev2-1/minetest-go/inventory/example
 
 
