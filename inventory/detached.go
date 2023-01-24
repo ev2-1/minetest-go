@@ -27,7 +27,7 @@ func GetDetached(name string, c *minetest.Client) (inv *DetachedInv, err error) 
 	detachedInvsMu.RLock()
 	defer detachedInvsMu.RUnlock()
 
-	c.Logf("[INV] access detached inv '%s'", name)
+	c.Logger.Printf("[INV] access detached inv '%s'", name)
 
 	inv, ok := detachedInvs[name]
 	if !ok {
