@@ -119,47 +119,38 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 
 	var fromInv, toInv RWInv
 
-	println(1)
-
 	// collect inventories
 	fromInv, err = act.From.Aquire(c)
 	if err != nil {
 		return
 	}
-	println(2)
 
 	fromInv.Lock()
 	defer fromInv.Unlock()
-	println(3)
 
 	// only get a inv once, otherwise its gonna deadlock
 	if act.From.Identifier.Equals(act.To.Identifier) { // doesnt work for detached inv (atm)!
 		toInv = fromInv
 	} else {
-		println(4)
 		toInv, err = act.To.Aquire(c)
 		if err != nil {
 			return
 		}
-		println(5)
 
 		toInv.Lock()
 		defer toInv.Unlock()
 	}
-	println(6)
 
 	// validate source:
 	fromInvList, ok := fromInv.Get(act.From.Name)
 	if !ok {
 		return nil, ErrInvalidInv
 	}
-	println(7)
 
 	fromStack, ok := fromInvList.GetStack(act.From.Stack)
 	if !ok {
 		return nil, ErrInvalidStack
 	}
-	println(8)
 
 	moveItem := fromStack.Name
 
@@ -200,40 +191,30 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 	toInv.Set(act.To.Name, toInvList)
 	fromInv.Set(act.From.Name, fromInvList)
 
-	println(9)
-
 	// updating client:
 	fromStr, err := SerializeString(fromInv.Serialize)
 	if err != nil {
 		c.Logf("Error: %s", err)
 		return
 	}
-	println(10)
-
 	ack1, err := act.From.SendUpdate(fromStr, c)
 
 	var ack2 <-chan struct{}
 
 	// only send other inventory if inventories are different
 	if fromInv != toInv {
-		println(101)
-
 		var toStr string
 		toStr, err = SerializeString(toInv.Serialize)
 		if err != nil {
 			c.Logf("Error: %s", err)
 			return
 		}
-		println(102)
 
 		ack2, err = act.To.SendUpdate(toStr, c)
 		if err != nil {
 			return
 		}
-		println(103)
-
 	}
-	println(11)
 
 	ack := make(chan struct{})
 
@@ -243,7 +224,6 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 
 		close(ack)
 	}(ack1, ack2, ack)
-	println(12)
 
 	return ack, err
 }
