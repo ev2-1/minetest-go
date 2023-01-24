@@ -64,7 +64,8 @@ func (di *DetachedInv) SendUpdates() (<-chan struct{}, error) {
 			Keep: true,
 
 			Inv: str,
-		}) // TODO
+		})
+
 		if err != nil {
 			continue
 		}

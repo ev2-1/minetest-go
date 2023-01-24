@@ -23,8 +23,9 @@ func (*InvIdentifierUndefined) InvIdentifier() string {
 	return "undefined"
 }
 
+// undefined is like NaN not itsel
 func (*InvIdentifierUndefined) Equals(InvIdentifier) bool {
-	return false // TODO
+	return false
 }
 
 func (*InvIdentifierUndefined) Deserialize(io.Reader) {}
@@ -53,8 +54,12 @@ func (*InvIdentifierPlayer) InvIdentifier() string {
 	return "player"
 }
 
-func (*InvIdentifierPlayer) Equals(i InvIdentifier) bool {
-	return false // TODO
+func (self *InvIdentifierPlayer) Equals(to InvIdentifier) bool {
+	if player, ok := to.(*InvIdentifierPlayer); !ok {
+		return false
+	} else {
+		return player.name == self.name
+	}
 }
 
 func (i *InvIdentifierPlayer) Deserialize(r io.Reader) {
@@ -70,8 +75,12 @@ func (*InvIdentifierNodeMeta) InvIdentifier() string {
 	return "nodemeta"
 }
 
-func (*InvIdentifierNodeMeta) Equals(i InvIdentifier) bool {
-	return false // TODO
+func (self *InvIdentifierNodeMeta) Equals(to InvIdentifier) bool {
+	if node, ok := to.(*InvIdentifierNodeMeta); !ok {
+		return false
+	} else {
+		return node.X == self.X && node.Y == self.Y && node.Z == self.Z
+	}
 }
 
 func (i *InvIdentifierNodeMeta) Deserialize(r io.Reader) {
