@@ -36,7 +36,7 @@ func loadIntoCache(pos [3]int16) error {
 	mapCacheMu.Lock()
 	defer mapCacheMu.Unlock()
 
-	blk, err := readBlkFromDB(pos)
+	blk, err := activeDriver.GetBlk(pos)
 	if err != nil {
 		return err
 	}
@@ -74,8 +74,8 @@ func enumerateExpiredBlks() (s [][3]int16) {
 		blk.Lock()
 
 		// check if pos matches:
-		if pos != blk.Pos {
-			log.Fatal(fmt.Sprintf("mapblk dosn't have correct pos has %v, was expecting %v", blk.Pos, pos))
+		if pos != blk.MapBlk.Pos() {
+			log.Fatal(fmt.Sprintf("mapblk dosn't have correct pos has %v, was expecting %v", blk.MapBlk.Pos(), pos))
 		}
 
 		if blk.expired() {

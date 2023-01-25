@@ -64,14 +64,14 @@ func sendCltBlk(clt *minetest.Client, p [3]int16) <-chan struct{} {
 
 	blk, ok := mapCache[p]
 	if !ok {
-		return ch()
+		return nil
 	}
 
 	blk.RLock()
 	defer blk.RUnlock()
 	ack, _ := clt.SendCmd(&mt.ToCltBlkData{
 		Blkpos: p,
-		Blk:    blk.MapBlk.MapBlk,
+		Blk:    *blk.MapBlk.MapBlk(),
 	})
 
 	return ack

@@ -1,15 +1,48 @@
 package mmap
 
 import (
-	"github.com/EliasFleckenstein03/mtmap"
+	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"sync"
 	"time"
 )
 
+var (
+	activeDriver MapDriver
+
+	drivers   = make(map[string]MapDriver)
+	driversMu sync.RWMutex
+)
+
+func RegisterDriver(name string, driver MapDriver) {
+	driversMu.Lock()
+	defer driversMu.Unlock()
+
+	drivers[name] = driver
+}
+
+type MapDriver interface {
+	Open(string) error
+
+	GetBlk([3]int16) (DriverMapBlk, error)
+	SetBlk([3]int16, *MapBlk) error
+}
+
+type DriverMapBlk interface {
+	RLock()
+	RUnlock()
+	Lock()
+	Unlock()
+
+	MapBlk() *mt.MapBlk
+	Pos() [3]int16
+
+	Save(*MapBlk) error
+}
+
 type MapBlk struct {
-	mtmap.MapBlk
+	MapBlk DriverMapBlk
 	sync.RWMutex
 
 	ForceLoaded bool      // if set the default func for cleanup block won't be unloaded
@@ -17,7 +50,6 @@ type MapBlk struct {
 	LastAccess  time.Time // timestamp when blk was last Accessed (unixmillis)
 	LastSeen    time.Time // timestamp when client was in blk for the last time (unixmillis)
 	LastRefresh time.Time // timestamp when blk was last manualy refreshed (unixmillis)
-	Pos         [3]int16  // BlkPos of mapblk
 
 	deleted bool
 
@@ -25,16 +57,15 @@ type MapBlk struct {
 	loadedBy   map[*minetest.Client]struct{}
 }
 
-func MakeMapBlk(blk *mtmap.MapBlk, pos [3]int16) *MapBlk {
+func MakeMapBlk(blk DriverMapBlk, pos [3]int16) *MapBlk {
 	now := time.Now()
 
 	return &MapBlk{
-		MapBlk: *blk,
+		MapBlk: blk,
 
 		Loaded:      now,
 		LastRefresh: now,
 		LastAccess:  now,
-		Pos:         pos,
 
 		loadedBy: make(map[*minetest.Client]struct{}),
 	}

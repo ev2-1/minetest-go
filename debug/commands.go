@@ -114,9 +114,11 @@ func init() {
 		}
 
 		var msg string
-		param0 := blk.Param0[pi]
-		param1 := blk.Param1[pi]
-		param2 := blk.Param2[pi]
+		sblk := blk.MapBlk.MapBlk()
+
+		param0 := sblk.Param0[pi]
+		param1 := sblk.Param1[pi]
+		param2 := sblk.Param2[pi]
 
 		for info := range argsMap {
 			switch info {
@@ -137,7 +139,7 @@ func init() {
 				break
 
 			case "meta":
-				meta, ok := blk.NodeMetas[pi]
+				meta, ok := sblk.NodeMetas[pi]
 				if !ok {
 					msg += "Meta: nil\n"
 				} else {

@@ -23,7 +23,7 @@ func AddExpiredCondition(f func(*MapBlk) bool) {
 // only sends updates after that until client send DeletedBlks
 func LoadBlk(clt *minetest.Client, p [3]int16) <-chan struct{} {
 	if isLoaded(clt, p) {
-		return ch()
+		return nil
 	}
 
 	ch := make(chan struct{})
