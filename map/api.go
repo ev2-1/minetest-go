@@ -1,6 +1,7 @@
 package mmap
 
 import (
+	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"sync"
@@ -47,4 +48,18 @@ func GetBlk(p [3]int16) *MapBlk {
 	defer mapCacheMu.RUnlock()
 
 	return mapCache[p]
+}
+
+// GetNode returns a mt.Node and NodeMeta for a coordinate
+// If no NodeMeta is specified returns mt.Node and nil
+func GetNode(p [3]int16) (node mt.Node, meta *mt.NodeMeta) {
+	blk, i := mt.Pos2Blkpos(p)
+
+	mapblk := GetBlk(blk).MapBlk.MapBlk()
+
+	return mt.Node{
+		Param0: mapblk.Param0[i],
+		Param1: mapblk.Param1[i],
+		Param2: mapblk.Param2[i],
+	}, mapblk.NodeMetas[i]
 }

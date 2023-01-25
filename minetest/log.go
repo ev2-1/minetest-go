@@ -22,7 +22,7 @@ func (lw *LogWriter) Write(p []byte) (n int, err error) {
 
 func initLog() {
 	log.SetPrefix("[minetest] ")
-	log.SetFlags(log.Flags() | log.Lmsgprefix)
+	log.SetFlags(log.Flags() | log.Lmsgprefix | log.Lshortfile)
 
 	f, err := os.OpenFile(Path("latest.log"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {

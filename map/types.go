@@ -35,7 +35,7 @@ type DriverMapBlk interface {
 	Lock()
 	Unlock()
 
-	MapBlk() *mt.MapBlk
+	MapBlk() *mt.MapBlk // HAS to be real pointer to internal object
 	Pos() [3]int16
 
 	Save(*MapBlk) error

@@ -98,6 +98,7 @@ func (drv *MinetestMapDriver) GetBlk(pos [3]int16) (mmap.DriverMapBlk, error) {
 	}
 
 	bblk := &MapBlk{Blk: blk}
+	bblk.PPos = pos
 	bblk.drv = drv
 
 	return bblk, nil
