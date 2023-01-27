@@ -4,7 +4,6 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/inventory"
-	mmap "github.com/ev2-1/minetest-go/map"
 	"github.com/ev2-1/minetest-go/minetest"
 	"github.com/ev2-1/minetest-go/tools/pos"
 
@@ -16,7 +15,7 @@ func init() {
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
 		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos().Int())
 
-		<-mmap.LoadBlk(c, blkpos)
+		<-minetest.LoadBlk(c, blkpos)
 
 		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d)", blkpos[0], blkpos[1], blkpos[2])
 	})
@@ -84,7 +83,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("cleanmapcache", func(c *minetest.Client, args []string) {
-		mmap.CleanCache()
+		minetest.CleanCache()
 
 		chat.SendMsgf(c, mt.RawMsg, "cleaning map cache done")
 	})
@@ -96,7 +95,7 @@ func init() {
 		}
 
 		p, pi := mt.Pos2Blkpos(pos.GetPos(c).Pos().Int())
-		blk := mmap.GetBlk(p)
+		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})
 
@@ -114,7 +113,7 @@ func init() {
 		}
 
 		var msg string
-		sblk := blk.MapBlk.MapBlk()
+		sblk := blk.MapBlk
 
 		param0 := sblk.Param0[pi]
 		param1 := sblk.Param1[pi]

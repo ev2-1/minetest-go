@@ -5,6 +5,10 @@ import (
 	"os"
 )
 
+var logFlags = log.Flags() | log.LstdFlags | log.Lmsgprefix | log.Lshortfile
+
+var MapLogger = log.New(log.Writer(), "[map] ", logFlags)
+
 var logWriter *LogWriter
 
 type LogWriter struct {
@@ -22,7 +26,7 @@ func (lw *LogWriter) Write(p []byte) (n int, err error) {
 
 func initLog() {
 	log.SetPrefix("[minetest] ")
-	log.SetFlags(log.Flags() | log.Lmsgprefix | log.Lshortfile)
+	log.SetFlags(logFlags)
 
 	f, err := os.OpenFile(Path("latest.log"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {

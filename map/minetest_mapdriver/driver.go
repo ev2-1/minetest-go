@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"database/sql"
 	"github.com/EliasFleckenstein03/mtmap"
-	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/map"
 	"github.com/ev2-1/minetest-go/minetest"
 	_ "github.com/mattn/go-sqlite3" // MIT licensed.
 
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 )
 
 /*
@@ -32,7 +31,7 @@ type MinetestMapDriver struct {
 }
 
 func init() {
-	mmap.RegisterDriver("minetest", &MinetestMapDriver{})
+	minetest.RegisterMapDriver("minetest", &MinetestMapDriver{})
 }
 
 var (
@@ -64,49 +63,31 @@ func (drv *MinetestMapDriver) Open(file string) error {
 	return nil
 }
 
-type MapBlk struct {
-	sync.RWMutex
-
-	Blk  *mtmap.MapBlk
-	PPos [3]int16
-
-	drv *MinetestMapDriver
-}
-
-func (blk *MapBlk) MapBlk() *mt.MapBlk {
-	return &blk.Blk.MapBlk
-}
-
-func (blk *MapBlk) Pos() [3]int16 {
-	return blk.PPos
-}
-
-func (blk *MapBlk) Save(ablk *mmap.MapBlk) error {
-	blk.drv.SetBlk(blk.Pos(), ablk)
-
-	return nil
-}
-
 func Blk2DBPos(p [3]int16) int64 {
 	return int64(p[2])*16777216 + int64(p[1])*4096 + int64(p[0])
 }
 
-func (drv *MinetestMapDriver) GetBlk(pos [3]int16) (mmap.DriverMapBlk, error) {
+func (drv *MinetestMapDriver) GetBlk(pos [3]int16) (*minetest.MapBlk, error) {
 	blk, err := drv.readBlkFromDB(pos)
 	if err != nil {
 		return nil, err
 	}
 
-	bblk := &MapBlk{Blk: blk}
-	bblk.PPos = pos
-	bblk.drv = drv
+	bblk := &minetest.MapBlk{
+		MapBlk: blk.MapBlk,
+		Pos:    pos,
+
+		Driver: drv,
+
+		Loaded: time.Now(),
+	}
 
 	return bblk, nil
 }
 
-func (drv *MinetestMapDriver) SetBlk(pos [3]int16, blk *mmap.MapBlk) error {
-	drv.writeBlkToDB(pos, &mtmap.MapBlk{
-		MapBlk:    *blk.MapBlk.MapBlk(),
+func (drv *MinetestMapDriver) SetBlk(blk *minetest.MapBlk) error {
+	drv.writeBlkToDB(blk.Pos, &mtmap.MapBlk{
+		MapBlk:    blk.MapBlk,
 		Timestamp: uint32(blk.LastAccess.Unix()),
 	})
 

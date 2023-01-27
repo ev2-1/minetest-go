@@ -3,10 +3,11 @@
 # auth_nopass adds authentication only using FirstSRP
 github.com/ev2-1/minetest-go/auth_nopass
 
-# minetest map can parse minetest's `map.sqlite` files
-# located `$pwd/map.sqlite`
-github.com/ev2-1/minetest-go/map
+# minetest_mapdriver can parse minetest's `map.sqlite` files
+github.com/ev2-1/minetest-go/map/minetest_mapdriver
 github.com/ev2-1/minetest-go/map/loader_basic3x3
+
+github.com/ev2-1/minetest-go/interact
 
 # http media serves media in `$pwd/media` to clients using mth
 github.com/ev2-1/minetest-go/http_media
@@ -37,5 +38,4 @@ github.com/ev2-1/minetest-go/inventory
 github.com/ev2-1/minetest-go/tnt_ao
 github.com/ev2-1/minetest-go/debug
 #github.com/ev2-1/minetest-go/inventory/example
-
 

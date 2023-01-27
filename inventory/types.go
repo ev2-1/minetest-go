@@ -325,17 +325,3 @@ func SimpleInvFromNamedInvList(list mt.Inv, inv *SimpleInv) {
 
 	return
 }
-
-// Combine acks into one ack
-// Waits for all acks to close then closes ack
-func Acks(ack chan struct{}, acks ...<-chan struct{}) {
-	if len(acks) == 0 {
-		close(ack)
-	}
-
-	for i := 0; i < len(acks); i++ {
-		<-acks[i]
-	}
-
-	close(ack)
-}

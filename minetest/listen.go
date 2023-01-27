@@ -53,7 +53,7 @@ func (l *listener) accept() (*Client, error) {
 	prefix := fmt.Sprintf("[%s] ", p.RemoteAddr())
 	c := &Client{
 		Peer:   p,
-		Logger: log.New(logWriter, prefix, log.LstdFlags|log.Lmsgprefix),
+		Logger: log.New(logWriter, prefix, logFlags),
 		initCh: make(chan struct{}),
 	}
 

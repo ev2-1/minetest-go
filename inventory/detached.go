@@ -74,7 +74,7 @@ func (di *DetachedInv) SendUpdates() (<-chan struct{}, error) {
 	}
 
 	ack := make(chan struct{})
-	go Acks(ack, acks...)
+	go minetest.Acks(ack, acks...)
 
 	return ack, nil
 }

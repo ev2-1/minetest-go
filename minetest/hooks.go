@@ -135,7 +135,7 @@ var (
 
 // Gets called when server shuts down
 // NOTE: (Leave hooks also get called)
-func RegisterShutdownHooks(p func()) {
+func RegisterShutdownHook(p func()) {
 	shutdownHooksMu.Lock()
 	defer shutdownHooksMu.Unlock()
 
@@ -147,7 +147,7 @@ var (
 	saveFileHooksMu sync.RWMutex
 )
 
-func RegisterSaveFileHooks(p func()) {
+func RegisterSaveFileHook(p func()) {
 	saveFileHooksMu.Lock()
 	defer saveFileHooksMu.Unlock()
 

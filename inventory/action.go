@@ -214,7 +214,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 
 	ack := make(chan struct{})
 
-	go Acks(ack, ack1, ack2)
+	go minetest.Acks(ack, ack1, ack2)
 
 	return ack, err
 }

@@ -131,3 +131,47 @@ func handleClt(c *Client) {
 }
 
 func (c *Client) Init() <-chan struct{} { return c.initCh }
+
+// BroadcastClientS broadcasts a mt.Cmd to a client slice
+func BroadcastClientS(s []*Client, cmd mt.Cmd) <-chan struct{} {
+	var acks []<-chan struct{}
+
+	for _, clt := range s {
+		ack, _ := clt.SendCmd(cmd)
+		acks = append(acks, ack)
+	}
+
+	ack := make(chan struct{})
+	go Acks(ack, acks...)
+
+	return ack
+}
+
+// BroadcastClientM broadcasts a mt.Cmd to a client slice
+func BroadcastClientM(s map[*Client]struct{}, cmd mt.Cmd) <-chan struct{} {
+	var acks []<-chan struct{}
+
+	for clt := range s {
+		ack, _ := clt.SendCmd(cmd)
+		acks = append(acks, ack)
+	}
+
+	ack := make(chan struct{})
+	go Acks(ack, acks...)
+
+	return ack
+}
+
+// Combine acks into one ack
+// Waits for all acks to close then closes ack
+func Acks(ack chan struct{}, acks ...<-chan struct{}) {
+	if len(acks) == 0 {
+		close(ack)
+	}
+
+	for i := 0; i < len(acks); i++ {
+		<-acks[i]
+	}
+
+	close(ack)
+}

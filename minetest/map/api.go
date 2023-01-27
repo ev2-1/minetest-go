@@ -63,3 +63,22 @@ func GetNode(p [3]int16) (node mt.Node, meta *mt.NodeMeta) {
 		Param2: mapblk.Param2[i],
 	}, mapblk.NodeMetas[i]
 }
+
+// SetNode sets a mt.Node and NodeMeta for a coordinate
+// If no NodeMeta is specified it WILL be overwritten
+func SetNode(p [3]int16, node mt.Node, meta *mt.NodeMeta) {
+	blk, i := mt.Pos2Blkpos(p)
+
+	mapblk := GetBlk(blk).MapBlk.MapBlk()
+	mapblk.Param0[i] = node.Param0
+	mapblk.Param1[i] = node.Param1
+	mapblk.Param2[i] = node.Param2
+
+	if meta == nil {
+		delete(mapblk.NodeMetas, i)
+	} else {
+		mapblk.NodeMetas[i] = meta
+	}
+
+	return
+}
