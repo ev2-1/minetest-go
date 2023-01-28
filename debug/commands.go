@@ -8,6 +8,7 @@ import (
 	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -52,6 +53,48 @@ func init() {
 
 		chat.SendMsgf(c, mt.RawMsg, "Setting field '%s' to '%s'", field, data)
 		c.SetData(field, &minetest.ClientDataString{String: data})
+
+		return
+	})
+
+	chat.RegisterChatCmd("give", func(c *minetest.Client, args []string) {
+		if len(args) < 2 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: give <item> <count>")
+			return
+		}
+
+		item := args[0]
+
+		count, err := strconv.ParseInt(args[1], 10, 33)
+		if err != nil {
+			chat.SendMsgf(c, mt.RawMsg, "Error parsing argument: %s", err)
+			return
+		}
+
+		if count < 0 {
+			chat.SendMsgf(c, mt.RawMsg, "Not yet implemented")
+			return
+		}
+
+		i, ack, err := inventory.Give(c,
+			&inventory.InvLocation{
+				Identifier: &inventory.InvIdentifierCurrentPlayer{},
+				Name:       "main",
+				Stack:      -1, // auto aquire
+			},
+			uint16(count), item,
+		)
+
+		if err != nil {
+			chat.SendMsgf(c, mt.RawMsg, "Error: %s", err)
+			return
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Waiting for ack")
+		if ack != nil {
+			<-ack
+		}
+		chat.SendMsgf(c, mt.RawMsg, "Added %d items: %s", i, err)
 
 		return
 	})

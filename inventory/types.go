@@ -171,6 +171,13 @@ func (l *InvLocation) SendUpdate(list string, c *minetest.Client) (<-chan struct
 	return nil, ErrInvalidLocation
 }
 
+func ParseInvLocation(str string) *InvLocation {
+	l := new(InvLocation)
+	l.Deserialize(strings.NewReader(str))
+
+	return l
+}
+
 func (l *InvLocation) Deserialize(r io.Reader) {
 	ident := ReadString(r, true)
 

@@ -11,4 +11,5 @@ var (
 	ErrStackInsufficient = errors.New("stack quanitiy is ErrStackInsufficient")
 	ErrStackNotEmpty     = errors.New("the stack interacted with is not empty")
 	ErrInvalidPos        = errors.New("the position supplied is not parsable (e.g. not 3 dimensional)")
+	ErrOutOfSpace        = errors.New("inventory already full")
 )
