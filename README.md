@@ -1,6 +1,6 @@
 # minetest-go
 
-a minetest server framework written in golang
+a minetest server framework thing written in golang
 
 working plugins / features:
 
@@ -13,7 +13,10 @@ working plugins / features:
 - basic media announce using mth http files (`basic_media`)
 	Will probably be renamed to `http_media` and `basic_media` will be "normal" mt-protocol
 
+### Things that are broken
+
 - nodemetas from json file (`json_nodemeta`) for documentation please wait or contact me (TODO)
+  - well it works, just the dumper programm requires a broken buildroot for mt-multiserver-proxy
 
 # Thanks to
 
