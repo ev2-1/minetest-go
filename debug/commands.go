@@ -14,7 +14,7 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
-		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos().Int())
+		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
 
 		<-minetest.LoadBlk(c, blkpos)
 
@@ -137,7 +137,7 @@ func init() {
 			return
 		}
 
-		p, pi := mt.Pos2Blkpos(pos.GetPos(c).Pos().Int())
+		p, pi := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
 		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})

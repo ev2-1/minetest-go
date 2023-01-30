@@ -28,6 +28,12 @@ type ClientDataSaved struct {
 	data []byte
 }
 
+func (c *Client) ensureClientData() {
+	if c.data == nil {
+		c.data = make(map[string]ClientData)
+	}
+}
+
 func (c *Client) GetData(field string) (cd ClientData, ok bool) {
 	c.dataMu.RLock()
 	defer c.dataMu.RUnlock()
@@ -39,6 +45,7 @@ func (c *Client) GetData(field string) (cd ClientData, ok bool) {
 func (c *Client) SetData(field string, value ClientData) (overwrote bool) {
 	c.dataMu.Lock()
 	defer c.dataMu.Unlock()
+	c.ensureClientData()
 
 	_, overwrote = c.data[field]
 	c.data[field] = value

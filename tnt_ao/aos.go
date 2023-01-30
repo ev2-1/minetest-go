@@ -14,7 +14,7 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("spawn_tnt", func(c *minetest.Client, args []string) {
-		ao.RegisterAO(testAO(pos.GetPos(c).Pos()))
+		ao.RegisterAO(testAO(pos.GetPos(c).Pos.Pos()))
 	})
 
 	chat.RegisterChatCmd("rm_ao", func(c *minetest.Client, args []string) {

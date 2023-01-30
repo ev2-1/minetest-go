@@ -8,6 +8,7 @@ import (
 	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"log"
+	"time"
 )
 
 func GetAOID(c *minetest.Client) (mt.AOID, bool) {
@@ -29,11 +30,12 @@ func GetAOID(c *minetest.Client) (mt.AOID, bool) {
 func init() {
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
 		pp := pos.GetPos(c)
-		pos := pp.Pos()
+		ppos := pp.Pos
+		pos := ppos.Pos()
 
 		chat.SendMsgf(c, mt.SysMsg, "Your position: (%f, %f, %f) pitch: %f, yaw: %f",
 			pos[0], pos[1], pos[2],
-			pp.Pitch(), pp.Yaw(),
+			ppos.Pitch(), ppos.Yaw(),
 		)
 	})
 
@@ -46,7 +48,7 @@ func init() {
 		}()
 	})
 
-	pos.RegisterPosUpdater(func(clt *minetest.Client, p mt.PlayerPos, dt int64) {
+	pos.RegisterPosUpdater(func(clt *minetest.Client, p *pos.ClientPos, dt time.Duration) {
 		id, ok := GetAOID(clt)
 
 		if !ok || id == 0 {
@@ -59,16 +61,18 @@ func init() {
 			return
 		}
 
+		ppos := p.Pos
+
 		a.SetPos(mt.AOPos{
-			Pos: p.Pos(),
-			Rot: mt.Vec{0, p.Yaw()},
-			Vel: p.Vel(),
+			Pos: ppos.Pos(),
+			Rot: mt.Vec{0, ppos.Yaw()},
+			Vel: ppos.Vel(),
 
 			Interpolate: true,
 		})
 		a.SetBonePos("Head_Control", mt.AOBonePos{
 			Pos: mt.Vec{0, 6.3, 0},
-			Rot: mt.Vec{-p.Pitch(), 0, 0},
+			Rot: mt.Vec{-ppos.Pitch(), 0, 0},
 		})
 	})
 

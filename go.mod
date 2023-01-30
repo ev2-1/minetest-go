@@ -24,3 +24,5 @@ require (
 	vimagination.zapto.org/byteio v1.0.1 // indirect
 	vimagination.zapto.org/memio v1.0.0 // indirect
 )
+
+replace debug_sync => ../debug_sync

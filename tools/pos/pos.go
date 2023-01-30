@@ -8,16 +8,19 @@ import (
 	"time"
 )
 
-var pos = make(map[*minetest.Client]mt.PlayerPos)
-var posMu sync.RWMutex
+type ClientPos struct {
+	sync.RWMutex
 
-var posUpdate = make(map[*minetest.Client]int64)
-var posUpdateMu sync.RWMutex
+	Pos        mt.PlayerPos
+	OldPos     mt.PlayerPos
+	LastUpdate time.Time
+}
 
 var posUpdatersMu sync.RWMutex
-var posUpdaters []func(c *minetest.Client, pos mt.PlayerPos, lu int64)
+var posUpdaters []func(c *minetest.Client, pos *ClientPos, lu time.Duration)
 
-func RegisterPosUpdater(pu func(c *minetest.Client, pos mt.PlayerPos, lu int64)) {
+// PosUpdater is called with a LOCKED ClientPos
+func RegisterPosUpdater(pu func(c *minetest.Client, pos *ClientPos, lu time.Duration)) {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
 
@@ -26,62 +29,66 @@ func RegisterPosUpdater(pu func(c *minetest.Client, pos mt.PlayerPos, lu int64))
 
 func init() {
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+		c.Logf("Pkt: %T", pkt.Cmd)
+	})
+
+	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		pp, ok := pkt.Cmd.(*mt.ToSrvPlayerPos)
 
 		if ok {
-			p := pp.Pos
+			cpos := GetPos(c)
+			cpos.Lock()
+			defer cpos.Unlock()
 
-			// (c *minetest.Client, p *mt.PlayerPos) {
-			posUpdateMu.RLock()
+			now := time.Now()
+			dtime := now.Sub(cpos.LastUpdate)
 
-			time := time.Now().UnixMicro()
-			dtime := time - posUpdate[c]
+			cpos.LastUpdate = now
+			cpos.OldPos = cpos.Pos
+			cpos.Pos = pp.Pos
 
-			posUpdatersMu.RLock()
+			c.Logf("start u")
 			for _, u := range posUpdaters {
-				u(c, p, dtime)
+				u(c, cpos, dtime)
 			}
-			posUpdatersMu.RUnlock()
-
-			posUpdateMu.RUnlock()
-
-			posUpdateMu.Lock()
-			posUpdate[c] = time
-			posUpdateMu.Unlock()
-
-			posMu.Lock()
-			pos[c] = p
-			posMu.Unlock()
+			c.Logf("done u")
 		}
 	})
+}
 
-	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
-		posMu.Lock()
-		delete(pos, l.Client)
-		posMu.Unlock()
-
-		posUpdateMu.Lock()
-		delete(posUpdate, l.Client)
-		posUpdateMu.Unlock()
-	})
+func MakePos(c *minetest.Client) *ClientPos {
+	return &ClientPos{
+		Pos:        mt.PlayerPos{Pos100: [3]int32{0, 100, 100}},
+		LastUpdate: time.Now(),
+	}
 }
 
 // GetPos returns pos os player / client
-func GetPos(c *minetest.Client) mt.PlayerPos {
-	posMu.Lock()
-	defer posMu.Unlock()
-
-	if _, ok := pos[c]; !ok {
-		pos[c] = mt.PlayerPos{Pos100: [3]int32{0, 900, 0}}
+func GetPos(c *minetest.Client) *ClientPos {
+	cd, ok := c.GetData("pos")
+	if !ok {
+		cd = MakePos(c)
+		c.SetData("pos", cd)
 	}
 
-	return pos[c]
+	pos, ok := cd.(*ClientPos)
+	if !ok {
+		pos = MakePos(c)
+		c.SetData("pos", cd)
+	} else {
+	}
+	return pos
 }
 
 // SetPos sets position
-func SetPos(c *minetest.Client, p mt.PlayerPos) {
-	posMu.Lock()
-	defer posMu.Unlock()
+// returns old position
+func SetPos(c *minetest.Client, p mt.PlayerPos) mt.PlayerPos {
+	cpos := GetPos(c)
+	cpos.Lock()
+	defer cpos.Unlock()
 
-	pos[c] = p
+	cpos.OldPos = cpos.Pos
+	cpos.Pos = p
+
+	return cpos.OldPos
 }
