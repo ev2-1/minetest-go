@@ -98,7 +98,7 @@ func ReloadConfig() {
 	loadConfig()
 }
 
-func GetConfig(key string) any {
+func MustGetConfig(key string) any {
 	LoadConfig()
 
 	configMu.RLock()
@@ -107,9 +107,54 @@ func GetConfig(key string) any {
 	return config[key]
 }
 
+func GetConfig(key string) (val any, ok bool) {
+	LoadConfig()
+
+	configMu.RLock()
+	defer configMu.RUnlock()
+
+	val, ok = config[key]
+	return
+}
+
+// Returns value which is is the config field if set or d if not
+// ok is set if the config field existed
+func GetConfigBool(key string, d bool) (val bool, ok bool) {
+	v, ok := GetConfig(key)
+	if !ok {
+		return d, true
+	}
+
+	val, ok = v.(bool)
+	if !ok {
+		log.Printf("WARN: config field %s was requested as bool but is type %T!\n", key, v)
+		return d, false
+	}
+
+	return
+}
+
+// Returns value which is is the config field if set or d if not
+// ok is set if the config field existed
+func GetConfigString(key string, d string) (val string, ok bool) {
+	v, ok := GetConfig(key)
+	if !ok {
+		return d, true
+	}
+
+	val, ok = v.(string)
+	if !ok {
+		log.Printf("WARN: config field %s was requested as string but is type %T!\n", key, v)
+		return d, false
+	}
+
+	return
+}
+
 // ConfigVerbose is a helper function to indicate if verbose logging is turned on
 func ConfigVerbose() bool {
-	return GetConfig("verbose").(bool)
+	v, _ := GetConfigBool("verbose", false)
+	return v
 }
 
 // ForInConfig executes f `for k, v := range config`

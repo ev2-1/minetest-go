@@ -11,8 +11,7 @@ import (
 
 func init() {
 	RegisterStage2(func() {
-		data := GetConfig("map-driver")
-		driver, ok := data.(string)
+		driver, ok := GetConfigString("map-driver", "")
 		if !ok {
 			log.Fatalf("Error: Map: no driver specified config field 'map-driver' is empty!\nAvailable: %s\n", strings.Join(ListDrivers(), ", "))
 		}
@@ -25,8 +24,7 @@ func init() {
 			log.Fatalf("Error: Map: driver specified is invalid!\nAvailable: %s\n", strings.Join(ListDrivers(), ", "))
 		}
 
-		data = GetConfig("map-path")
-		file, ok := data.(string)
+		file, ok := GetConfigString("map-path", "map.sqlite")
 		if !ok {
 			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
 		}

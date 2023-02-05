@@ -39,7 +39,8 @@ func init() {
 			return
 		}
 
-		chat.SendMsgf(c, mt.RawMsg, "value: %v", minetest.GetConfig(args[0]))
+		v, ok := minetest.GetConfig(args[0])
+		chat.SendMsgf(c, mt.RawMsg, "value: %v, %s", v, T(ok, "set", "not set"))
 	})
 
 	chat.RegisterChatCmd("savedata", func(c *minetest.Client, args []string) {
@@ -227,4 +228,12 @@ func FormatNodeMetaField(nmf []mt.NodeMetaField) (str string) {
 	}
 
 	return
+}
+
+func T[V any](c bool, t, f V) V {
+	if c {
+		return t
+	} else {
+		return f
+	}
 }

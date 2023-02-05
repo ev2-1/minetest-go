@@ -33,10 +33,7 @@ func runFunc() {
 		log.Fatalf("Error initializing Client Data DB: %s!", err)
 	}
 
-	var listenAddr = ":30000"
-	if addr, ok := GetConfig("listen").(string); ok && addr != "" {
-		listenAddr = addr
-	}
+	listenAddr, _ := GetConfigString("listen", ":30000")
 	addr, err := net.ResolveUDPAddr("udp", listenAddr)
 	if err != nil {
 		log.Fatal(err)

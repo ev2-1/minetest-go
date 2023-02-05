@@ -146,10 +146,7 @@ func mustPrepare(q string) (stmt *sql.Stmt) {
 func initClientDataDB() (err error) {
 	DBLog = log.New(log.Writer(), "[DB] ", log.Flags())
 
-	var configuredPath = "players.sqlite"
-	if conf := GetConfig("playerdb"); conf != nil {
-		configuredPath = conf.(string)
-	}
+	configuredPath, _ := GetConfigString("playerdb", "players.sqlite")
 
 	clientDB, err = sql.Open("sqlite3", configuredPath)
 	if err != nil {
