@@ -1,3 +1,4 @@
 load.txt
 load.txt*
 !load.txt.example
+*.ignore
