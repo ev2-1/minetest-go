@@ -13,6 +13,10 @@ import (
 )
 
 func init() {
+	chat.RegisterChatCmd("uuid", func(c *minetest.Client, args []string) {
+		chat.SendMsgf(c, mt.RawMsg, "Your UUID is %s", c.UUID)
+	})
+
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
 		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
 
