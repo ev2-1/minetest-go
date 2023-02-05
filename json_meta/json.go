@@ -11,7 +11,6 @@ import (
 )
 
 func init() {
-	// create folder (if not exists)
 	path := minetest.Path("nodedefs/")
 	os.Mkdir(path, 0777)
 
@@ -25,9 +24,12 @@ func init() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		parseFileNode(f)
+
+		n := parseFileNode(f)
+		log.Printf("Added %d NodeDefs from %s\n", n, file.Name())
 	}
 
+	// ItemDefs
 	path = minetest.Path("itemdefs/")
 	os.Mkdir(path, 0777)
 
@@ -41,13 +43,14 @@ func init() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		parseFileItem(f)
+
+		n := parseFileItem(f)
+		log.Printf("Added %d ItemDefs from %s\n", n, file.Name())
 	}
 }
 
-func parseFileNode(r io.Reader) {
-	d := json.NewDecoder(r)
-
+func parseFileNode(r io.Reader) int {
+	var d = json.NewDecoder(r)
 	var defs []*mt.NodeDef
 
 	err := d.Decode(&defs)
@@ -56,11 +59,12 @@ func parseFileNode(r io.Reader) {
 	}
 
 	minetest.AddNodeDef(defs...)
+
+	return len(defs)
 }
 
-func parseFileItem(r io.Reader) {
-	d := json.NewDecoder(r)
-
+func parseFileItem(r io.Reader) int {
+	var d = json.NewDecoder(r)
 	var defs []*mt.ItemDef
 
 	err := d.Decode(&defs)
@@ -69,11 +73,11 @@ func parseFileItem(r io.Reader) {
 	}
 
 	var rdefs = make([]mt.ItemDef, len(defs))
-
 	for k, v := range defs {
 		rdefs[k] = *v
 	}
 
-
 	minetest.AddItemDef(rdefs...)
+
+	return len(defs)
 }
