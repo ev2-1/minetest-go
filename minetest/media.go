@@ -112,6 +112,19 @@ func GetNodeDef(name string) (def *mt.NodeDef) {
 	return def
 }
 
+// GetItemDef returns pointer to ItemDef if registerd
+func GetItemDef(name string) (def *mt.ItemDef) {
+	itemDefsMu.Lock()
+	defer itemDefsMu.Unlock()
+
+	d, found := itemDefs[name]
+	if !found {
+		return nil
+	}
+
+	return &d
+}
+
 // GetNodeID returns the Param0 of a node
 // panics if not found
 func GetNodeID(name string) mt.Content {
