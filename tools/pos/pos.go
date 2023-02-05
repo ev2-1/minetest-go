@@ -47,11 +47,9 @@ func init() {
 			cpos.OldPos = cpos.Pos
 			cpos.Pos = pp.Pos
 
-			c.Logf("start u")
 			for _, u := range posUpdaters {
 				u(c, cpos, dtime)
 			}
-			c.Logf("done u")
 		}
 	})
 }
