@@ -8,8 +8,10 @@ import (
 	"sync"
 )
 
-var itemDefsMu sync.RWMutex
-var itemDefs []mt.ItemDef
+var (
+	itemDefsMu sync.RWMutex
+	itemDefs   = map[string]mt.ItemDef{}
+)
 
 type nodeDefNotFoundErr struct {
 	name string
@@ -21,15 +23,14 @@ func (ndnfe nodeDefNotFoundErr) Error() string {
 
 var (
 	nodeDefsMu sync.RWMutex
-	nodeDefs   []*mt.NodeDef
-
-	nodeDefsMapMu sync.RWMutex
-	nodeDefsMap   = make(map[string]*mt.NodeDef)
-	nodeDefID     mt.Content
+	nodeDefs   = map[string]*mt.NodeDef{}
+	nodeDefID  mt.Content // counts up for each node
 )
 
+type Alias struct{ Alias, Orig string }
+
 var aliasesMu sync.RWMutex
-var aliases []struct{ Alias, Orig string }
+var aliases map[string]string
 
 var mediaURLs []string
 var media []struct{ Name, Base64SHA1 string }
@@ -39,12 +40,14 @@ var NodeIdMap map[mt.Content]string
 var IdNodeMap map[string]mt.Content
 
 // Add more item definitions to pool
-// pls only use while init func
+// will panic if serverstate is `StateRunning`
 func AddItemDef(defs ...mt.ItemDef) {
 	itemDefsMu.Lock()
 	defer itemDefsMu.Unlock()
 
-	itemDefs = append(itemDefs, defs...)
+	for _, def := range defs {
+		itemDefs[def.Name] = def
+	}
 }
 
 // Add more item definitions to pool
@@ -52,17 +55,13 @@ func AddItemDef(defs ...mt.ItemDef) {
 // Param0 field is overwritten
 func AddNodeDef(defs ...*mt.NodeDef) {
 	nodeDefsMu.Lock()
-	nodeDefsMapMu.Lock()
 	defer nodeDefsMu.Unlock()
-	defer nodeDefsMapMu.Unlock()
 
 	// add id
 	for k := range defs {
 		defs[k].Param0 = getNodeDefID()
-		nodeDefsMap[defs[k].Name] = defs[k]
+		nodeDefs[defs[k].Name] = defs[k]
 	}
-
-	nodeDefs = append(nodeDefs, defs...)
 }
 
 func getNodeDefID() mt.Content {
@@ -71,11 +70,9 @@ func getNodeDefID() mt.Content {
 
 		// insert meta defs:
 		// unknown air and ignore
-		nodeDefs = append(nodeDefs,
-			&mt.NodeDef{Param0: mt.Unknown, Name: "unknown"},
-			&mt.NodeDef{Param0: mt.Air, Name: "air"},
-			&mt.NodeDef{Param0: mt.Ignore, Name: "ignore"},
-		)
+		nodeDefs["unknown"] = &mt.NodeDef{Param0: mt.Unknown, Name: "unknown"}
+		nodeDefs["air"] = &mt.NodeDef{Param0: mt.Air, Name: "air"}
+		nodeDefs["ignore"] = &mt.NodeDef{Param0: mt.Ignore, Name: "ignore"}
 	}
 
 	id := nodeDefID
@@ -84,13 +81,30 @@ func getNodeDefID() mt.Content {
 	return id
 }
 
+// RealNodeName returns the underlying name of a given node
+// checks aliases map if !ok returns name
+func RealNodeName(name string) string {
+	aliasesMu.RLock()
+	defer aliasesMu.RUnlock()
+
+	rname, ok := aliases[name]
+	if !ok {
+		return name
+	}
+
+	return rname
+}
+
 // GetNodeDef returns pointer to node def if registerd
 // otherwise nil
 func GetNodeDef(name string) (def *mt.NodeDef) {
-	nodeDefsMapMu.Lock()
-	defer nodeDefsMapMu.Unlock()
+	// check alias
+	name = RealNodeName(name)
 
-	def, found := nodeDefsMap[name]
+	nodeDefsMu.Lock()
+	defer nodeDefsMu.Unlock()
+
+	def, found := nodeDefs[name]
 	if !found {
 		return nil
 	}
@@ -114,10 +128,10 @@ func FillNameIdMap() {
 	NodeIdMap = make(map[mt.Content]string)
 	IdNodeMap = make(map[string]mt.Content)
 
-	nodeDefsMapMu.RLock()
-	defer nodeDefsMapMu.RUnlock()
+	nodeDefsMu.RLock()
+	defer nodeDefsMu.RUnlock()
 
-	for k, v := range nodeDefsMap {
+	for k, v := range nodeDefs {
 		IdNodeMap[k] = v.Param0
 		NodeIdMap[v.Param0] = k
 	}
@@ -125,11 +139,13 @@ func FillNameIdMap() {
 
 // Add a Alias to the pool
 // pls only use while init func
-func AddAlias(alias ...struct{ Alias, Orig string }) {
+func AddAlias(alias ...Alias) {
 	aliasesMu.Lock()
 	defer aliasesMu.Unlock()
 
-	aliases = append(aliases, alias...)
+	for _, a := range alias {
+		aliases[a.Alias] = a.Orig
+	}
 }
 
 // Add a file to the media pool
@@ -151,24 +167,46 @@ func AddMediaURL(url ...string) {
 }
 
 // Send (cached) ItemDefinitions to client
-func (c *Client) SendItemDefs() {
+func (c *Client) SendItemDefs() (<-chan struct{}, error) {
 	itemDefsMu.RLock()
-	cmd := &mt.ToCltItemDefs{
-		Defs:    itemDefs,
-		Aliases: aliases,
+
+	// add to slice
+	defs := make([]mt.ItemDef, len(itemDefs))
+	var i int
+	for _, v := range itemDefs {
+		defs[i] = v
+		i++
 	}
+
 	itemDefsMu.RUnlock()
 
-	c.SendCmd(cmd)
+	// add aliases to slice
+	aliasesMu.RLock()
+	alias := make([]struct{ Alias, Orig string }, len(aliases))
+
+	i = 0
+	for k, v := range aliases {
+		alias[i] = Alias{k, v}
+		i++
+	}
+
+	aliasesMu.RUnlock()
+
+	cmd := &mt.ToCltItemDefs{
+		Defs:    defs,
+		Aliases: alias,
+	}
+
+	return c.SendCmd(cmd)
 }
 
 // Send (cached) NodeDefinitions to client
-func (c *Client) SendNodeDefs() {
+func (c *Client) SendNodeDefs() (<-chan struct{}, error) {
 	cmd := &mt.ToCltNodeDefs{
 		Defs: nodeDefReferenced(),
 	}
 
-	c.SendCmd(cmd)
+	return c.SendCmd(cmd)
 }
 
 func nodeDefReferenced() (s []mt.NodeDef) {
