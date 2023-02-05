@@ -1,12 +1,17 @@
 package minetest
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"sync"
 
 	"github.com/anon55555/mt"
+)
+
+var (
+	ErrServerShuttingDown = errors.New("Server shutting down")
 )
 
 type listener struct {
@@ -48,6 +53,18 @@ func (l *listener) accept() (*Client, error) {
 	p, err := l.Listener.Accept()
 	if err != nil {
 		return nil, err
+	}
+
+	// if not online reject
+	if State() != StateOnline {
+		p.SendCmd(&mt.ToCltKick{
+			Reason:    mt.Shutdown,
+			Reconnect: true,
+		})
+
+		log.Printf("WARN: %s tried to connect but state 1= StateOnline!\n", p.RemoteAddr())
+
+		return nil, ErrServerShuttingDown
 	}
 
 	prefix := fmt.Sprintf("[%s] ", p.RemoteAddr())

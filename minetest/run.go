@@ -52,13 +52,21 @@ func runFunc() {
 
 	log.Println("listen", l.Addr())
 
+	// set state to Online
+	stateMu.Lock()
+	state = StateOnline
+	stateMu.Unlock()
+
 	// killchan handeling
 	go func() {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		<-sig
 
-		log.Print("received SIGINT or other Interrupt")
+		log.Print("received SIGINT or other Interrupt - Shutting Down")
+		stateMu.Lock()
+		state = StateShuttingDown
+		stateMu.Unlock()
 
 		wg := sync.WaitGroup{}
 

@@ -1,5 +1,5 @@
 /*
-	minetest-go is a *very* simple minetest server written in golang
+minetest-go is a *very* simple minetest server written in golang
 */
 package minetest
 
@@ -36,3 +36,22 @@ func Path(path string) string {
 
 	return execDir + "/" + path
 }
+
+type ServerState uint8
+
+var stateMu sync.RWMutex
+var state ServerState = StateInitializing
+
+func State() ServerState {
+	stateMu.RLock()
+	defer stateMu.RUnlock()
+
+	return state
+}
+
+const (
+	StateInitializing ServerState = iota
+	StateOnline
+	StateShuttingDown
+	StateOffline // only reached when saving
+)
