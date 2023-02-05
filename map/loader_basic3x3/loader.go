@@ -21,7 +21,6 @@ func init() {
 		defer lastPosMu.Unlock()
 
 		apos := pos.Pos.Pos().Int()
-		c.Logf("pos: (%5d %5d %5d)", apos[0], apos[1], apos[2])
 		ip, _ := mt.Pos2Blkpos(apos)
 
 		p, ok := lastPos[c]
@@ -30,8 +29,6 @@ func init() {
 				return
 			}
 		}
-
-		c.Logf("blkpos changed! (%5d %5d %5d)", ip[0], ip[1], ip[2])
 
 		go loadAround(ip, c)
 		lastPos[c] = ip
