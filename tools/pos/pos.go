@@ -29,10 +29,6 @@ func RegisterPosUpdater(pu func(c *minetest.Client, pos *ClientPos, lu time.Dura
 
 func init() {
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
-		c.Logf("Pkt: %T", pkt.Cmd)
-	})
-
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		pp, ok := pkt.Cmd.(*mt.ToSrvPlayerPos)
 
 		if ok {
