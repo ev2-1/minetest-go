@@ -2,7 +2,7 @@ package minecraft_map
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/map"
+	"github.com/ev2-1/minetest-go/minetest"
 	mc "vimagination.zapto.org/minecraft"
 
 	"sync"
@@ -31,7 +31,7 @@ func (drv *MinecraftMapDriver) Open(file string) (err error) {
 	return nil
 }
 
-func (drv *MinecraftMapDriver) GetBlk(pos [3]int16) (blk mmap.DriverMapBlk, err error) {
+func (drv *MinecraftMapDriver) GetBlk(pos [3]int16) (blk minetest.DriverMapBlk, err error) {
 	// convert to normal pos:
 	pos = mt.Blkpos2Pos(pos, 0)
 
@@ -56,9 +56,9 @@ func (drv *MinecraftMapDriver) GetBlk(pos [3]int16) (blk mmap.DriverMapBlk, err 
 
 func MapContent(id uint16, data uint8) mt.Content {
 
-	return
+	return 0
 }
 
 func init() {
-	mmap.RegisterDriver("minecraft", new(MinecraftMapDriver))
+	minetest.RegisterMapDriver("minecraft", new(MinecraftMapDriver))
 }
