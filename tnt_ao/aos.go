@@ -13,7 +13,7 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("spawn_tnt", func(c *minetest.Client, args []string) {
-		ao.RegisterAO(testAO(minetest.GetPos(c).Pos.Pos()))
+		ao.RegisterAO(testAO(minetest.GetPos(c).Pos))
 	})
 
 	chat.RegisterChatCmd("rm_ao", func(c *minetest.Client, args []string) {

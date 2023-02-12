@@ -3,33 +3,40 @@ package mapLoader
 import (
 	"github.com/ev2-1/minetest-go/minetest"
 
-	"github.com/anon55555/mt"
-
-	"sync"
 	"time"
 )
 
-var (
-	lastPos   = map[*minetest.Client][3]int16{}
-	lastPosMu sync.RWMutex
-)
+func lastDim(c *minetest.Client, dim minetest.Dim) *minetest.Dim {
+	data, ok := c.GetData("last_dim")
+	if !ok {
+		c.SetData("last_dim", &dim)
+
+		return nil
+	}
+
+	cdim, ok := data.(*minetest.Dim)
+	if !ok {
+		c.SetData("last_dim", &dim)
+
+		return nil
+	}
+
+	c.SetData("last_dim", dim)
+
+	return cdim
+}
 
 func init() {
 	minetest.RegisterPosUpdater(func(c *minetest.Client, pos *minetest.ClientPos, lu time.Duration) {
-		lastPosMu.Lock()
-		defer lastPosMu.Unlock()
+		newPos, _ := minetest.Pos2Blkpos(pos.Pos.IntPos())
+		oldPos, _ := minetest.Pos2Blkpos(pos.OldPos.IntPos())
 
-		apos := pos.Pos.Pos().Int()
-		ip, _ := mt.Pos2Blkpos(apos)
+		dim := lastDim(c, pos.Pos.Dim)
 
-		p, ok := lastPos[c]
-		if ok {
-			if p == ip {
-				return
-			}
+		if newPos != oldPos || dim == nil || pos.Pos.Dim != *dim {
+			c.Logf("Blkpos changed!")
+
+			go loadAround(newPos, c)
 		}
-
-		go loadAround(ip, c)
-		lastPos[c] = ip
 	})
 }

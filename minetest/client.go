@@ -20,6 +20,13 @@ const (
 	CsSudo
 )
 
+type PosState uint8
+
+const (
+	PsOk PosState = iota
+	PsTransition
+)
+
 type UUID [16]byte
 
 func (u UUID) String() string {
@@ -46,6 +53,10 @@ type Client struct {
 	dataMu sync.RWMutex
 
 	leaveOnce sync.Once // a client only can leave once
+
+	// TODO Move pos here
+	PosState  PosState
+	PosUnlock <-chan struct{}
 
 	lang string
 }
@@ -164,12 +175,17 @@ func BroadcastClientM(s map[*Client]struct{}, cmd mt.Cmd) <-chan struct{} {
 
 // Combine acks into one ack
 // Waits for all acks to close then closes ack
-func Acks(ack chan struct{}, acks ...<-chan struct{}) {
+func Acks(ack chan struct{}, acks ...<-chan struct{}) { // TODO. fiX
 	if len(acks) == 0 {
 		close(ack)
+		return
 	}
 
 	for i := 0; i < len(acks); i++ {
+		if acks[i] == nil {
+			continue
+		}
+
 		<-acks[i]
 	}
 

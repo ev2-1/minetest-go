@@ -76,7 +76,7 @@ func init() {
 
 		case *mt.ToSrvFirstSRP:
 			c.SendCmd(&mt.ToCltAcceptAuth{
-				PlayerPos:       minetest.GetPos(c).Pos.Pos(),
+				PlayerPos:       minetest.GetPos(c).Pos,
 				MapSeed:         1337,
 				SendInterval:    0.09,
 				SudoAuthMethods: mt.SRP,

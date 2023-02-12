@@ -28,13 +28,11 @@ func GetAOID(c *minetest.Client) (mt.AOID, bool) {
 
 func init() {
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
-		pp := minetest.GetPos(c)
-		ppos := pp.Pos
-		pos := ppos.Pos()
+		pos := minetest.GetPos(c)
 
-		chat.SendMsgf(c, mt.SysMsg, "Your position: (%f, %f, %f) pitch: %f, yaw: %f",
-			pos[0], pos[1], pos[2],
-			ppos.Pitch(), ppos.Yaw(),
+		chat.SendMsgf(c, mt.SysMsg, "Your position: (%f, %f, %f, dim: %s (%d)) pitch: %f, yaw: %f",
+			pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim.String(), pos.Dim,
+			pos.Pitch, pos.Yaw,
 		)
 	})
 
@@ -63,15 +61,15 @@ func init() {
 		ppos := p.Pos
 
 		a.SetPos(mt.AOPos{
-			Pos: ppos.Pos(),
-			Rot: mt.Vec{0, ppos.Yaw()},
-			Vel: ppos.Vel(),
+			Pos: ppos.Pos,
+			Rot: mt.Vec{0, ppos.Yaw},
+			Vel: ppos.Vel,
 
 			Interpolate: true,
 		})
 		a.SetBonePos("Head_Control", mt.AOBonePos{
 			Pos: mt.Vec{0, 6.3, 0},
-			Rot: mt.Vec{-ppos.Pitch(), 0, 0},
+			Rot: mt.Vec{-ppos.Pitch, 0, 0},
 		})
 	})
 

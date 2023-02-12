@@ -16,12 +16,71 @@ func init() {
 		chat.SendMsgf(c, mt.RawMsg, "Your UUID is %s", c.UUID)
 	})
 
+	chat.RegisterChatCmd("fullpos", func(c *minetest.Client, args []string) {
+		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", minetest.GetFullPos(c))
+	})
+
+	chat.RegisterChatCmd("dimension", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: dimension <name>")
+			return
+		}
+
+		dim := minetest.GetDim(args[0])
+		if dim == nil {
+			chat.SendMsgf(c, mt.RawMsg, "Dimension '%s' does not exist!", args[0])
+			return
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Sending you to %s (%d)!", args[0], *dim)
+
+		pos := minetest.GetPos(c)
+		pos.Dim = *dim
+
+		minetest.SetPos(c, pos)
+	})
+
+	chat.RegisterChatCmd("open_dim", func(c *minetest.Client, args []string) {
+		usage := func(str string, v ...any) {
+			chat.SendMsgf(c, mt.RawMsg, str+"Usage: open_dim <name> <mapdriver>:<file>", v...)
+		}
+
+		if len(args) != 2 {
+			usage("")
+			return
+		}
+
+		dimName := args[0]
+
+		s := strings.SplitN(args[1], ":", 3)
+		if len(s) != 2 {
+			usage("")
+			return
+		}
+
+		driver, file := s[0], s[1]
+
+		chat.SendMsgf(c, mt.RawMsg, "Loading new dimension %s from %s using drv %s",
+			dimName, file, driver,
+		)
+
+		id, err := minetest.NewDim(dimName, driver, file)
+		if err != nil {
+			usage("Err: %s\n", err)
+			return
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Success, got ID: %d",
+			id,
+		)
+	})
+
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
-		blkpos, _ := mt.Pos2Blkpos(minetest.GetPos(c).Pos.Pos().Int())
+		blkpos, _ := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
 
 		<-minetest.LoadBlk(c, blkpos)
 
-		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d)", blkpos[0], blkpos[1], blkpos[2])
+		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d) %s (%d)", blkpos.Pos[0], blkpos.Pos[1], blkpos.Pos[2], blkpos.Dim, blkpos.Dim)
 	})
 
 	chat.RegisterChatCmd("kickme", func(c *minetest.Client, args []string) {
@@ -141,7 +200,7 @@ func init() {
 			return
 		}
 
-		p, pi := mt.Pos2Blkpos(minetest.GetPos(c).Pos.Pos().Int())
+		p, pi := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
 		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})

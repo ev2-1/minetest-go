@@ -23,7 +23,7 @@ func interact(c *minetest.Client, m *mt.ToSrvInteract) {
 		switch m.Action {
 		case mt.Dig:
 		case mt.Dug:
-			Dig(pos)
+			Dig(c, pos)
 
 		case mt.Place:
 			Place(c, m)
