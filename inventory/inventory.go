@@ -30,13 +30,13 @@ func init() {
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInvAction:
-			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
+			action, err := DeserializeClientInvAction(strings.NewReader(cmd.Action))
 			if err != nil {
 				c.Logger.Printf("Error: %s", err)
 				break
 			}
 
-			if _, err := action.Apply(c); err != nil {
+			if _, err := ApplyClientInvAction(action, c); err != nil {
 				c.Logger.Printf("Error: %s", err)
 			}
 		}

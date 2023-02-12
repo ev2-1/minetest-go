@@ -7,20 +7,84 @@ import (
 	"io"
 )
 
+type InvActionRet struct {
+	Ack <-chan struct{}
+	Err error
+}
+
+// Applies inv Action though actionqueue
+func ApplyInvAction(act InvAction) (<-chan struct{}, error) {
+	ch := make(chan InvActionRet, 1)
+	AppendQueue(&invActionWrap{
+		act: act,
+		ret: ch,
+	})
+
+	ret := <-ch
+
+	return ret.Ack, ret.Err
+}
+
+// Applies inv Action though actionqueue
+func ApplyClientInvAction(act ClientInvAction, clt *minetest.Client) (<-chan struct{}, error) {
+	ch := make(chan InvActionRet, 1)
+	AppendQueue(&invActionWrap{
+		act: &ClientInvActionS{act, clt},
+		ret: ch,
+	})
+
+	ret := <-ch
+
+	return ret.Ack, ret.Err
+}
+
+// Wraps to use with returning function
+type invActionWrap struct {
+	act InvAction
+	ret chan (InvActionRet)
+}
+
+func (act invActionWrap) Apply() (<-chan struct{}, error) {
+	ack, err := act.Apply()
+	act.ret <- InvActionRet{ack, err}
+
+	return ack, err
+}
+
 type InvAction interface {
+	// Apply should only be called in ActionQueue
+	// by using ApplyInvAction
+	Apply() (<-chan struct{}, error)
+}
+
+// implements InvAction
+type ClientInvActionS struct {
+	Action ClientInvAction
+	Client *minetest.Client
+}
+
+func (act *ClientInvActionS) Apply() (<-chan struct{}, error) {
+	if act.Client == nil {
+		return nil, minetest.ErrClientNotSpecified
+	}
+
+	return act.Action.Apply(act.Client)
+}
+
+type ClientInvAction interface {
 	InvActionVerb() string
 	Apply(c *minetest.Client) (<-chan struct{}, error)
 
 	String() string // String does NOT searialize
 }
 
-type InvActionDrop struct {
+type ClientInvActionDrop struct {
 	Count uint16
 
 	From *InvLocation
 }
 
-func (act *InvActionDrop) Deserialize(r io.Reader) {
+func (act *ClientInvActionDrop) Deserialize(r io.Reader) {
 	act.Count = ReadUint16(r, false)
 
 	act.From = new(InvLocation)
@@ -28,14 +92,14 @@ func (act *InvActionDrop) Deserialize(r io.Reader) {
 	act.From.Deserialize(r)
 }
 
-func (act *InvActionDrop) String() string {
+func (act *ClientInvActionDrop) String() string {
 	return fmt.Sprintf("Dropping %d from %s (inv: %s; stack: %d)",
 		act.Count,
 		act.From.Identifier, act.From.Name, act.From.Stack,
 	)
 }
 
-func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
+func (act *ClientInvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
 	if minetest.ConfigVerbose() {
 		c.Logger.Printf("[INV] %s", act.String())
 	}
@@ -84,14 +148,14 @@ func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 	return act.From.SendUpdate(str, c)
 }
 
-type InvActionMove struct {
+type ClientInvActionMove struct {
 	Count uint16
 
 	From *InvLocation
 	To   *InvLocation
 }
 
-func (act *InvActionMove) Deserialize(r io.Reader) {
+func (act *ClientInvActionMove) Deserialize(r io.Reader) {
 	act.Count = ReadUint16(r, false)
 
 	act.From = new(InvLocation)
@@ -101,14 +165,14 @@ func (act *InvActionMove) Deserialize(r io.Reader) {
 	act.To.Deserialize(r)
 }
 
-func (act *InvActionMove) String() string {
+func (act *ClientInvActionMove) String() string {
 	return fmt.Sprintf("Moving %d items from %s (inv: %s; stack: %d) to %s (inv: %s; stack: %d)",
 		act.Count, act.From.Identifier, act.From.Name, act.From.Stack,
 		act.To.Identifier, act.To.Name, act.To.Stack,
 	)
 }
 
-func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
+func (act *ClientInvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
 	if minetest.ConfigVerbose() {
 		c.Logger.Printf("[INV] %s", act.String())
 	}
@@ -219,7 +283,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 	return ack, err
 }
 
-func DeserializeInvAction(r io.Reader) (act InvAction, err error) {
+func DeserializeClientInvAction(r io.Reader) (act ClientInvAction, err error) {
 	action := ReadString(r, false)
 
 	newAction, ok := newInvAction[action]
@@ -235,10 +299,10 @@ func DeserializeInvAction(r io.Reader) (act InvAction, err error) {
 }
 
 // ---
-func (*InvActionMove) InvActionVerb() string { return "Move" }
-func (*InvActionDrop) InvActionVerb() string { return "Drop" }
+func (*ClientInvActionMove) InvActionVerb() string { return "Move" }
+func (*ClientInvActionDrop) InvActionVerb() string { return "Drop" }
 
-var newInvAction = map[string]func() InvAction{
-	"Move": func() InvAction { return new(InvActionMove) },
-	"Drop": func() InvAction { return new(InvActionDrop) },
+var newInvAction = map[string]func() ClientInvAction{
+	"Move": func() ClientInvAction { return new(ClientInvActionMove) },
+	"Drop": func() ClientInvAction { return new(ClientInvActionDrop) },
 }

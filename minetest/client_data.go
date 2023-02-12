@@ -7,8 +7,11 @@ import (
 	"io"
 )
 
-var ErrClientDataNotFound = errors.New("ClientData not found!")
-var ErrClientDataInvalidType = errors.New("ClientData has invalid type!")
+var (
+	ErrClientDataNotFound    = errors.New("ClientData not found!")
+	ErrClientDataInvalidType = errors.New("ClientData has invalid type!")
+	ErrClientNotSpecified    = errors.New("no Client specified!")
+)
 
 type ClientData interface {
 }
