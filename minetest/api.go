@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 
 	"bytes"
+	"errors"
 	"sync"
 )
 
@@ -27,7 +28,17 @@ func LoadBlk(clt *Client, p IntPos) <-chan struct{} {
 		return nil
 	}
 
-	TryCache(p)
+	err := TryCache(p)
+	if err != nil {
+		clt.Logf("WARN: TryCache: %s\n", err)
+		if errors.Is(ErrInvalidDim, err) {
+			clt.Logf("WARN: %s: resetting dimension to DIM0!\n", err)
+			pos := GetPos(clt)
+			pos.Dim = 0
+			SetPos(clt, pos)
+		}
+	}
+
 	ack := sendCltBlk(clt, p)
 
 	go func() {

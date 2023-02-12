@@ -1,6 +1,7 @@
 package minetest
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -10,6 +11,8 @@ import (
 
 var mapCache map[IntPos]*MapBlk
 var mapCacheMu sync.RWMutex
+
+var ErrInvalidDim = errors.New("invalid dimension")
 
 // IsCached returns true if there is a valid cache for pos p
 func IsCached(pos IntPos) bool {
@@ -40,7 +43,13 @@ func loadIntoCache(pos IntPos) error {
 	mapCacheMu.Lock()
 	defer mapCacheMu.Unlock()
 
-	blk, err := mapIO[pos.Dim].GetBlk(pos.Pos)
+	drv, ok := mapIO[pos.Dim]
+	if !ok {
+		log.Printf("tired to access dimension %d, but is not registerd!\n", pos.Dim)
+		return ErrInvalidDim
+	}
+
+	blk, err := drv.GetBlk(pos.Pos)
 	if err != nil {
 		return err
 	}
