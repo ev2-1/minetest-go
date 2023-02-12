@@ -134,11 +134,11 @@ type ClientPos struct {
 var be = binary.BigEndian
 
 func (cp *ClientPos) Serialize(w io.Writer) (err error) {
-	return binary.Write(w, be, cp.Pos)
+	return binary.Write(w, be, cp.Pos.Pos)
 }
 
 func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
-	err = binary.Read(w, be, &cp.Pos)
+	err = binary.Read(w, be, &cp.Pos.Pos)
 	if err != nil {
 		return err
 	}
