@@ -1,8 +1,7 @@
-package pos
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/minetest"
 
 	"sync"
 	"time"
@@ -17,10 +16,10 @@ type ClientPos struct {
 }
 
 var posUpdatersMu sync.RWMutex
-var posUpdaters []func(c *minetest.Client, pos *ClientPos, lu time.Duration)
+var posUpdaters []func(c *Client, pos *ClientPos, lu time.Duration)
 
 // PosUpdater is called with a LOCKED ClientPos
-func RegisterPosUpdater(pu func(c *minetest.Client, pos *ClientPos, lu time.Duration)) {
+func RegisterPosUpdater(pu func(c *Client, pos *ClientPos, lu time.Duration)) {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
 
@@ -28,7 +27,7 @@ func RegisterPosUpdater(pu func(c *minetest.Client, pos *ClientPos, lu time.Dura
 }
 
 func init() {
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
 		pp, ok := pkt.Cmd.(*mt.ToSrvPlayerPos)
 
 		if ok {
@@ -50,7 +49,7 @@ func init() {
 	})
 }
 
-func MakePos(c *minetest.Client) *ClientPos {
+func MakePos(c *Client) *ClientPos {
 	return &ClientPos{
 		Pos:        mt.PlayerPos{Pos100: [3]int32{0, 100, 100}},
 		LastUpdate: time.Now(),
@@ -58,7 +57,7 @@ func MakePos(c *minetest.Client) *ClientPos {
 }
 
 // GetPos returns pos os player / client
-func GetPos(c *minetest.Client) *ClientPos {
+func GetPos(c *Client) *ClientPos {
 	cd, ok := c.GetData("pos")
 	if !ok {
 		cd = MakePos(c)
@@ -76,7 +75,7 @@ func GetPos(c *minetest.Client) *ClientPos {
 
 // SetPos sets position
 // returns old position
-func SetPos(c *minetest.Client, p mt.PlayerPos) mt.PlayerPos {
+func SetPos(c *Client, p mt.PlayerPos) mt.PlayerPos {
 	cpos := GetPos(c)
 	cpos.Lock()
 	defer cpos.Unlock()

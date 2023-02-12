@@ -5,7 +5,6 @@ import (
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/inventory"
 	"github.com/ev2-1/minetest-go/minetest"
-	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"fmt"
 	"strconv"
@@ -18,7 +17,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
-		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
+		blkpos, _ := mt.Pos2Blkpos(minetest.GetPos(c).Pos.Pos().Int())
 
 		<-minetest.LoadBlk(c, blkpos)
 
@@ -142,7 +141,7 @@ func init() {
 			return
 		}
 
-		p, pi := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
+		p, pi := mt.Pos2Blkpos(minetest.GetPos(c).Pos.Pos().Int())
 		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})

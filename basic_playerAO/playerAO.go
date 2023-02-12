@@ -5,7 +5,6 @@ import (
 	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
-	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"log"
 	"time"
@@ -29,7 +28,7 @@ func GetAOID(c *minetest.Client) (mt.AOID, bool) {
 
 func init() {
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
-		pp := pos.GetPos(c)
+		pp := minetest.GetPos(c)
 		ppos := pp.Pos
 		pos := ppos.Pos()
 
@@ -48,7 +47,7 @@ func init() {
 		}()
 	})
 
-	pos.RegisterPosUpdater(func(clt *minetest.Client, p *pos.ClientPos, dt time.Duration) {
+	minetest.RegisterPosUpdater(func(clt *minetest.Client, p *minetest.ClientPos, dt time.Duration) {
 		id, ok := GetAOID(clt)
 
 		if !ok || id == 0 {

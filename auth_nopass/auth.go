@@ -3,7 +3,6 @@ package auth_nopass
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
-	"github.com/ev2-1/minetest-go/tools/pos"
 )
 
 func Stage1() {}
@@ -77,7 +76,7 @@ func init() {
 
 		case *mt.ToSrvFirstSRP:
 			c.SendCmd(&mt.ToCltAcceptAuth{
-				PlayerPos:       pos.GetPos(c).Pos.Pos(),
+				PlayerPos:       minetest.GetPos(c).Pos.Pos(),
 				MapSeed:         1337,
 				SendInterval:    0.09,
 				SudoAuthMethods: mt.SRP,

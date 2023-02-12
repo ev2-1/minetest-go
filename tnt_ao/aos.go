@@ -4,7 +4,6 @@ import (
 	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
-	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"github.com/anon55555/mt"
 
@@ -14,7 +13,7 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("spawn_tnt", func(c *minetest.Client, args []string) {
-		ao.RegisterAO(testAO(pos.GetPos(c).Pos.Pos()))
+		ao.RegisterAO(testAO(minetest.GetPos(c).Pos.Pos()))
 	})
 
 	chat.RegisterChatCmd("rm_ao", func(c *minetest.Client, args []string) {

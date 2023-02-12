@@ -2,7 +2,6 @@ package mapLoader
 
 import (
 	"github.com/ev2-1/minetest-go/minetest"
-	tp "github.com/ev2-1/minetest-go/tools/pos"
 
 	"github.com/anon55555/mt"
 
@@ -16,7 +15,7 @@ var (
 )
 
 func init() {
-	tp.RegisterPosUpdater(func(c *minetest.Client, pos *tp.ClientPos, lu time.Duration) {
+	minetest.RegisterPosUpdater(func(c *minetest.Client, pos *minetest.ClientPos, lu time.Duration) {
 		lastPosMu.Lock()
 		defer lastPosMu.Unlock()
 
