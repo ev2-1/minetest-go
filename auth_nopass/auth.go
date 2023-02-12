@@ -75,6 +75,8 @@ func init() {
 			})
 
 		case *mt.ToSrvFirstSRP:
+			minetest.InitClient(c)
+
 			c.SendCmd(&mt.ToCltAcceptAuth{
 				PlayerPos:       minetest.GetPos(c).Pos,
 				MapSeed:         1337,
@@ -88,8 +90,6 @@ func init() {
 			c.SendItemDefs()
 			c.SendNodeDefs()
 			c.SendAnnounceMedia()
-
-			minetest.InitClient(c)
 
 			// is ignored anyways
 			c.SendCmd(&mt.ToCltCSMRestrictionFlags{MapRange: 3})

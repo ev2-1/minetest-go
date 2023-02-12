@@ -183,12 +183,12 @@ func InitClient(c *Client) {
 	// data:
 	var bytes int
 	c.data, bytes, err = DB_PlayerGetData(c.UUID)
-	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytes)
-
 	if err != nil {
 		c.Log("Failed to get Player data!: %s\n", err)
 		panic("Failed to get Player data!")
 	}
+
+	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytes)
 
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()

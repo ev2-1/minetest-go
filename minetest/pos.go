@@ -3,7 +3,11 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -127,6 +131,23 @@ type ClientPos struct {
 	LastUpdate time.Time
 }
 
+var be = binary.BigEndian
+
+func (cp *ClientPos) Serialize(w io.Writer) (err error) {
+	return binary.Write(w, be, cp.Pos)
+}
+
+func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
+	err = binary.Read(w, be, &cp.Pos)
+	if err != nil {
+		return err
+	}
+
+	cp.Pos.Pos[1] += 10
+
+	return
+}
+
 var posUpdatersMu sync.RWMutex
 var posUpdaters []func(c *Client, pos *ClientPos, lu time.Duration)
 
@@ -168,8 +189,11 @@ func init() {
 }
 
 func MakePos(c *Client) *ClientPos {
+	_, f, l, _ := runtime.Caller(1)
+	c.Logf("makepos %s:%d\n", f, l)
+
 	return &ClientPos{
-		Pos:        Pos{Pos: [3]float32{10, 10, 0}},
+		Pos:        Pos{Pos: [3]float32{105, 155, 140}},
 		LastUpdate: time.Now(),
 	}
 }
@@ -184,14 +208,32 @@ func GetPos(c *Client) Pos {
 func GetFullPos(c *Client) *ClientPos {
 	cd, ok := c.GetData("pos")
 	if !ok {
+		c.Logf("Info: !ok %T\n", cd)
 		cd = MakePos(c)
 		c.SetData("pos", cd)
 	}
 
 	pos, ok := cd.(*ClientPos)
 	if !ok {
-		pos = MakePos(c)
-		c.SetData("pos", cd)
+		c.Logf("Info: !*ClientPos")
+		dat, ok := cd.(*ClientDataSaved)
+		if !ok {
+			c.Logf("Err: !*ClientDataSaved")
+			pos = MakePos(c)
+			c.SetData("pos", pos)
+			return pos
+		}
+
+		pos = new(ClientPos)
+		err := pos.Deserialize(bytes.NewReader(dat.Bytes()))
+		if err != nil {
+			c.Logf("Error while Deserializing ClientPos: %s\n", err)
+			pos = MakePos(c)
+			c.SetData("pos", pos)
+			return pos
+		}
+
+		c.SetData("pos", pos)
 	}
 
 	return pos
