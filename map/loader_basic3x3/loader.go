@@ -9,21 +9,22 @@ import (
 func lastDim(c *minetest.Client, dim minetest.Dim) *minetest.Dim {
 	data, ok := c.GetData("last_dim")
 	if !ok {
-		c.SetData("last_dim", &dim)
+		c.SetData("last_dim", dim)
 
 		return nil
 	}
 
-	cdim, ok := data.(*minetest.Dim)
+	cdim, ok := data.(minetest.Dim)
 	if !ok {
-		c.SetData("last_dim", &dim)
+		c.Logf("last_dim has type %T\n", data)
+		c.SetData("last_dim", dim)
 
 		return nil
 	}
 
 	c.SetData("last_dim", dim)
 
-	return cdim
+	return &cdim
 }
 
 func init() {
@@ -34,7 +35,7 @@ func init() {
 		dim := lastDim(c, pos.Pos.Dim)
 
 		if newPos != oldPos || dim == nil || pos.Pos.Dim != *dim {
-			c.Logf("Blkpos changed!")
+			c.Logf("Blkpos changed. %v %v %v\n", newPos != oldPos, newPos != oldPos || dim == nil, newPos != oldPos || dim == nil || pos.Pos.Dim != *dim)
 
 			go loadAround(newPos, c)
 		}
