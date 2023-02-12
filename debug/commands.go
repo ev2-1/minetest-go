@@ -78,9 +78,14 @@ func init() {
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
 		blkpos, _ := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
 
-		<-minetest.LoadBlk(c, blkpos)
+		go func() {
+			ack := minetest.LoadBlk(c, blkpos)
+			if ack != nil {
+				<-ack
+			}
 
-		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d) %s (%d)", blkpos.Pos[0], blkpos.Pos[1], blkpos.Pos[2], blkpos.Dim, blkpos.Dim)
+			chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d) %s (%d)", blkpos.Pos[0], blkpos.Pos[1], blkpos.Pos[2], blkpos.Dim, blkpos.Dim)
+		}()
 	})
 
 	chat.RegisterChatCmd("kickme", func(c *minetest.Client, args []string) {
