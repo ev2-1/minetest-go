@@ -51,7 +51,7 @@ type Client struct {
 }
 
 func (c *Client) Logf(format string, v ...any) {
-	c.Log(fmt.Sprintf(format, v...))
+	c.Logger.Output(2, fmt.Sprintf(format, v...))
 }
 
 func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
