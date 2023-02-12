@@ -12,11 +12,8 @@ working plugins / features:
   - supports minetest map format though (`github.com/eliasFleckenstein03/mtmap`)
 - basic media announce using mth http files (`basic_media`)
 	Will probably be renamed to `http_media` and `basic_media` will be "normal" mt-protocol
-
-### Things that are broken
-
-- nodemetas from json file (`json_nodemeta`) for documentation please wait or contact me (TODO)
-  - well it works, just the dumper programm requires a broken buildroot for mt-multiserver-proxy
+- nodemetas from json file (`json_nodemeta`)
+  - can be generated using [meta_dumper](//github.com/ev2-1/meta_dumper)
 
 # Thanks to
 
