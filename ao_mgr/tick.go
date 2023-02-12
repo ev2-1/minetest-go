@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
+	"log"
 	"sync"
 )
 
@@ -17,7 +18,7 @@ func init() {
 		activeObjectsMu.RLock()
 
 		for _, d := range clients {
-			d.aosMu.RLock()
+			d.aosMu.Lock()
 
 			for id, _ := range activeObjects {
 				if _, ok := d.aos[id]; !ok {
@@ -26,11 +27,11 @@ func init() {
 				}
 			}
 
-			d.aosMu.RUnlock()
+			d.aosMu.Unlock()
 		}
 
 		activeObjectsMu.RUnlock()
-		rmQueueMu.RLock()
+		rmQueueMu.Lock()
 
 		// remove global remove queue
 		if len(rmQueue) != 0 {
@@ -39,13 +40,14 @@ func init() {
 
 				for id, _ := range d.aos {
 					if _, ok := rmQueue[id]; ok {
-						// clt dosn't have AO, adding to queue:
+						// clt has stuff from rmqueue:
 						d.QueueRm(id)
 					}
 				}
 
 				d.aosMu.RUnlock()
 			}
+
 		}
 		clientsMu.RUnlock()
 
@@ -54,6 +56,7 @@ func init() {
 			activeObjectsMu.Lock()
 			for id := range rmQueue {
 				if _, ok := activeObjects[id]; ok {
+					log.Printf("removing AO %d globally\n", id)
 					delete(activeObjects, id)
 				}
 			}
@@ -61,6 +64,9 @@ func init() {
 			activeObjectsMu.Unlock()
 		}
 
-		rmQueueMu.RUnlock()
+		// clear queue:
+		rmQueue = map[mt.AOID]struct{}{}
+
+		rmQueueMu.Unlock()
 	})
 }

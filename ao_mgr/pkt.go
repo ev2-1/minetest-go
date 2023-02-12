@@ -25,6 +25,8 @@ func (cd *ClientData) doAddQueue() (a []mt.AOAdd) {
 	}
 
 	activeObjectsMu.RLock()
+	defer activeObjectsMu.RUnlock()
+
 	for _, id := range cd.queueAdd {
 		if id != 0 && activeObjects[id] != nil {
 			a = append(a, mt.AOAdd{
@@ -38,7 +40,6 @@ func (cd *ClientData) doAddQueue() (a []mt.AOAdd) {
 			})
 		}
 	}
-	activeObjectsMu.RUnlock()
 
 	return
 }
@@ -72,7 +73,9 @@ func init() {
 		clientsMu.RLock()
 
 		for clt, cd := range clients {
-			if !cd.initialized.Load() {
+			cd.Lock()
+
+			if !cd.initialized {
 				clt.Log("not yet initialized")
 
 				continue
@@ -82,40 +85,48 @@ func init() {
 			rm := cd.queueRm
 
 			if len(add) != 0 || len(rm) != 0 {
+				clt.Logger.Printf("Adding %d aos; Removing %d aos\n", len(add), len(rm))
 				ack, err := clt.SendCmd(&mt.ToCltAORmAdd{
 					Add:    add,
 					Remove: rm,
 				})
 
 				if err != nil {
-					clt.Log("error sending AOS, retrying next tick")
+					clt.Log("error sending ToCltAORmAdd, retrying next tick")
 				}
 
-				<-ack
+				go func(cd *ClientData) {
+					<-ack
 
-				// clear data & update c.aos (if needed)
-				if len(add) != 0 {
-					cd.aosMu.Lock()
-					for _, msg := range add {
-						cd.aos[msg.ID] = struct{}{}
-					}
-					cd.aosMu.Unlock()
+					cd.Lock()
+					defer cd.Unlock()
 
-					cd.queueAdd = nil
-				}
-
-				if len(rm) != 0 {
-					cd.queueRm = nil
-
-					cd.aosMu.Lock()
-					for _, id := range rm {
-						if _, ok := cd.aos[id]; ok {
-							delete(cd.aos, id)
+					// clear data & update c.aos (if needed)
+					if len(add) != 0 {
+						cd.aosMu.Lock()
+						for _, msg := range add {
+							cd.aos[msg.ID] = struct{}{}
 						}
+						cd.aosMu.Unlock()
+
+						cd.queueAdd = nil
 					}
-					cd.aosMu.Unlock()
-				}
+
+					if len(rm) != 0 {
+						cd.queueRm = nil
+
+						cd.aosMu.Lock()
+						for _, id := range rm {
+							if _, ok := cd.aos[id]; ok {
+								delete(cd.aos, id)
+							}
+						}
+						cd.aosMu.Unlock()
+					}
+				}(cd)
 			}
+
+			cd.Unlock()
 		}
 
 		clientsMu.RUnlock()

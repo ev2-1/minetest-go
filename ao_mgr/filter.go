@@ -11,13 +11,13 @@ var (
 
 func FilterRelevantAdds(pos mt.Pos, adds []mt.AOAdd) (r []mt.AOAdd) {
 	// mt.AOAdd.InitData.Pos (mt.Pos = mt.Vec)
-	for _, add := range adds {
-		if Distance(mt.Vec(pos), mt.Vec(add.InitData.Pos)) > ReleventDistance {
-			r = append(r, add)
-		}
-	}
+	//	for _, add := range adds {
+	//		if Distance(mt.Vec(pos), mt.Vec(add.InitData.Pos)) > ReleventDistance {
+	//			r = append(r, add)
+	//		}
+	//	}
 
-	return
+	return adds
 }
 
 func FilterRelevantRms(pos mt.Pos, rms []mt.AOID) (r []mt.AOID) {
@@ -47,5 +47,6 @@ func FilterRelevantMsgs(pos mt.Pos, msgs []mt.IDAOMsg) (r []mt.IDAOMsg) {
 			}
 		}
 	*/
+
 	return msgs
 }

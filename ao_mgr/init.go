@@ -6,14 +6,14 @@ import (
 
 	"fmt"
 	"sync"
-	"sync/atomic"
 )
 
 // Data kept per client
 type ClientData struct {
+	sync.RWMutex
 	clt *minetest.Client
 
-	initialized atomic.Bool // player AO initialized; wont send anything until true (gets set true when `queueAddSelf` is invoked)
+	initialized bool // player AO initialized; wont send anything until true (gets set true when `queueAddSelf` is invoked)
 
 	// which AOs do you have?
 	aosMu sync.RWMutex
@@ -28,16 +28,25 @@ type ClientData struct {
 }
 
 func (cd *ClientData) GetID() mt.AOID {
+	cd.RLock()
+	defer cd.RUnlock()
+
 	return cd.id
 }
 
 func (cd *ClientData) QueueAdd(adds ...mt.AOID) {
+	cd.Lock()
+	defer cd.Unlock()
+
 	cd.clt.Log(fmt.Sprintf("Adding AOIDs %v to client add queue", adds))
 
 	cd.queueAdd = append(cd.queueAdd, adds...)
 }
 
 func (cd *ClientData) QueueRm(rms ...mt.AOID) {
+	cd.Lock()
+	defer cd.Unlock()
+
 	cd.clt.Log(fmt.Sprintf("Adding AOIDs %v to client rm queue", rms))
 
 	cd.queueRm = append(cd.queueRm, rms...)
@@ -58,6 +67,8 @@ func init() {
 	minetest.RegisterJoinHook(func(clt *minetest.Client) {
 		go func() {
 			cd := makeClientData(clt)
+			cd.Lock()
+			defer cd.Unlock()
 
 			// give client data
 			clientsMu.Lock()
@@ -94,21 +105,22 @@ func init() {
 			<-ack
 
 			cd.clt.Log("initialized!")
-			cd.initialized.Store(true)
+			cd.initialized = true
 		}()
 	})
 
 	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
-		clientsMu.RLock()
-		defer clientsMu.RUnlock()
-		if cd, ok := clients[l.Client]; ok {
-			RmAO(cd.id)
+		clientsMu.Lock()
+		defer clientsMu.Unlock()
 
-			clientsMu.RUnlock()
-			clientsMu.Lock()
+		if cd, ok := clients[l.Client]; ok {
+			cd.Lock()
+			defer cd.Unlock()
+
+			l.Client.Logger.Printf("Removing AO (%d)\n", cd.id)
+
+			RmAO(cd.id)
 			delete(clients, l.Client)
-			clientsMu.Unlock()
-			clientsMu.RLock()
 		}
 	})
 }
