@@ -161,6 +161,4 @@ func NodeMetasEqual(m1, m2 *mt.NodeMeta) bool {
 	}
 
 	return true
-	//TODO: actually implement
-	//return (m1 == nil && m2 == nil) || (m1.Inv == m2.Inv)
 }
