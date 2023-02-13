@@ -42,7 +42,7 @@ func init() {
 
 	chat.RegisterChatCmd("open_dim", func(c *minetest.Client, args []string) {
 		usage := func(str string, v ...any) {
-			chat.SendMsgf(c, mt.RawMsg, str+"Usage: open_dim <name> <mapgen> <mapdriver>:<file>", v...)
+			chat.SendMsgf(c, mt.RawMsg, str+"Usage: open_dim <name> <args>@<mapgen> <mapdriver>:<file>", v...)
 		}
 
 		if len(args) != 3 {
@@ -51,9 +51,15 @@ func init() {
 		}
 
 		dimName := args[0]
-		gen := args[1]
+		s := strings.SplitN(args[1], "@", 3)
+		if len(s) != 2 {
+			usage("")
+			return
+		}
 
-		s := strings.SplitN(args[2], ":", 3)
+		genargs, gen := s[0], s[1]
+
+		s = strings.SplitN(args[2], ":", 3)
 		if len(s) != 2 {
 			usage("")
 			return
@@ -65,7 +71,7 @@ func init() {
 			dimName, file, driver,
 		)
 
-		id, err := minetest.NewDim(dimName, gen, driver, file)
+		id, err := minetest.NewDim(dimName, gen, genargs, driver, file)
 		if err != nil {
 			usage("Err: %s\n", err)
 			return

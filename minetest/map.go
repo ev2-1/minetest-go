@@ -42,6 +42,11 @@ func init() {
 			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
 		}
 
+		mapargs, ok := GetConfigString("map-generator-args", "")
+		if !ok {
+			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
+		}
+
 		generatorsMu.RLock()
 		generator, ok := generators[mapgen]
 		if !ok {
@@ -49,7 +54,7 @@ func init() {
 		}
 
 		generatorsMu.RUnlock()
-		generator = generator.Make(driver)
+		generator = generator.Make(driver, mapargs)
 
 		//open default DIM0:
 		err = registerDim(&Dimension{
@@ -69,7 +74,7 @@ var ErrInvalidDriver = errors.New("invalid mapdriver")
 var ErrInvalidGenerator = errors.New("invalid map generator")
 
 // NewDim creates a new Dimension and registers it
-func NewDim(name, gen, drv, file string) (*Dimension, error) {
+func NewDim(name, gen, genargs, drv, file string) (*Dimension, error) {
 	driversMu.RLock()
 	driver, ok := drivers[drv]
 	if !ok {
@@ -97,7 +102,7 @@ func NewDim(name, gen, drv, file string) (*Dimension, error) {
 		ID:     0, // Aquire later automatically
 	}
 
-	dim.Generator = generator.Make(dim.Driver)
+	dim.Generator = generator.Make(dim.Driver, genargs)
 
 	err := dim.Driver.Open(file)
 	if err != nil {
@@ -191,7 +196,7 @@ func RegisterMapGenerator(name string, gen MapGenerator) {
 // has access to mapdriver
 // can but should (in most cases) not set blocks its not asked to
 type MapGenerator interface {
-	Make(drv MapDriver) MapGenerator
+	Make(drv MapDriver, args string) MapGenerator
 
 	// Generate is called with a BlkPos
 	// Should save generated Blk into MapDriver

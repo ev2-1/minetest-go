@@ -5,6 +5,7 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"log"
+	"strings"
 	"time"
 )
 
@@ -27,21 +28,17 @@ func (gen *FlatMapGenerator) FromS(s []string) {
 			gen.Config = append(gen.Config, [16]string{})
 		}
 
-		log.Printf("i: %2d; k: %2d;\n", i, k)
-
 		gen.Config[i][k-i*16] = s[k]
 	}
 
 	log.Printf("-%v-\n", gen.Config)
 }
 
-func (*FlatMapGenerator) Make(drv minetest.MapDriver) minetest.MapGenerator {
+func (*FlatMapGenerator) Make(drv minetest.MapDriver, args string) minetest.MapGenerator {
 	gen := new(FlatMapGenerator)
 	gen.Driver = drv
 
-	gen.FromS([]string{
-		"mcl_core:bedrock", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt", "mcl_core:dirt_with_grass",
-	})
+	gen.FromS(strings.Split(args, ","))
 
 	return gen
 }
