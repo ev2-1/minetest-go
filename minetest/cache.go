@@ -35,6 +35,8 @@ func TryCache(pos IntPos) error {
 	return nil
 }
 
+// loads Blks at pos into Cache
+// generates new if no Blk exists
 func loadIntoCache(pos IntPos) error {
 	if ConfigVerbose() {
 		MapLogger.Printf("Loading (%d,%d,%d) %s (%d) into cache\n", pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim, pos.Dim)
@@ -43,19 +45,29 @@ func loadIntoCache(pos IntPos) error {
 	mapCacheMu.Lock()
 	defer mapCacheMu.Unlock()
 
-	drv, ok := mapIO[pos.Dim]
-	if !ok {
-		log.Printf("tired to access dimension %d, but is not registerd!\n", pos.Dim)
+	dim := pos.Dim.Lookup()
+	if dim == nil {
+		MapLogger.Printf("Tired to access dimension %d, but is not registerd!\n", pos.Dim)
 		return ErrInvalidDim
 	}
 
+	drv := dim.Driver
+
 	blk, err := drv.GetBlk(pos.Pos)
 	if err != nil {
-		return err
+		MapLogger.Printf("Info: error encounterd in GetBlk: [%v]: %s\n", pos, err)
 	}
 
 	if mapCache == nil {
 		mapCache = make(map[IntPos]*MapBlk)
+	}
+
+	if blk == nil {
+		MapLogger.Printf("blk at [%v] does not exists. generating\n", pos)
+		blk, err = dim.Generator.Generate(pos.Pos)
+		if err != nil {
+			return err
+		}
 	}
 
 	mapCache[pos] = blk

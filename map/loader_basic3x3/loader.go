@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func lastDim(c *minetest.Client, dim minetest.Dim) *minetest.Dim {
+func lastDim(c *minetest.Client, dim minetest.DimID) *minetest.DimID {
 	data, ok := c.GetData("last_dim")
 	if !ok {
 		c.SetData("last_dim", dim)
@@ -14,7 +14,7 @@ func lastDim(c *minetest.Client, dim minetest.Dim) *minetest.Dim {
 		return nil
 	}
 
-	cdim, ok := data.(minetest.Dim)
+	cdim, ok := data.(minetest.DimID)
 	if !ok {
 		c.Logf("last_dim has type %T\n", data)
 		c.SetData("last_dim", dim)

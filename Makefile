@@ -11,3 +11,6 @@ run: build
 
 runv: build
 	cd ./cmd/minetest-go/; ./minetest-go -config verbose:true
+
+gdb: build
+	cd ./cmd/minetest-go/; gdb ./minetest-go

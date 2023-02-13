@@ -14,7 +14,7 @@ import (
 
 // returns dim corosponding to name
 // returns nil if Dim does not exist
-func GetDim(name string) *Dim {
+func GetDim(name string) *Dimension {
 	dimensionsMu.RLock()
 	defer dimensionsMu.RUnlock()
 
@@ -24,25 +24,35 @@ func GetDim(name string) *Dim {
 		return nil
 	}
 
-	return &dim
+	return dim
 }
 
-type Dim uint16
+type DimID uint16
 
-func (d Dim) String() string {
+func (d DimID) String() string {
+	dim := d.Lookup()
+	if dim == nil {
+		MapLogger.Printf("WARN: dimension %d is not defined!\n", d)
+		return fmt.Sprintf("%d", d)
+	}
+
+	return dim.Name
+}
+
+func (d DimID) Lookup() *Dimension {
 	dimensionsMu.RLock()
 	defer dimensionsMu.RUnlock()
 
 	name, ok := dimensionsR[d]
 	if !ok {
 		MapLogger.Printf("WARN: dimension %d has no name!\n", d)
-		return fmt.Sprintf("%d", d)
+		return nil
 	}
 
 	return name
 }
 
-func PlayerPos2Pos(pos mt.PlayerPos, d Dim) Pos {
+func PlayerPos2Pos(pos mt.PlayerPos, d DimID) Pos {
 	return Pos{
 		Pos:   pos.Pos(),
 		Vel:   pos.Vel(),
@@ -57,7 +67,7 @@ func PlayerPos2Pos(pos mt.PlayerPos, d Dim) Pos {
 
 type IntPos struct {
 	Pos [3]int16
-	Dim Dim
+	Dim DimID
 }
 
 type Pos struct {
@@ -66,7 +76,7 @@ type Pos struct {
 
 	FOV80 uint8
 
-	Dim Dim
+	Dim DimID
 }
 
 func (p Pos) IntPos() IntPos {
@@ -200,6 +210,8 @@ func MakePos(c *Client) *ClientPos {
 
 func GetPos(c *Client) Pos {
 	pos := GetFullPos(c)
+	pos.RLock()
+	defer pos.RUnlock()
 
 	return pos.Pos
 }
