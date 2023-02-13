@@ -32,7 +32,7 @@ func init() {
 			return
 		}
 
-		chat.SendMsgf(c, mt.RawMsg, "Sending you to %s (%d)!", args[0], *dim)
+		chat.SendMsgf(c, mt.RawMsg, "Sending you to %s (%d)!", dim.Name, dim.ID)
 
 		pos := minetest.GetPos(c)
 		pos.Dim = dim.ID
@@ -71,14 +71,14 @@ func init() {
 			dimName, file, driver,
 		)
 
-		id, err := minetest.NewDim(dimName, gen, genargs, driver, file)
+		dim, err := minetest.NewDim(dimName, gen, genargs, driver, file)
 		if err != nil {
 			usage("Err: %s\n", err)
 			return
 		}
 
 		chat.SendMsgf(c, mt.RawMsg, "Success, got ID: %d",
-			id,
+			dim.ID,
 		)
 	})
 
