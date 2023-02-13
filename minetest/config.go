@@ -117,6 +117,13 @@ func GetConfig(key string) (val any, ok bool) {
 	return
 }
 
+// Like GetConfigBool but does not return ok
+func GetConfigBoolV(key string, d bool) (val bool) {
+	val, _ = GetConfigBool(key, d)
+
+	return
+}
+
 // Returns value which is is the config field if set or d if not
 // ok is set if the config field existed
 func GetConfigBool(key string, d bool) (val bool, ok bool) {
@@ -130,6 +137,13 @@ func GetConfigBool(key string, d bool) (val bool, ok bool) {
 		log.Printf("WARN: config field %s was requested as bool but is type %T!\n", key, v)
 		return d, false
 	}
+
+	return
+}
+
+// Like GetConfigString but does not return ok
+func GetConfigStringV(key string, d string) (val string) {
+	val, _ = GetConfigString(key, d)
 
 	return
 }
@@ -153,7 +167,7 @@ func GetConfigString(key string, d string) (val string, ok bool) {
 
 // ConfigVerbose is a helper function to indicate if verbose logging is turned on
 func ConfigVerbose() bool {
-	v, _ := GetConfigBool("verbose", false)
+	v, _ := GetConfigBool("log-verbose", false)
 	return v
 }
 
