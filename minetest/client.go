@@ -72,7 +72,11 @@ func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 			break
 
 		default:
-			c.Log("<-", fmt.Sprintf("%T", cmd))
+			lpkts, ok := GetConfigBool("log-packets", false)
+
+			if (ConfigVerbose() && !(ok && !lpkts)) || lpkts {
+				c.Log("<-", fmt.Sprintf("%T", cmd))
+			}
 		}
 	}
 
