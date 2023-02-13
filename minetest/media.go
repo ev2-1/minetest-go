@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 )
@@ -131,7 +132,8 @@ func GetNodeID(name string) mt.Content {
 	def := GetNodeDef(name)
 
 	if def == nil {
-		panic(nodeDefNotFoundErr{name})
+		log.Printf("WARN: %s\n", nodeDefNotFoundErr{name})
+		return mt.Unknown
 	}
 
 	return def.Param0
