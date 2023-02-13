@@ -6,25 +6,8 @@ import (
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
 
-	"log"
 	"time"
 )
-
-func GetAOID(c *minetest.Client) (mt.AOID, bool) {
-	dat, ok := c.GetData("aoid")
-	if !ok {
-		return 0, false
-	}
-
-	id, ok := dat.(mt.AOID)
-	if ok {
-		return id, true
-	} else {
-		log.Fatalf("ClientData has unexpected Type expected %T got %T!\n", mt.AOID(0), dat)
-	}
-
-	return 0, false
-}
 
 func init() {
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
@@ -38,7 +21,7 @@ func init() {
 
 	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
 		go func() {
-			id, ok := GetAOID(l.Client)
+			id, ok := ao.GetCltAOID(l.Client)
 			if ok {
 				ao.RmAO(id)
 			}
@@ -46,7 +29,7 @@ func init() {
 	})
 
 	minetest.RegisterPosUpdater(func(clt *minetest.Client, p *minetest.ClientPos, dt time.Duration) {
-		id, ok := GetAOID(clt)
+		id, ok := ao.GetCltAOID(clt)
 
 		if !ok || id == 0 {
 			return
@@ -60,13 +43,12 @@ func init() {
 
 		ppos := p.Pos
 
-		a.SetPos(mt.AOPos{
-			Pos: ppos.Pos,
+		a.SetPos(ao.AOPos{
+			Pos: ppos,
 			Rot: mt.Vec{0, ppos.Yaw},
 			Vel: ppos.Vel,
+		}, true)
 
-			Interpolate: true,
-		})
 		a.SetBonePos("Head_Control", mt.AOBonePos{
 			Pos: mt.Vec{0, 6.3, 0},
 			Rot: mt.Vec{-ppos.Pitch, 0, 0},

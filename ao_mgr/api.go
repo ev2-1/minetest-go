@@ -5,6 +5,7 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"fmt"
+	"log"
 )
 
 // the first one is reserved for the playerAOID
@@ -92,23 +93,14 @@ func GetCltAOIDs(c *minetest.Client) []mt.AOID {
 	return []mt.AOID{}
 }
 
-// GetCltAOID returns the AOID of the clients AO
-func GetCltAOID(clt *minetest.Client) mt.AOID {
-	clientsMu.RLock()
-	defer clientsMu.RUnlock()
-
-	id, ok := clients[clt]
-	if !ok {
-		return 0
-	} else {
-		return id.GetID()
-	}
-}
-
 // - abstr -
 
 // RegisterAO registers a initialized ActiveObject
 func RegisterAO(ao ActiveObject) mt.AOID {
+	return registerAO(ao, TypeNormal)
+}
+
+func registerAO(ao ActiveObject, t AOType) mt.AOID {
 	if ao.GetID() == 0 {
 		ao.SetID(GetAOID())
 	}
@@ -130,4 +122,24 @@ func RegisterAO0Maker(f func(clt *minetest.Client, id mt.AOID) ActiveObject) {
 	} else {
 		panic(fmt.Errorf("[ao_mgr] Repeated AO0Maker registration attempt."))
 	}
+}
+
+func SetCltAOID(clt *minetest.Client, id mt.AOID) {
+	clt.SetData("aoid", id)
+}
+
+func GetCltAOID(c *minetest.Client) (mt.AOID, bool) {
+	dat, ok := c.GetData("aoid")
+	if !ok {
+		return 0, false
+	}
+
+	id, ok := dat.(mt.AOID)
+	if ok {
+		return id, true
+	} else {
+		log.Fatalf("ClientData has unexpected Type expected %T got %T!\n", mt.AOID(0), dat)
+	}
+
+	return 0, false
 }

@@ -17,39 +17,55 @@ func init() {
 		clientsMu.RLock()
 		activeObjectsMu.RLock()
 
-		for _, d := range clients {
+		for clt, d := range clients {
 			d.aosMu.Lock()
 
-			for id, _ := range activeObjects {
-				if _, ok := d.aos[id]; !ok {
-					// clt dosn't have AO, adding to queue:
-					d.QueueAdd(id)
+			for id, ao := range activeObjects {
+				if t, ok := d.aos[id]; !ok {
+					if t != TypeNormal {
+						continue
+					}
+
+					// clt dosn't have AO, check if relevant:
+					if RelevantAO(clt, ao) {
+						d.QueueAdd(id)
+						clt.Logf("adding AO %d\n", id)
+					}
 				}
 			}
 
 			d.aosMu.Unlock()
 		}
 
-		activeObjectsMu.RUnlock()
 		rmQueueMu.Lock()
 
-		// remove global remove queue
-		if len(rmQueue) != 0 {
-			for _, d := range clients {
-				d.aosMu.RLock()
+		// remove
+		for clt, d := range clients {
+			d.aosMu.RLock()
 
-				for id, _ := range d.aos {
-					if _, ok := rmQueue[id]; ok {
-						// clt has stuff from rmqueue:
-						d.QueueRm(id)
-					}
+			for id, t := range d.aos {
+				cid, ok := GetCltAOID(clt)
+
+				// Ignore special AOs & self
+				if t != TypeNormal || (ok && cid == id) {
+					continue
 				}
 
-				d.aosMu.RUnlock()
+				ao := activeObjects[id]
+
+				// should be removed        || out of range
+				if _, ok := rmQueue[id]; ok || !RelevantAO(clt, ao) {
+					// clt has stuff from rmqueue:
+					d.QueueRm(id)
+					clt.Logf("removing AO %d\n", id)
+				}
 			}
 
+			d.aosMu.RUnlock()
 		}
+
 		clientsMu.RUnlock()
+		activeObjectsMu.RUnlock()
 
 		// apply rm to global aos
 		if len(rmQueue) != 0 {

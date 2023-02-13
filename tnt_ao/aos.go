@@ -13,7 +13,7 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("spawn_tnt", func(c *minetest.Client, args []string) {
-		ao.RegisterAO(testAO(minetest.GetPos(c).Pos))
+		ao.RegisterAO(testAO(ao.AOPos{Pos: minetest.GetPos(c)}))
 	})
 
 	chat.RegisterChatCmd("rm_ao", func(c *minetest.Client, args []string) {
@@ -32,13 +32,11 @@ func init() {
 	})
 }
 
-func testAO(pos mt.Pos) ao.ActiveObject {
+func testAO(pos ao.AOPos) ao.ActiveObject {
 	return &ao.ActiveObjectS{
 		AOState: ao.AOState{
-			Pos: mt.AOPos{
-				Pos: pos,
-			},
-			HP: 10,
+			Pos: pos,
+			HP:  10,
 		},
 
 		Props: mt.AOProps{

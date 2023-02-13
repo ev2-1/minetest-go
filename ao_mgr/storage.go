@@ -6,6 +6,21 @@ import (
 	"sync"
 )
 
+type AOPos struct {
+	minetest.Pos
+
+	Rot, Vel, Acc [3]float32
+}
+
+func (p AOPos) AOPos() mt.AOPos {
+	return mt.AOPos{
+		Pos: p.Pos.Pos,
+		Vel: p.Vel,
+		Acc: p.Acc,
+		Rot: p.Rot,
+	}
+}
+
 var activeObjects = make(map[mt.AOID]ActiveObject)
 var activeObjectsMu sync.RWMutex
 
@@ -16,13 +31,13 @@ func GetAO(id mt.AOID) ActiveObject {
 	return activeObjects[id]
 }
 
-func GetAOPos(id mt.AOID) (bool, mt.AOPos) {
+func GetAOPos(id mt.AOID) (bool, AOPos) {
 	activeObjectsMu.RLock()
 	defer activeObjectsMu.RUnlock()
 
 	p, f := activeObjects[id]
 	if !f {
-		return f, mt.AOPos{}
+		return f, AOPos{}
 	}
 
 	return f, p.GetPos()
@@ -40,8 +55,8 @@ type ActiveObject interface {
 	// DoPhysics gets called at most once per tick with dtime to do physics
 	DoPhysics(dtime float32)
 
-	GetPos() mt.AOPos
-	SetPos(mt.AOPos)
+	GetPos() AOPos
+	SetPos(pos AOPos, interpolate bool)
 
 	GetBonePos(string) (mt.AOBonePos, bool)
 	SetBonePos(string, mt.AOBonePos)
@@ -107,8 +122,9 @@ func (p AOPhys) Pkt() *mt.AOCmdPhysOverride {
 type AOState struct {
 	Anim mt.AOAnim
 
-	PosMu sync.RWMutex
-	Pos   mt.AOPos
+	PosMu       sync.RWMutex
+	Pos         AOPos
+	Interpolate bool
 
 	Armor  []mt.Group
 	Attach mt.AOAttach
@@ -160,14 +176,14 @@ func (s *AOState) GetTextureMod() mt.Texture {
 	return s.TextureMod
 }
 
-func (s *AOState) GetPos() mt.AOPos {
+func (s *AOState) GetPos() AOPos {
 	s.PosMu.RLock()
 	defer s.PosMu.RUnlock()
 
 	return s.Pos
 }
 
-func (s *AOState) SetPos(p mt.AOPos) {
+func (s *AOState) SetPos(p AOPos) {
 	s.PosMu.Lock()
 	defer s.PosMu.Unlock()
 

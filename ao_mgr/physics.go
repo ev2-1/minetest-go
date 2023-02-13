@@ -9,10 +9,10 @@ func (ao *ActiveObjectS) DoPhysics(dtime float32) {
 
 	oldVel := pos.Vel
 	pos.Vel = addVec(mulVec(pos.Acc, dtime), pos.Vel)
-	pos.Pos = mt.Pos(addVec(
-		mt.Vec(pos.Pos),
+	pos.Pos.Pos = mt.Pos(addVec(
+		mt.Vec(pos.Pos.Pos),
 		mulVecs(
-			mt.Vec(pos.Pos),
+			mt.Vec(pos.Pos.Pos),
 			mulVec(
 				addVec(
 					oldVel,

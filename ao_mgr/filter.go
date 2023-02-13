@@ -2,34 +2,34 @@ package ao
 
 import (
 	"github.com/anon55555/mt"
-	//	"github.com/ev2-1/minetest-go-plugins/tools/pos"
+	"github.com/ev2-1/minetest-go/minetest"
 )
 
 var (
-	ReleventDistance float32 = 100 // in nodes; distance around player their still informed about AOs
+	ReleventDistance float32 = 1000 // in nodes/10; distance around player their still informed about AOs
 )
 
-func FilterRelevantAdds(pos mt.Pos, adds []mt.AOAdd) (r []mt.AOAdd) {
-	// mt.AOAdd.InitData.Pos (mt.Pos = mt.Vec)
-	//	for _, add := range adds {
-	//		if Distance(mt.Vec(pos), mt.Vec(add.InitData.Pos)) > ReleventDistance {
-	//			r = append(r, add)
-	//		}
-	//	}
+func RelevantAO(clt *minetest.Client, ao ActiveObject) bool {
+	// check if ID is the one of client
+	cpos := minetest.GetPos(clt)
+	aopos := ao.GetPos()
 
-	return adds
+	dis := Distance(mt.Vec(aopos.Pos.Pos), cpos.Pos)
+	if cpos.Dim == aopos.Dim && dis < ReleventDistance {
+		return true
+	}
+
+	return false
 }
 
-func FilterRelevantRms(pos mt.Pos, rms []mt.AOID) (r []mt.AOID) {
+/*func FilterRelevantRms(clt *minetest.Client, rms []mt.AOID) (r []mt.AOID) {
 	for _, rm := range rms {
 		f, p := GetAOPos(rm)
 		if !f {
 			break
 		}
 
-		if Distance(mt.Vec(pos), mt.Vec(p.Pos)) > ReleventDistance {
-			r = append(r, rm)
-		}
+		// check if is loaded by client
 	}
 
 	return
@@ -46,7 +46,8 @@ func FilterRelevantMsgs(pos mt.Pos, msgs []mt.IDAOMsg) (r []mt.IDAOMsg) {
 				r = append(r, msg)
 			}
 		}
-	*/
+*/ /*
 
 	return msgs
 }
+*/

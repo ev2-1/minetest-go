@@ -28,7 +28,7 @@ func (p *player) InitPkt(clt *minetest.Client) mt.AOInitData {
 
 func makeAO(clt *minetest.Client, id mt.AOID) ao.ActiveObject {
 	if id != 0 {
-		clt.SetData("aoid", id)
+		ao.SetCltAOID(clt, id)
 		clt.Log("aoid:", id)
 	}
 

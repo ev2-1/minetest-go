@@ -17,15 +17,23 @@ type ClientData struct {
 
 	// which AOs do you have?
 	aosMu sync.RWMutex
-	aos   map[mt.AOID]struct{}
+	aos   map[mt.AOID]AOType
 
 	// the id you have yourself
 	id mt.AOID
 
 	// queues
-	queueAdd []mt.AOID
-	queueRm  []mt.AOID
+	queueAdd map[mt.AOID]struct{}
+	queueRm  map[mt.AOID]struct{}
 }
+
+//go:generate stringer -type AOType
+type AOType uint8
+
+const (
+	TypeNormal AOType = iota
+	TypeForced        // ignores ao for automatic actions
+)
 
 func (cd *ClientData) GetID() mt.AOID {
 	cd.RLock()
@@ -40,7 +48,33 @@ func (cd *ClientData) QueueAdd(adds ...mt.AOID) {
 
 	cd.clt.Log(fmt.Sprintf("Adding AOIDs %v to client add queue", adds))
 
-	cd.queueAdd = append(cd.queueAdd, adds...)
+	if cd.queueAdd == nil {
+		cd.queueAdd = make(map[mt.AOID]struct{})
+	}
+
+	for _, id := range adds {
+		cd.queueAdd[id] = struct{}{}
+	}
+}
+
+func (cd *ClientData) queueRmS() (s []mt.AOID) {
+	s = make([]mt.AOID, 0, len(cd.queueRm))
+
+	for k := range cd.queueRm {
+		s = append(s, k)
+	}
+
+	return
+}
+
+func (cd *ClientData) queueAddS() (s []mt.AOID) {
+	s = make([]mt.AOID, 0, len(cd.queueAdd))
+
+	for k := range cd.queueAdd {
+		s = append(s, k)
+	}
+
+	return
 }
 
 func (cd *ClientData) QueueRm(rms ...mt.AOID) {
@@ -49,14 +83,23 @@ func (cd *ClientData) QueueRm(rms ...mt.AOID) {
 
 	cd.clt.Log(fmt.Sprintf("Adding AOIDs %v to client rm queue", rms))
 
-	cd.queueRm = append(cd.queueRm, rms...)
+	if cd.queueRm == nil {
+		cd.queueRm = make(map[mt.AOID]struct{})
+	}
+
+	for _, id := range rms {
+		cd.queueRm[id] = struct{}{}
+	}
 }
 
 func makeClientData(c *minetest.Client) *ClientData {
 	return &ClientData{
 		clt: c,
 
-		aos: make(map[mt.AOID]struct{}),
+		aos: make(map[mt.AOID]AOType),
+
+		queueAdd: make(map[mt.AOID]struct{}),
+		queueRm:  make(map[mt.AOID]struct{}),
 	}
 }
 
@@ -82,11 +125,11 @@ func init() {
 			// make playerAO (for the others)
 			id := GetAOID()
 			ao := ao0maker(clt, id)
-			RegisterAO(ao)
+			registerAO(ao, TypeForced)
 
 			// forceignore id for self:
 			cd.aosMu.Lock()
-			cd.aos[id] = struct{}{}
+			cd.aos[id] = TypeNormal
 			cd.aosMu.Unlock()
 
 			// make playerAO for self:

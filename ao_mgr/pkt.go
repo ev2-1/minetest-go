@@ -27,7 +27,7 @@ func (cd *ClientData) doAddQueue() (a []mt.AOAdd) {
 	activeObjectsMu.RLock()
 	defer activeObjectsMu.RUnlock()
 
-	for _, id := range cd.queueAdd {
+	for id := range cd.queueAdd {
 		if id != 0 && activeObjects[id] != nil {
 			a = append(a, mt.AOAdd{
 				ID:       id,
@@ -82,7 +82,7 @@ func init() {
 			}
 
 			add := cd.doAddQueue()
-			rm := cd.queueRm
+			rm := cd.queueRmS()
 
 			if len(add) != 0 || len(rm) != 0 {
 				clt.Logger.Printf("Adding %d aos; Removing %d aos\n", len(add), len(rm))
@@ -105,7 +105,7 @@ func init() {
 					if len(add) != 0 {
 						cd.aosMu.Lock()
 						for _, msg := range add {
-							cd.aos[msg.ID] = struct{}{}
+							cd.aos[msg.ID] = TypeNormal
 						}
 						cd.aosMu.Unlock()
 

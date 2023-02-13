@@ -61,13 +61,14 @@ func (ao *ActiveObjectS) changed(f AOField) {
 	ao.Changed[f] = struct{}{}
 }
 
-func (ao *ActiveObjectS) SetPos(p mt.AOPos) {
+func (ao *ActiveObjectS) SetPos(p AOPos, i bool) {
 	ao.AOState.SetPos(p)
+	ao.AOState.Interpolate = i
 
 	ao.changed(FieldPos)
 }
 
-func (ao *ActiveObjectS) SetPosPhys(p mt.AOPos) {
+func (ao *ActiveObjectS) SetPosPhys(p AOPos) {
 	ao.AOState.SetPos(p)
 }
 
@@ -85,8 +86,11 @@ func (ao *ActiveObjectS) Pkts() (m []mt.AOMsg, b bool) {
 	for c, _ := range ao.Changed {
 		switch c {
 		case FieldPos:
+			pos := ao.GetPos().AOPos()
+			pos.Interpolate = ao.AOState.Interpolate
+
 			m[i] = &mt.AOCmdPos{
-				Pos: ao.GetPos(),
+				Pos: pos,
 			}
 			break
 
@@ -260,7 +264,7 @@ func (ao *ActiveObjectS) InitPkt(clt *minetest.Client) mt.AOInitData {
 		IsPlayer: false,
 
 		ID:  ao.GetID(),
-		Pos: p.Pos,
+		Pos: p.Pos.Pos,
 		Rot: p.Rot,
 
 		HP: ao.GetHP(),
@@ -268,3 +272,5 @@ func (ao *ActiveObjectS) InitPkt(clt *minetest.Client) mt.AOInitData {
 		Msgs: msgs,
 	}
 }
+
+var _ ActiveObject = &ActiveObjectS{}
