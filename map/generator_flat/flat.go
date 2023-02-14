@@ -50,7 +50,12 @@ func (g *FlatMapGenerator) Generate(pos [3]int16) (*minetest.MapBlk, error) {
 	line := func(z int, c mt.Content) {
 		for x := 0; x < 16; x++ {
 			for y := 0; y < 16; y++ {
-				blk.Param0[x+(16*z)+(y*16*16)] = c
+				i := x + (16 * z) + (y * 16 * 16)
+				blk.Param0[i] = c
+
+				if c == mt.Air {
+					blk.Param1[i] = 255
+				}
 			}
 		}
 	}
