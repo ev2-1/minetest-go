@@ -20,7 +20,6 @@ func Relevant(ao ActiveObject, clt *minetest.Client) bool {
 
 		return aopos.Dim == cltpos.Dim &&
 			Distance(aopos.Pos, cltpos.Pos.Pos) <= RelevantDistance
-
 	}
 
 	// default true:
