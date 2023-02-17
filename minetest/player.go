@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/kevinburke/nacl/randombytes"
 
+	"fmt"
 	"log"
 )
 
@@ -74,6 +75,11 @@ func Clts() map[*Client]struct{} {
 	}
 
 	return c
+}
+
+// like log.Fatalf but does not panic but kick Client with specified Message
+func (c *Client) Fatalf(str string, v ...any) (ack <-chan struct{}, err error) {
+	return c.Kick(mt.Custom, fmt.Sprintf(str, v...))
 }
 
 func (c *Client) Kick(r mt.KickReason, Custom string) (ack <-chan struct{}, err error) {

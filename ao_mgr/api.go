@@ -83,7 +83,7 @@ func GetClientData(clt *minetest.Client) *ClientData {
 
 	cd, ok := data.(*ClientData)
 	if !ok {
-		log.Fatalf("[%s] [ERROR] ClientData at '%s' is not of type '*ao.ClientData' but '%T'", clt, ClientDataKey, data)
+		clt.Fatalf("ClientData at '%s' is not of type '*ao.ClientData' but '%T'", ClientDataKey, data)
 
 		return nil
 	}
@@ -133,8 +133,8 @@ func GetPAO(clt *minetest.Client) ActiveObjectPlayer {
 
 	cdao, ok := ao.(ActiveObjectPlayer)
 	if !ok {
-		//TODO clt.Fatalf
-		log.Fatalf("Client AO is not ActiveObjectPlayer but %T!\n", ao)
+		clt.Fatalf("Client AO is not ActiveObjectPlayer but %T!\n", ao)
+		return nil
 	}
 
 	return cdao

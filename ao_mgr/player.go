@@ -4,7 +4,6 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
-	"log"
 	"sync"
 	"time"
 )
@@ -64,8 +63,8 @@ func initPlayerAO(clt *minetest.Client) {
 		},
 	})
 	if err != nil {
-		//TODO clt.Fatalf("")
-		log.Fatalf("Error encountered: %s\n", err)
+		clt.Fatalf("Error encountered: %s\n", err)
+		return
 	}
 
 	//for the others
