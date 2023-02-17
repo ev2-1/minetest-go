@@ -7,7 +7,21 @@ import (
 
 var logFlags = log.Flags() | log.LstdFlags | log.Lmsgprefix | log.Lshortfile
 
-var MapLogger = log.New(log.Writer(), "[map] ", logFlags)
+var MapLogger = func() *log.Logger {
+	lpkts, ok := GetConfigBool("log-map", false)
+
+	if (ConfigVerbose() && !(ok && !lpkts)) || lpkts {
+		return log.New(log.Writer(), "[map] ", logFlags)
+	}
+
+	return log.New(&nilWriter{}, "", 0)
+}()
+
+type nilWriter struct{}
+
+func (nw *nilWriter) Write(b []byte) (n int, err error) {
+	return len(b), nil
+}
 
 var logWriter *LogWriter
 

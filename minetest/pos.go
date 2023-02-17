@@ -4,11 +4,11 @@ import (
 	"github.com/anon55555/mt"
 
 	"bytes"
+	"sync"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -52,16 +52,18 @@ func (d DimID) Lookup() *Dimension {
 	return name
 }
 
-func PlayerPos2Pos(pos mt.PlayerPos, d DimID) Pos {
-	return Pos{
-		Pos:   pos.Pos(),
-		Vel:   pos.Vel(),
-		Pitch: pos.Pitch(),
-		Yaw:   pos.Yaw(),
+func PlayerPos2PPos(pos mt.PlayerPos, d DimID) PPos {
+	return PPos{
+		Pos{
+			Pos:   pos.Pos(),
+			Vel:   pos.Vel(),
+			Pitch: pos.Pitch(),
+			Yaw:   pos.Yaw(),
 
-		FOV80: pos.FOV80,
+			Dim: d,
+		},
 
-		Dim: d,
+		pos.FOV80,
 	}
 }
 
@@ -74,9 +76,14 @@ type Pos struct {
 	Pos, Vel   [3]float32
 	Pitch, Yaw float32
 
-	FOV80 uint8
-
 	Dim DimID
+}
+
+// PPos defines a PlayerPosition
+type PPos struct {
+	Pos
+
+	FOV80 uint8
 }
 
 func (p Pos) IntPos() IntPos {
@@ -122,7 +129,7 @@ func (p Pos) Yaw100() (i int32) {
 	return
 }
 
-func (p Pos) PlayerPos() mt.PlayerPos {
+func (p PPos) PlayerPos() mt.PlayerPos {
 	return mt.PlayerPos{
 		Pos100:   p.Pos100(),
 		Vel100:   p.Vel100(),
@@ -136,24 +143,24 @@ func (p Pos) PlayerPos() mt.PlayerPos {
 type ClientPos struct {
 	sync.RWMutex
 
-	Pos        Pos
-	OldPos     Pos
+	CurPos     PPos
+	OldPos     PPos
 	LastUpdate time.Time
 }
 
 var be = binary.BigEndian
 
 func (cp *ClientPos) Serialize(w io.Writer) (err error) {
-	return binary.Write(w, be, cp.Pos.Pos)
+	return binary.Write(w, be, cp.CurPos.Pos)
 }
 
 func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
-	err = binary.Read(w, be, &cp.Pos.Pos)
+	err = binary.Read(w, be, &cp.CurPos.Pos)
 	if err != nil {
 		return err
 	}
 
-	cp.Pos.Pos[1] += 10
+	cp.CurPos.Pos.Pos[1] += 10
 
 	return
 }
@@ -161,7 +168,7 @@ func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
 var posUpdatersMu sync.RWMutex
 var posUpdaters []func(c *Client, pos *ClientPos, lu time.Duration)
 
-// PosUpdater is called with a LOCKED ClientPos
+// PosUpdater is called with a UNLOCKED ClientPos
 func RegisterPosUpdater(pu func(c *Client, pos *ClientPos, lu time.Duration)) {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
@@ -171,7 +178,18 @@ func RegisterPosUpdater(pu func(c *Client, pos *ClientPos, lu time.Duration)) {
 
 func init() {
 	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
-		pp, ok := pkt.Cmd.(*mt.ToSrvPlayerPos)
+		var pp mt.PlayerPos
+
+		switch cmd := pkt.Cmd.(type) {
+		case *mt.ToSrvPlayerPos:
+			pp = cmd.Pos
+
+		case *mt.ToSrvInteract:
+			pp = cmd.Pos
+
+		default:
+			return
+		}
 
 		if c.PosState != PsOk {
 			c.Logf("PosState != PsOk, waiting")
@@ -179,21 +197,19 @@ func init() {
 			c.Logf("PosUnlock")
 		}
 
-		if ok {
-			cpos := GetFullPos(c)
-			cpos.Lock()
-			defer cpos.Unlock()
+		cpos := GetFullPos(c)
+		cpos.Lock()
 
-			now := time.Now()
-			dtime := now.Sub(cpos.LastUpdate)
+		now := time.Now()
+		dtime := now.Sub(cpos.LastUpdate)
 
-			cpos.LastUpdate = now
-			cpos.OldPos = cpos.Pos
-			cpos.Pos = PlayerPos2Pos(pp.Pos, cpos.Pos.Dim)
+		cpos.LastUpdate = now
+		cpos.OldPos = cpos.CurPos
+		cpos.CurPos = PlayerPos2PPos(pp, cpos.CurPos.Dim)
+		cpos.Unlock()
 
-			for _, u := range posUpdaters {
-				u(c, cpos, dtime)
-			}
+		for _, u := range posUpdaters {
+			u(c, cpos, dtime)
 		}
 	})
 }
@@ -203,17 +219,17 @@ func MakePos(c *Client) *ClientPos {
 	c.Logf("makepos %s:%d\n", f, l)
 
 	return &ClientPos{
-		Pos:        Pos{Pos: [3]float32{105, 155, 140}},
+		CurPos:     PPos{Pos: Pos{Pos: [3]float32{105, 155, 140}}},
 		LastUpdate: time.Now(),
 	}
 }
 
-func GetPos(c *Client) Pos {
+func GetPos(c *Client) PPos {
 	pos := GetFullPos(c)
 	pos.RLock()
 	defer pos.RUnlock()
 
-	return pos.Pos
+	return pos.CurPos
 }
 
 // GetFullPos returns pos of player / client
@@ -253,15 +269,15 @@ func GetFullPos(c *Client) *ClientPos {
 
 // SetPos sets position
 // returns old position
-func SetPos(c *Client, p Pos) Pos {
+func SetPos(c *Client, p PPos, send bool) PPos {
 	cpos := GetFullPos(c)
 	cpos.Lock()
 	defer cpos.Unlock()
 
-	cpos.OldPos = cpos.Pos
-	cpos.Pos = p
+	cpos.OldPos = cpos.CurPos
+	cpos.CurPos = p
 
-	if cpos.OldPos.Dim != cpos.Pos.Dim {
+	if cpos.OldPos.Dim != cpos.CurPos.Dim {
 		unlockchan := make(chan struct{})
 
 		c.PosUnlock = unlockchan
@@ -271,15 +287,17 @@ func SetPos(c *Client, p Pos) Pos {
 
 		c.Logf("Leaving DIM %s (%d); joining DIM %s (%d)\n",
 			cpos.OldPos.Dim, cpos.OldPos.Dim,
-			cpos.Pos.Dim, cpos.Pos.Dim,
+			cpos.CurPos.Dim, cpos.CurPos.Dim,
 		)
+
+		// TODO Black screen
 
 		now := time.Now()
 
 		//unloading all old blks:
 		_, err := unloadAll(c)
 		if err != nil {
-			c.Logf("Failed to switch dimension %s: %s\n", cpos.Pos.Dim, err)
+			c.Logf("Failed to switch dimension %s: %s\n", cpos.CurPos.Dim, err)
 		}
 
 		c.Logf("Waiting for clt to ack all overwrites\n")
@@ -289,6 +307,15 @@ func SetPos(c *Client, p Pos) Pos {
 		c.Logf("switched dimensions in %s\n",
 			time.Now().Sub(now),
 		)
+	}
+
+	// send client own pos if required
+	if send {
+		c.SendCmd(&mt.ToCltMovePlayer{
+			Pos:   p.Pos.Pos,
+			Pitch: p.Pitch,
+			Yaw:   p.Yaw,
+		})
 	}
 
 	return cpos.OldPos

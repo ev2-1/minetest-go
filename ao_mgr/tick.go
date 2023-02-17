@@ -5,84 +5,108 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"log"
-	"sync"
+	"time"
 )
 
-var rmQueue = make(map[mt.AOID]struct{})
-var rmQueueMu sync.RWMutex
+const AOActionTimeout time.Duration = time.Second
 
 func init() {
 	minetest.RegisterTickHook(func() {
-		// check if each client has all aos
-		clientsMu.RLock()
-		activeObjectsMu.RLock()
+		clts := minetest.Clts()
+		startTime := time.Now()
 
-		for clt, d := range clients {
-			d.aosMu.Lock()
+		ActiveObjectsMu.RLock()
+		defer ActiveObjectsMu.RUnlock()
 
-			for id, ao := range activeObjects {
-				if t, ok := d.aos[id]; !ok {
-					if t != TypeNormal {
-						continue
+		for clt := range clts {
+			go func(clt *minetest.Client) {
+				cd := GetClientData(clt)
+				if cd == nil {
+					return
+				}
+
+				addQueue := make(map[mt.AOID]*AOInit)
+				rmQueue := make(map[mt.AOID]struct{})
+
+				cd.RLock()
+				defer cd.RUnlock()
+
+				if !cd.Ready {
+					return
+				}
+
+				//Look for globally added:
+				for id, ao := range ActiveObjects {
+					if _, ok := cd.AOs[id]; !ok && id != cd.AOID && Relevant(ao, clt) {
+						clt.Logf("scheduling %d for aoadd\n", id)
+						addQueue[id] = ao.AOInit(clt)
+					}
+				}
+
+				//Look for globally removed:
+				for id := range cd.AOs {
+					if _, ok := ActiveObjects[id]; !ok && id != cd.AOID {
+						clt.Logf("scheduling %d for aorm\n", id)
+						rmQueue[id] = struct{}{}
+					}
+				}
+
+				laq := len(addQueue)
+
+				//skip
+				if laq <= 0 && len(rmQueue) <= 0 {
+					return
+				}
+
+				adds := make([]mt.AOAdd, laq)
+
+				if laq > 0 {
+					var i int
+					for id, init := range addQueue {
+						adds[i] = mt.AOAdd{
+							ID:       id,
+							InitData: init.AOInitData(id),
+						}
+
+						i++
+					}
+				}
+
+				ack, err := clt.SendCmd(&mt.ToCltAORmAdd{
+					Remove: map2slice(rmQueue),
+					Add:    adds,
+				})
+
+				if err != nil {
+					clt.Logf("[WARN] Error encounterd when sending pkt: %s\n", err)
+					return
+				}
+
+				timeout := time.After(AOActionTimeout)
+
+				select {
+				case <-timeout:
+					clt.Logf("[WARN] AOAction timed out after %s\n", AOActionTimeout)
+					return
+
+				case <-ack:
+					//TODO: check which has prio in MT code
+					// apply to ClientData
+					for id := range addQueue {
+						cd.AOs[id] = struct{}{}
 					}
 
-					// clt dosn't have AO, check if relevant:
-					if RelevantAO(clt, ao) {
-						d.QueueAdd(id)
-						clt.Logf("adding AO %d\n", id)
+					for id := range rmQueue {
+						delete(cd.AOs, id)
 					}
 				}
-			}
 
-			d.aosMu.Unlock()
+			}(clt)
 		}
 
-		rmQueueMu.Lock()
-
-		// remove
-		for clt, d := range clients {
-			d.aosMu.RLock()
-
-			for id, t := range d.aos {
-				cid, ok := GetCltAOID(clt)
-
-				// Ignore special AOs & self
-				if t != TypeNormal || (ok && cid == id) {
-					continue
-				}
-
-				ao := activeObjects[id]
-
-				// should be removed        || out of range
-				if _, ok := rmQueue[id]; ok || !RelevantAO(clt, ao) {
-					// clt has stuff from rmqueue:
-					d.QueueRm(id)
-					clt.Logf("removing AO %d\n", id)
-				}
-			}
-
-			d.aosMu.RUnlock()
+		duration := time.Now().Sub(startTime)
+		if duration > time.Millisecond*64 {
+			log.Printf("[WARN] AO tick took %s!\n", duration)
 		}
-
-		clientsMu.RUnlock()
-		activeObjectsMu.RUnlock()
-
-		// apply rm to global aos
-		if len(rmQueue) != 0 {
-			activeObjectsMu.Lock()
-			for id := range rmQueue {
-				if _, ok := activeObjects[id]; ok {
-					log.Printf("removing AO %d globally\n", id)
-					delete(activeObjects, id)
-				}
-			}
-
-			activeObjectsMu.Unlock()
-		}
-
-		// clear queue:
-		rmQueue = map[mt.AOID]struct{}{}
-
-		rmQueueMu.Unlock()
 	})
 }

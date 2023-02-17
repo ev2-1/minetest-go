@@ -29,13 +29,13 @@ func lastDim(c *minetest.Client, dim minetest.DimID) *minetest.DimID {
 
 func init() {
 	minetest.RegisterPosUpdater(func(c *minetest.Client, pos *minetest.ClientPos, lu time.Duration) {
-		newPos, _ := minetest.Pos2Blkpos(pos.Pos.IntPos())
+		newPos, _ := minetest.Pos2Blkpos(pos.CurPos.IntPos())
 		oldPos, _ := minetest.Pos2Blkpos(pos.OldPos.IntPos())
 
-		dim := lastDim(c, pos.Pos.Dim)
+		dim := lastDim(c, pos.CurPos.Dim)
 
-		if newPos != oldPos || dim == nil || pos.Pos.Dim != *dim {
-			c.Logf("Blkpos changed. %v %v %v\n", newPos != oldPos, newPos != oldPos || dim == nil, newPos != oldPos || dim == nil || pos.Pos.Dim != *dim)
+		if newPos != oldPos || dim == nil || pos.CurPos.Dim != *dim {
+			c.Logf("Blkpos changed. %v %v %v\n", newPos != oldPos, newPos != oldPos || dim == nil, newPos != oldPos || dim == nil || pos.CurPos.Dim != *dim)
 
 			go loadAround(newPos, c)
 		}

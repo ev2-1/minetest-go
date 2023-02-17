@@ -78,7 +78,7 @@ func init() {
 			minetest.InitClient(c)
 
 			c.SendCmd(&mt.ToCltAcceptAuth{
-				PlayerPos:       minetest.GetPos(c).Pos,
+				PlayerPos:       minetest.GetPos(c).Pos.Pos,
 				MapSeed:         1337,
 				SendInterval:    0.09,
 				SudoAuthMethods: mt.SRP,

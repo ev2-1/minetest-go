@@ -15,17 +15,11 @@ func (c *Client) process(pkt *mt.Pkt) {
 		defer c.Log("->", fmt.Sprintf("%T done", pkt.Cmd))
 	}
 
-	var handled bool
-
 	pktProcessorsMu.RLock()
 	for _, h := range pktProcessors {
 		h(c, pkt)
 	}
 	pktProcessorsMu.RUnlock()
-
-	if handled {
-		return
-	}
 
 	switch pkt.Cmd.(type) {
 	case *mt.ToSrvCltReady:

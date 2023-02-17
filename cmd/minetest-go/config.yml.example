@@ -4,6 +4,10 @@
 # listen - listen address
 listen: ":30000"
 
+# aomaker - selects the default ActiveObject creator for Clients
+#         - has to be set to mcl2 manually as 'debug' is not implemented yet 
+default-aomaker: "default"
+
 # -- == Logging == --
 #
 
@@ -13,6 +17,10 @@ log-verbose: true
 # log-packets - enable or disable the logging of the packetflow
 #               overwrites log-verbose
 log-packets: false
+
+# log-map - enable or disable the logging of the MapLogger
+#           overwrites log-verbose
+log-map: false
 
 # -- == Map (DIM0 configuration) == --
 #
@@ -29,3 +37,4 @@ map-generator: "flat"
 # map-generator-args - arguments for mapgenerator;
 #                      creates a minecraft-like flatmap
 map-generator-args: "mcl_core:bedrock,mcl_core:dirt,mcl_core:dirt,mcl_core:dirt,mcl_core:dirt_with_grass"
+

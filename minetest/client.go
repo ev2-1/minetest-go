@@ -61,6 +61,10 @@ type Client struct {
 	lang string
 }
 
+func (c *Client) String() string {
+	return fmt.Sprintf("[%s%s] ", c.Peer.RemoteAddr(), T(c.Name == "", "", " "+c.Name))
+}
+
 func (c *Client) Logf(format string, v ...any) {
 	c.Logger.Output(2, fmt.Sprintf(format, v...))
 }
@@ -194,4 +198,12 @@ func Acks(ack chan struct{}, acks ...<-chan struct{}) { // TODO. fiX
 	}
 
 	close(ack)
+}
+
+func T[K any](c bool, t, f K) K {
+	if c {
+		return t
+	} else {
+		return f
+	}
 }

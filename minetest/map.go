@@ -281,7 +281,7 @@ func markLoaded(clt *Client, p IntPos) {
 	defer loadedMu.Unlock()
 
 	if ConfigVerbose() {
-		clt.Logf("marking [%v] loaded\n", p)
+		MapLogger.Printf("[%s] marking [%v] loaded\n", clt, p)
 	}
 
 	if loaded == nil {

@@ -1,53 +1,38 @@
 package ao
 
 import (
-	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+
+	"github.com/g3n/engine/math32"
 )
 
-var (
-	ReleventDistance float32 = 1000 // in nodes/10; distance around player their still informed about AOs
-)
+const RelevantDistance float32 = 100 * 10 // in 10th nodes
 
-func RelevantAO(clt *minetest.Client, ao ActiveObject) bool {
-	// check if ID is the one of client
-	cpos := minetest.GetPos(clt)
-	aopos := ao.GetPos()
-
-	dis := Distance(mt.Vec(aopos.Pos.Pos), cpos.Pos)
-	if cpos.Dim == aopos.Dim && dis < ReleventDistance {
-		return true
+func Relevant(ao ActiveObject, clt *minetest.Client) bool {
+	if relao, ok := ao.(ActiveObjectRelevant); ok {
+		return relao.Relevant(clt)
 	}
 
-	return false
-}
+	// Default Relevance function:
+	if posao, ok := ao.(ActiveObjectAPIAOPos); ok {
+		aopos := posao.GetAOPos()
+		cltpos := minetest.GetPos(clt)
 
-/*func FilterRelevantRms(clt *minetest.Client, rms []mt.AOID) (r []mt.AOID) {
-	for _, rm := range rms {
-		f, p := GetAOPos(rm)
-		if !f {
-			break
-		}
+		return aopos.Dim == cltpos.Dim &&
+			Distance(aopos.Pos, cltpos.Pos.Pos) <= RelevantDistance
 
-		// check if is loaded by client
 	}
 
-	return
+	// default true:
+	return true
 }
 
-func FilterRelevantMsgs(pos mt.Pos, msgs []mt.IDAOMsg) (r []mt.IDAOMsg) {
-	/*	for _, msg := range msgs {
-			f, p := GetAOPos(msg.ID)
-			if !f {
-				break
-			}
+func Distance(a, b [3]float32) float32 {
+	var number float32
 
-			if Distance(mt.Vec(pos), mt.Vec(p.Pos)) > ReleventDistance {
-				r = append(r, msg)
-			}
-		}
-*/ /*
+	number += math32.Pow((a[0] - b[0]), 2)
+	number += math32.Pow((a[1] - b[1]), 2)
+	number += math32.Pow((a[2] - b[2]), 2)
 
-	return msgs
+	return math32.Sqrt(number)
 }
-*/

@@ -4,7 +4,6 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/kevinburke/nacl/randombytes"
 
-	"fmt"
 	"log"
 )
 
@@ -155,7 +154,7 @@ func registerPlayer(c *Client) {
 	joinHooksMu.RUnlock()
 
 	// change prefix to new name
-	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
+	c.Logger.SetPrefix(c.String())
 }
 
 func InitClient(c *Client) {

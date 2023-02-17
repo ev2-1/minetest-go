@@ -4,142 +4,138 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
-	"fmt"
 	"log"
+	"sync"
 )
 
-// the first one is reserved for the playerAOID
-const lowestAOID = mt.AOID(1)
+const (
+	LowestAOID  mt.AOID = (1)
+	HighestAOID mt.AOID = (65534) // one lower than largest value
+)
 
-func GetAOID() mt.AOID {
-	aosMu.Lock()
-	defer aosMu.Unlock()
+var (
+	ActiveObjectsMu sync.RWMutex
+	ActiveObjects   = make(map[mt.AOID]ActiveObject)
+)
 
-	for id := GlobalAOIDmin; id < GlobalAOIDmax; id++ {
-		if _, ok := aos[id]; !ok {
-			aos[id] = Global
+func getAOID() mt.AOID {
+	ActiveObjectsMu.RLock()
+	defer ActiveObjectsMu.RUnlock()
 
+	for id := LowestAOID; id < HighestAOID; id++ {
+		if _, ok := ActiveObjects[id]; !ok {
 			return id
 		}
 	}
 
-	return 0
+	panic("No free AOIDs left!")
 }
 
-func FreeAOID(id mt.AOID) {
-	aosMu.Lock()
-	defer aosMu.Unlock()
-
-	delete(aos, id)
-}
-
-func RmAO(ids ...mt.AOID) {
-	for _, id := range ids {
-		if id == 0 {
-			continue
-		}
-
-		FreeAOID(id)
-		rmQueueMu.Lock()
-		rmQueue[id] = struct{}{}
-		rmQueueMu.Unlock()
-	}
-}
-
-func AOMsg(msgs ...mt.IDAOMsg) {
-	for _, msg := range msgs {
-		if msg.ID == 0 {
-			continue
-		}
-
-		globalMsgsMu.Lock()
-		globalMsgs = append(globalMsgs, msg)
-		globalMsgsMu.Unlock()
-	}
-}
-
-// GetAllAOIDs returns a slice of all ActiveObjects' ids
-func GetAllAOIDs() []mt.AOID {
-	activeObjectsMu.RLock()
-	activeObjectsMu.RUnlock()
-
-	s := make([]mt.AOID, len(activeObjects))
-	i := 0
-
-	for id := range activeObjects {
-		s[i] = id
-		i++
-	}
-
-	return s
-}
-
-func GetCltAOIDs(c *minetest.Client) []mt.AOID {
-	clientsMu.RLock()
-	defer clientsMu.RUnlock()
-
-	if cd, ok := clients[c]; ok {
-		s := make([]mt.AOID, len(cd.aos))
-		i := 0
-
-		for id := range cd.aos {
-			s[i] = id
-			i++
-		}
-
-		return s
-	}
-
-	return []mt.AOID{}
-}
-
-// - abstr -
-
-// RegisterAO registers a initialized ActiveObject
+// RegisterAO registers the ActiveObject
 func RegisterAO(ao ActiveObject) mt.AOID {
-	return registerAO(ao, TypeNormal)
+	id := getAOID()
+	ao.SetAO(id)
+
+	registerAO(ao)
+
+	return id
 }
 
-func registerAO(ao ActiveObject, t AOType) mt.AOID {
-	if ao.GetID() == 0 {
-		ao.SetID(GetAOID())
-	}
+func registerAO(ao ActiveObject) {
+	ActiveObjectsMu.Lock()
+	defer ActiveObjectsMu.Unlock()
 
-	activeObjectsMu.Lock()
-	activeObjects[ao.GetID()] = ao
-	activeObjectsMu.Unlock()
-
-	return ao.GetID()
+	ActiveObjects[ao.GetAO()] = ao
 }
 
-var ao0maker func(clt *minetest.Client, id mt.AOID) ActiveObject
+// RmAO removes AO after calling Clean on AO
+// Returns false when ao was not registerd
+func RmAO(id mt.AOID) bool {
+	ActiveObjectsMu.Lock()
+	defer ActiveObjectsMu.Unlock()
 
-// Register player AO0 / self
-// RegisterSelfAOMaker is used to register the AO maker for each client
-func RegisterAO0Maker(f func(clt *minetest.Client, id mt.AOID) ActiveObject) {
-	if ao0maker == nil {
-		ao0maker = f
-	} else {
-		panic(fmt.Errorf("[ao_mgr] Repeated AO0Maker registration attempt."))
-	}
-}
-
-func SetCltAOID(clt *minetest.Client, id mt.AOID) {
-	clt.SetData("aoid", id)
-}
-
-func GetCltAOID(c *minetest.Client) (mt.AOID, bool) {
-	dat, ok := c.GetData("aoid")
+	ao, ok := ActiveObjects[id]
 	if !ok {
-		return 0, false
+		log.Printf("[WARN] tried to delete unregistered AO (aoid: %d)\n", id)
+
+		return false
 	}
 
-	id, ok := dat.(mt.AOID)
-	if ok {
-		return id, true
+	ao.Clean()
+	delete(ActiveObjects, id)
+
+	return true
+}
+
+const ClientDataKey = "ao_data"
+
+// GetClientData returns a pointer to Clients ClientData
+// Nil if not defined
+func GetClientData(clt *minetest.Client) *ClientData {
+	data, ok := clt.GetData(ClientDataKey)
+	if !ok {
+		clt.Logf("[WARN] Client does not have ao.ClientData!")
+		cd := makeClientData()
+		clt.SetData(ClientDataKey, cd)
+
+		return cd
+	}
+
+	cd, ok := data.(*ClientData)
+	if !ok {
+		log.Fatalf("[%s] [ERROR] ClientData at '%s' is not of type '*ao.ClientData' but '%T'", clt, ClientDataKey, data)
+
+		return nil
+	}
+
+	return cd
+}
+
+func GetAO(id mt.AOID) ActiveObject {
+	ActiveObjectsMu.RLock()
+	defer ActiveObjectsMu.RUnlock()
+
+	return ActiveObjects[id]
+}
+
+func BroadcastAOMsgs(ao ActiveObject, msgs ...mt.AOMsg) (<-chan struct{}, error) {
+	var merr = new(MultiError)
+	var acks []<-chan struct{}
+
+	for clt := range minetest.Clts() {
+		if Relevant(ao, clt) {
+			ack, err := clt.SendCmd(&mt.ToCltAOMsgs{
+				Msgs: IDAOMsgs(ao.GetAO(), msgs...),
+			})
+
+			acks = append(acks, ack)
+
+			if err != nil {
+				merr.Add(err)
+			}
+		}
+	}
+
+	if len(merr.Errs) > 0 {
+		return Acks(acks...), merr
 	} else {
-		log.Fatalf("ClientData has unexpected Type expected %T got %T!\n", mt.AOID(0), dat)
+		return Acks(acks...), nil
+	}
+}
+
+// GetPAO returns the ActiveObject representing clt.
+func GetPAO(clt *minetest.Client) ActiveObjectPlayer {
+	cd := GetClientData(clt)
+
+	cd.RLock()
+	ao := GetAO(cd.AOID)
+	cd.RUnlock()
+
+	cdao, ok := ao.(ActiveObjectPlayer)
+	if !ok {
+		//TODO clt.Fatalf
+		log.Fatalf("Client AO is not ActiveObjectPlayer but %T!\n", ao)
 	}
 
-	return 0, false
+	return cdao
 }
