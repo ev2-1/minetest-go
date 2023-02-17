@@ -8,7 +8,7 @@ import (
 var logFlags = log.Flags() | log.LstdFlags | log.Lmsgprefix | log.Lshortfile
 
 var MapLogger = func() *log.Logger {
-	lpkts, ok := GetConfigBool("log-map", false)
+	lpkts, ok := GetConfig("log-map", false)
 
 	if (ConfigVerbose() && !(ok && !lpkts)) || lpkts {
 		return log.New(log.Writer(), "[map] ", logFlags)

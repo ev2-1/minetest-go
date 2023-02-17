@@ -94,17 +94,17 @@ func initPlayerAO(clt *minetest.Client) {
 func GetPlayerAOmaker(clt *minetest.Client) (PlayerMaker, string) {
 	cd, ok := clt.GetData("aomaker")
 	if !ok {
-		return playerAOmaker[minetest.GetConfigStringV("default-aomaker", "debug")], minetest.GetConfigStringV("default-aomaker", "debug")
+		return playerAOmaker[minetest.GetConfigV("default-aomaker", "debug")], minetest.GetConfigV("default-aomaker", "debug")
 	}
 
 	name, ok := cd.(string)
 	if !ok {
-		return playerAOmaker[minetest.GetConfigStringV("default-aomaker", "debug")], minetest.GetConfigStringV("default-aomaker", "debug")
+		return playerAOmaker[minetest.GetConfigV("default-aomaker", "debug")], minetest.GetConfigV("default-aomaker", "debug")
 	}
 
 	mk, ok := playerAOmaker[name]
 	if !ok {
-		return playerAOmaker[minetest.GetConfigStringV("default-aomaker", "debug")], minetest.GetConfigStringV("default-aomaker", "debug")
+		return playerAOmaker[minetest.GetConfigV("default-aomaker", "debug")], minetest.GetConfigV("default-aomaker", "debug")
 	}
 
 	return mk, name

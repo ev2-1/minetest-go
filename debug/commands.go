@@ -168,7 +168,7 @@ func init() {
 			return
 		}
 
-		v, ok := minetest.GetConfig(args[0])
+		v, ok := minetest.GetConfig(args[0], any(0))
 		chat.SendMsgf(c, mt.RawMsg, "value: %v, %s", v, T(ok, "set", "not set"))
 	})
 

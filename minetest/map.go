@@ -12,7 +12,7 @@ import (
 
 func init() {
 	RegisterStage2(func() {
-		drv, ok := GetConfigString("map-driver", "")
+		drv, ok := GetConfig("map-driver", "")
 		if !ok {
 			log.Fatalf("Error: Map: no driver specified config field 'map-driver' is empty!\nAvailable: %s\n", strings.Join(ListDrivers(), ", "))
 		}
@@ -27,7 +27,7 @@ func init() {
 
 		driver = driver.Make()
 
-		file, ok := GetConfigString("map-path", "map.sqlite")
+		file, ok := GetConfig("map-path", "map.sqlite")
 		if !ok {
 			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
 		}
@@ -37,12 +37,12 @@ func init() {
 			log.Fatalf("Error: Can't open '%s' for DIM0: %s", file, err)
 		}
 
-		mapgen, ok := GetConfigString("map-generator", "flat")
+		mapgen, ok := GetConfig("map-generator", "flat")
 		if !ok {
 			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
 		}
 
-		mapargs, ok := GetConfigString("map-generator-args", "")
+		mapargs, ok := GetConfig("map-generator-args", "")
 		if !ok {
 			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
 		}

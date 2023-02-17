@@ -7,7 +7,7 @@ import (
 )
 
 func (c *Client) process(pkt *mt.Pkt) {
-	lpkts, ok := GetConfigBool("log-packets", false)
+	lpkts, ok := GetConfig("log-packets", false)
 
 	if (ConfigVerbose() && !(ok && !lpkts)) || lpkts {
 		c.Log("->", fmt.Sprintf("%T", pkt.Cmd))
