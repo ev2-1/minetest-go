@@ -15,11 +15,11 @@ func init() {
 		clts := minetest.Clts()
 		startTime := time.Now()
 
-		ActiveObjectsMu.RLock()
-		defer ActiveObjectsMu.RUnlock()
-
 		for clt := range clts {
 			go func(clt *minetest.Client) {
+				ActiveObjectsMu.RLock()
+				defer ActiveObjectsMu.RUnlock()
+
 				cd := GetClientData(clt)
 				if cd == nil {
 					return
@@ -44,8 +44,10 @@ func init() {
 				}
 
 				//Look for globally removed:
-				for id := range cd.AOs {
-					if _, ok := ActiveObjects[id]; !ok && id != cd.AOID {
+				for id, _ := range cd.AOs {
+					ao, ok := ActiveObjects[id]
+					clt.Logf("%d relevance %v\n", id, Relevant(ao, clt))
+					if (!ok || !Relevant(ao, clt)) && id != cd.AOID {
 						clt.Logf("scheduling %d for aorm\n", id)
 						rmQueue[id] = struct{}{}
 					}

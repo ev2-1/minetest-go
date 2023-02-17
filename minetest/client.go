@@ -20,13 +20,6 @@ const (
 	CsSudo
 )
 
-type PosState uint8
-
-const (
-	PsOk PosState = iota
-	PsTransition
-)
-
 type UUID [16]byte
 
 func (u UUID) String() string {
@@ -55,8 +48,7 @@ type Client struct {
 	leaveOnce sync.Once // a client only can leave once
 
 	// TODO Move pos here
-	PosState  PosState
-	PosUnlock <-chan struct{}
+	PosState sync.RWMutex
 
 	lang string
 }

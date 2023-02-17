@@ -4,11 +4,11 @@ import (
 	"github.com/anon55555/mt"
 
 	"bytes"
-	"sync"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -191,11 +191,8 @@ func init() {
 			return
 		}
 
-		if c.PosState != PsOk {
-			c.Logf("PosState != PsOk, waiting")
-			<-c.PosUnlock
-			c.Logf("PosUnlock")
-		}
+		c.PosState.RLock()
+		defer c.PosState.RUnlock()
 
 		cpos := GetFullPos(c)
 		cpos.Lock()
@@ -278,12 +275,8 @@ func SetPos(c *Client, p PPos, send bool) PPos {
 	cpos.CurPos = p
 
 	if cpos.OldPos.Dim != cpos.CurPos.Dim {
-		unlockchan := make(chan struct{})
-
-		c.PosUnlock = unlockchan
-		defer close(unlockchan)
-		c.PosState = PsTransition
-		defer func() { c.PosState = PsOk }()
+		c.PosState.Lock()
+		defer c.PosState.Unlock()
 
 		c.Logf("Leaving DIM %s (%d); joining DIM %s (%d)\n",
 			cpos.OldPos.Dim, cpos.OldPos.Dim,
