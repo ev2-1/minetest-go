@@ -64,6 +64,14 @@ func init() {
 	chat.RegisterChatCmd("tp", tp)
 	chat.RegisterChatCmd("teleport", tp)
 
+	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
+		pos := minetest.GetPos(c)
+
+		chat.SendMsgf(c, mt.SysMsg, "Your position: [%#v]",
+			pos,
+		)
+	})
+
 	chat.RegisterChatCmd("uuid", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your UUID is %s", c.UUID)
 	})
