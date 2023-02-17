@@ -7,11 +7,63 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 )
 
 func init() {
+	tp := func(c *minetest.Client, args []string) {
+		switch len(args) {
+		case 1:
+			pos := minetest.GetPos(c)
+			dim := minetest.GetDim(args[0])
+			if dim == nil {
+				chat.SendMsgf(c, mt.SysMsg, "Dimension '%s' does not exists!", args[0])
+				return
+			}
+
+			pos.Dim = dim.ID
+
+			minetest.SetPos(c, pos, true)
+
+		case 3:
+			pos := minetest.GetPos(c)
+
+			x, err := strconv.ParseFloat(args[0], 32)
+			if err != nil {
+				chat.SendMsg(c, "Your Brain | <-- [ERROR HERE] |", mt.SysMsg)
+				return
+			}
+
+			pos.Pos.Pos[0] = float32(x * 10)
+
+			x, err = strconv.ParseFloat(args[1], 32)
+			if err != nil {
+				chat.SendMsg(c, "Your Brain | <-- [ERROR HERE] |", mt.SysMsg)
+				return
+			}
+
+			pos.Pos.Pos[1] = float32(x * 10)
+
+			x, err = strconv.ParseFloat(args[2], 32)
+			if err != nil {
+				chat.SendMsg(c, "Your Brain | <-- [ERROR HERE] |", mt.SysMsg)
+				return
+			}
+
+			pos.Pos.Pos[2] = float32(x * 10)
+
+			minetest.SetPos(c, pos, true)
+
+		default:
+			chat.SendMsgf(c, mt.SysMsg, "Usage: teleport <DIM> | <x> <y> <z> TODO: [DIM]")
+		}
+	}
+
+	chat.RegisterChatCmd("tp", tp)
+	chat.RegisterChatCmd("teleport", tp)
+
 	chat.RegisterChatCmd("uuid", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your UUID is %s", c.UUID)
 	})
@@ -37,7 +89,7 @@ func init() {
 		pos := minetest.GetPos(c)
 		pos.Dim = dim.ID
 
-		minetest.SetPos(c, pos)
+		minetest.SetPos(c, pos, true)
 	})
 
 	chat.RegisterChatCmd("open_dim", func(c *minetest.Client, args []string) {
@@ -66,6 +118,9 @@ func init() {
 		}
 
 		driver, file := s[0], s[1]
+		if !path.IsAbs(file) {
+			file = minetest.Path(file)
+		}
 
 		chat.SendMsgf(c, mt.RawMsg, "Loading new dimension %s from %s using drv %s",
 			dimName, file, driver,
