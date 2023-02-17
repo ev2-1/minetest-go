@@ -74,14 +74,14 @@ func (tnt *AOTNT) GetAO() mt.AOID {
 	return tnt.AOID
 }
 
-func (tnt *AOTNT) SetPos(p ao.AOPos) {
+func (tnt *AOTNT) SetAOPos(p ao.AOPos) {
 	tnt.Lock()
 	defer tnt.Unlock()
 
 	tnt.Pos = p
 }
 
-func (tnt *AOTNT) GetPos() ao.AOPos {
+func (tnt *AOTNT) GetAOPos() ao.AOPos {
 	tnt.RLock()
 	defer tnt.RUnlock()
 
