@@ -38,3 +38,9 @@ map-generator: "flat"
 #                      creates a minecraft-like flatmap
 map-generator-args: "mcl_core:bedrock,mcl_core:dirt,mcl_core:dirt,mcl_core:dirt,mcl_core:dirt_with_grass"
 
+# -- == Debugging == --
+#
+
+# debug-allow-abs-map-paths - if set to true allows the /open_dim command to open a dimension from a absolute filepath
+                            - also disables path-traversal checks
+debug-allow-abs-map-paths: false

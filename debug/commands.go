@@ -8,6 +8,7 @@ import (
 
 	"fmt"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -127,7 +128,20 @@ func init() {
 
 		driver, file := s[0], s[1]
 		if !path.IsAbs(file) {
-			file = minetest.Path(file)
+			file = filepath.Clean(file)
+			if strings.HasPrefix(file, "..") {
+				if !minetest.GetConfigV("debug-allow-abs-map-paths", false) {
+					chat.SendMsgf(c, mt.RawMsg, "Loading maps from absolute paths is not allowed!")
+					return
+				}
+			}
+
+			file = minetest.Path("maps/" + file)
+		} else {
+			if !minetest.GetConfigV("debug-allow-abs-map-paths", false) {
+				chat.SendMsgf(c, mt.RawMsg, "Loading maps from absolute paths is not allowed!")
+				return
+			}
 		}
 
 		chat.SendMsgf(c, mt.RawMsg, "Loading new dimension %s from %s using drv %s",
