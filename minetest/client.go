@@ -152,10 +152,7 @@ func BroadcastClientS(s []*Client, cmd mt.Cmd) <-chan struct{} {
 		acks = append(acks, ack)
 	}
 
-	ack := make(chan struct{})
-	go Acks(ack, acks...)
-
-	return ack
+	return Acks(acks...)
 }
 
 // BroadcastClientM broadcasts a mt.Cmd to a client slice
@@ -167,29 +164,26 @@ func BroadcastClientM(s map[*Client]struct{}, cmd mt.Cmd) <-chan struct{} {
 		acks = append(acks, ack)
 	}
 
-	ack := make(chan struct{})
-	go Acks(ack, acks...)
-
-	return ack
+	return Acks(acks...)
 }
 
 // Combine acks into one ack
 // Waits for all acks to close then closes ack
-func Acks(ack chan struct{}, acks ...<-chan struct{}) { // TODO. fiX
-	if len(acks) == 0 {
-		close(ack)
-		return
-	}
+func Acks(acks ...<-chan struct{}) <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		for _, ack := range acks {
+			if ack == nil {
+				continue
+			}
 
-	for i := 0; i < len(acks); i++ {
-		if acks[i] == nil {
-			continue
+			<-ack
 		}
 
-		<-acks[i]
-	}
+		close(ch)
+	}()
 
-	close(ack)
+	return ch
 }
 
 func T[K any](c bool, t, f K) K {

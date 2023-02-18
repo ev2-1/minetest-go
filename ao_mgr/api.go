@@ -117,9 +117,9 @@ func BroadcastAOMsgs(ao ActiveObject, msgs ...mt.AOMsg) (<-chan struct{}, error)
 	}
 
 	if len(merr.Errs) > 0 {
-		return Acks(acks...), merr
+		return minetest.Acks(acks...), merr
 	} else {
-		return Acks(acks...), nil
+		return minetest.Acks(acks...), nil
 	}
 }
 

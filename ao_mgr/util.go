@@ -43,22 +43,7 @@ func (merr *MultiError) Add(err error) {
 	merr.Errs = append(merr.Errs, err)
 }
 
-func Acks(acks ...<-chan struct{}) <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		for _, ack := range acks {
-			if ack == nil {
-				continue
-			}
 
-			<-ack
-		}
-
-		close(ch)
-	}()
-
-	return ch
-}
 
 func IDAOMsgs(id mt.AOID, msgs ...mt.AOMsg) (s []mt.IDAOMsg) {
 	s = make([]mt.IDAOMsg, len(msgs))

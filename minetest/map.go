@@ -393,10 +393,7 @@ func unloadAll(clt *Client) (_ <-chan struct{}, err error) {
 		i++
 	}
 
-	aaack := make(chan struct{})
-	go Acks(aaack, acks...)
-
-	return aaack, nil
+	return Acks(acks...), nil
 }
 
 func isLoaded(clt *Client, p IntPos) bool {
