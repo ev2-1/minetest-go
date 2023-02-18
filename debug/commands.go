@@ -28,7 +28,7 @@ func init() {
 
 			minetest.SetPos(c, pos, true)
 
-		case 3:
+		case 3, 4:
 			pos := minetest.GetPos(c)
 
 			x, err := strconv.ParseFloat(args[0], 32)
@@ -55,10 +55,20 @@ func init() {
 
 			pos.Pos.Pos[2] = float32(x * 10)
 
+			if len(args) == 4 {
+				dim := minetest.GetDim(args[3])
+				if dim == nil {
+					chat.SendMsgf(c, mt.SysMsg, "Dimension '%s' does not exists!", args[3])
+					return
+				}
+
+				pos.Dim = dim.ID
+			}
+
 			minetest.SetPos(c, pos, true)
 
 		default:
-			chat.SendMsgf(c, mt.SysMsg, "Usage: teleport <DIM> | <x> <y> <z> TODO: [DIM]")
+			chat.SendMsgf(c, mt.SysMsg, "Usage: teleport <DIM> | <x> <y> <z> [DIM]")
 		}
 	}
 
