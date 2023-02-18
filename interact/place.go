@@ -61,7 +61,10 @@ func Place(c *minetest.Client, i *mt.ToSrvInteract) {
 
 	c.Logger.Printf("Placing %s (param0: %d) at (%d,%d,%d)", item.PlacePredict, node.Param0, pos[0], pos[1], pos[2])
 
-	minetest.SetNode(pos, mt.Node{Param0: node.Param0}, nil)
+	p := minetest.GetPos(c).IntPos()
+	p.Pos = pos
+
+	minetest.SetNode(p, mt.Node{Param0: node.Param0}, nil)
 
 	// remove item from inv
 	stack.Count--

@@ -1,0 +1,46 @@
+# -- == General == --
+#
+
+# listen - listen address
+listen: ":30000"
+
+# aomaker - selects the default ActiveObject creator for Clients
+#         - has to be set to mcl2 manually as 'debug' is not implemented yet 
+default-aomaker: "default"
+
+# -- == Logging == --
+#
+
+# log-verbose - more verbose logging
+log-verbose: true
+
+# log-packets - enable or disable the logging of the packetflow
+#               overwrites log-verbose
+log-packets: false
+
+# log-map - enable or disable the logging of the MapLogger
+#           overwrites log-verbose
+log-map: false
+
+# -- == Map (DIM0 configuration) == --
+#
+
+# map-driver - mapdriver to use
+map-driver: "minetest"
+
+# map-path - path argment to MapDriver
+map-path: "/tmp/testmap.sqlite"
+
+# map-generator - map generator name
+map-generator: "flat"
+
+# map-generator-args - arguments for mapgenerator;
+#                      creates a minecraft-like flatmap
+map-generator-args: "mcl_core:bedrock,mcl_core:dirt,mcl_core:dirt,mcl_core:dirt,mcl_core:dirt_with_grass"
+
+# -- == Debugging == --
+#
+
+# debug-allow-abs-map-paths - if set to true allows the /open_dim command to open a dimension from a absolute filepath
+                            - also disables path-traversal checks
+debug-allow-abs-map-paths: false

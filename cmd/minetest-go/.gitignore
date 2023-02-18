@@ -1,3 +1,4 @@
 *
+!*.example
 !server.go
 !.gitignore

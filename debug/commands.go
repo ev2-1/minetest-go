@@ -5,24 +5,199 @@ import (
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/inventory"
 	"github.com/ev2-1/minetest-go/minetest"
-	"github.com/ev2-1/minetest-go/tools/pos"
 
 	"fmt"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func init() {
+	tp := func(c *minetest.Client, args []string) {
+		switch len(args) {
+		case 1:
+			pos := minetest.GetPos(c)
+			dim := minetest.GetDim(args[0])
+			if dim == nil {
+				chat.SendMsgf(c, mt.SysMsg, "Dimension '%s' does not exists!", args[0])
+				return
+			}
+
+			pos.Dim = dim.ID
+
+			minetest.SetPos(c, pos, true)
+
+		case 3, 4:
+			pos := minetest.GetPos(c)
+
+			x, err := strconv.ParseFloat(args[0], 32)
+			if err != nil {
+				chat.SendMsg(c, "Your Brain | <-- [ERROR HERE] |", mt.SysMsg)
+				return
+			}
+
+			pos.Pos.Pos[0] = float32(x * 10)
+
+			x, err = strconv.ParseFloat(args[1], 32)
+			if err != nil {
+				chat.SendMsg(c, "Your Brain | <-- [ERROR HERE] |", mt.SysMsg)
+				return
+			}
+
+			pos.Pos.Pos[1] = float32(x * 10)
+
+			x, err = strconv.ParseFloat(args[2], 32)
+			if err != nil {
+				chat.SendMsg(c, "Your Brain | <-- [ERROR HERE] |", mt.SysMsg)
+				return
+			}
+
+			pos.Pos.Pos[2] = float32(x * 10)
+
+			if len(args) == 4 {
+				dim := minetest.GetDim(args[3])
+				if dim == nil {
+					chat.SendMsgf(c, mt.SysMsg, "Dimension '%s' does not exists!", args[3])
+					return
+				}
+
+				pos.Dim = dim.ID
+			}
+
+			minetest.SetPos(c, pos, true)
+
+		default:
+			chat.SendMsgf(c, mt.SysMsg, "Usage: teleport <DIM> | <x> <y> <z> [DIM]")
+		}
+	}
+
+	chat.RegisterChatCmd("tp", tp)
+	chat.RegisterChatCmd("teleport", tp)
+
+	chat.RegisterChatCmd("sleep", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: sleep <time>")
+			return
+		}
+
+		duration, err := time.ParseDuration(args[0])
+		if err != nil {
+			chat.SendMsgf(c, mt.RawMsg, "Err: %s", err)
+			return
+		}
+
+		time.Sleep(duration)
+
+		chat.SendMsgf(c, mt.RawMsg, "Slept for %s", duration)
+	})
+
+	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
+		pos := minetest.GetPos(c)
+
+		chat.SendMsgf(c, mt.SysMsg, "Your position: [%#v]",
+			pos,
+		)
+	})
+
 	chat.RegisterChatCmd("uuid", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your UUID is %s", c.UUID)
 	})
 
+	chat.RegisterChatCmd("fullpos", func(c *minetest.Client, args []string) {
+		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", minetest.GetFullPos(c))
+	})
+
+	chat.RegisterChatCmd("dimension", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: dimension <name>")
+			return
+		}
+
+		dim := minetest.GetDim(args[0])
+		if dim == nil {
+			chat.SendMsgf(c, mt.RawMsg, "Dimension '%s' does not exist!", args[0])
+			return
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Sending you to %s (%d)!", dim.Name, dim.ID)
+
+		pos := minetest.GetPos(c)
+		pos.Dim = dim.ID
+
+		minetest.SetPos(c, pos, true)
+	})
+
+	chat.RegisterChatCmd("open_dim", func(c *minetest.Client, args []string) {
+		usage := func(str string, v ...any) {
+			chat.SendMsgf(c, mt.RawMsg, str+"Usage: open_dim <name> <args>@<mapgen> <mapdriver>:<file>", v...)
+		}
+
+		if len(args) != 3 {
+			usage("")
+			return
+		}
+
+		dimName := args[0]
+		s := strings.SplitN(args[1], "@", 3)
+		if len(s) != 2 {
+			usage("")
+			return
+		}
+
+		genargs, gen := s[0], s[1]
+
+		s = strings.SplitN(args[2], ":", 3)
+		if len(s) != 2 {
+			usage("")
+			return
+		}
+
+		driver, file := s[0], s[1]
+		if !path.IsAbs(file) {
+			file = filepath.Clean(file)
+			if strings.HasPrefix(file, "..") {
+				if !minetest.GetConfigV("debug-allow-abs-map-paths", false) {
+					chat.SendMsgf(c, mt.RawMsg, "Loading maps from absolute paths is not allowed!")
+					return
+				}
+			}
+
+			file = minetest.Path("maps/" + file)
+		} else {
+			if !minetest.GetConfigV("debug-allow-abs-map-paths", false) {
+				chat.SendMsgf(c, mt.RawMsg, "Loading maps from absolute paths is not allowed!")
+				return
+			}
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Loading new dimension %s from %s using drv %s",
+			dimName, file, driver,
+		)
+
+		dim, err := minetest.NewDim(dimName, gen, genargs, driver, file)
+		if err != nil {
+			usage("Err: %s\n", err)
+			return
+		}
+
+		chat.SendMsgf(c, mt.RawMsg, "Success, got ID: %d",
+			dim.ID,
+		)
+	})
+
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
-		blkpos, _ := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
+		blkpos, _ := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
 
-		<-minetest.LoadBlk(c, blkpos)
+		go func() {
+			ack := minetest.LoadBlk(c, blkpos)
+			if ack != nil {
+				<-ack
+			}
 
-		chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d)", blkpos[0], blkpos[1], blkpos[2])
+			chat.SendMsgf(c, mt.RawMsg, "loadedBlk at (%d, %d, %d) %s (%d)", blkpos.Pos[0], blkpos.Pos[1], blkpos.Pos[2], blkpos.Dim, blkpos.Dim)
+		}()
 	})
 
 	chat.RegisterChatCmd("kickme", func(c *minetest.Client, args []string) {
@@ -43,7 +218,7 @@ func init() {
 			return
 		}
 
-		v, ok := minetest.GetConfig(args[0])
+		v, ok := minetest.GetConfig(args[0], any(0))
 		chat.SendMsgf(c, mt.RawMsg, "value: %v, %s", v, T(ok, "set", "not set"))
 	})
 
@@ -142,7 +317,7 @@ func init() {
 			return
 		}
 
-		p, pi := mt.Pos2Blkpos(pos.GetPos(c).Pos.Pos().Int())
+		p, pi := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
 		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})

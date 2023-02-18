@@ -67,12 +67,12 @@ func (l *listener) accept() (*Client, error) {
 		return nil, ErrServerShuttingDown
 	}
 
-	prefix := fmt.Sprintf("[%s] ", p.RemoteAddr())
 	c := &Client{
 		Peer:   p,
-		Logger: log.New(logWriter, prefix, logFlags),
 		initCh: make(chan struct{}),
 	}
+
+	c.Logger = log.New(logWriter, c.String(), logFlags)
 
 	l.mu.Lock()
 	l.clts = append(l.clts, c)

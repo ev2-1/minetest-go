@@ -2,35 +2,42 @@ package mapLoader
 
 import (
 	"github.com/ev2-1/minetest-go/minetest"
-	tp "github.com/ev2-1/minetest-go/tools/pos"
 
-	"github.com/anon55555/mt"
-
-	"sync"
 	"time"
 )
 
-var (
-	lastPos   = map[*minetest.Client][3]int16{}
-	lastPosMu sync.RWMutex
-)
+func lastDim(c *minetest.Client, dim minetest.DimID) *minetest.DimID {
+	data, ok := c.GetData("last_dim")
+	if !ok {
+		c.SetData("last_dim", dim)
+
+		return nil
+	}
+
+	cdim, ok := data.(minetest.DimID)
+	if !ok {
+		c.Logf("last_dim has type %T\n", data)
+		c.SetData("last_dim", dim)
+
+		return nil
+	}
+
+	c.SetData("last_dim", dim)
+
+	return &cdim
+}
 
 func init() {
-	tp.RegisterPosUpdater(func(c *minetest.Client, pos *tp.ClientPos, lu time.Duration) {
-		lastPosMu.Lock()
-		defer lastPosMu.Unlock()
+	minetest.RegisterPosUpdater(func(c *minetest.Client, pos *minetest.ClientPos, lu time.Duration) {
+		newPos, _ := minetest.Pos2Blkpos(pos.CurPos.IntPos())
+		oldPos, _ := minetest.Pos2Blkpos(pos.OldPos.IntPos())
 
-		apos := pos.Pos.Pos().Int()
-		ip, _ := mt.Pos2Blkpos(apos)
+		dim := lastDim(c, pos.CurPos.Dim)
 
-		p, ok := lastPos[c]
-		if ok {
-			if p == ip {
-				return
-			}
+		if newPos != oldPos || dim == nil || pos.CurPos.Dim != *dim {
+			c.Logf("Blkpos changed. %v %v %v\n", newPos != oldPos, newPos != oldPos || dim == nil, newPos != oldPos || dim == nil || pos.CurPos.Dim != *dim)
+
+			go loadAround(newPos, c)
 		}
-
-		go loadAround(ip, c)
-		lastPos[c] = ip
 	})
 }

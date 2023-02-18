@@ -1,6 +1,7 @@
 package minetest
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -8,11 +9,13 @@ import (
 	"time"
 )
 
-var mapCache map[[3]int16]*MapBlk
+var mapCache map[IntPos]*MapBlk
 var mapCacheMu sync.RWMutex
 
+var ErrInvalidDim = errors.New("invalid dimension")
+
 // IsCached returns true if there is a valid cache for pos p
-func IsCached(pos [3]int16) bool {
+func IsCached(pos IntPos) bool {
 	mapCacheMu.RLock()
 	defer mapCacheMu.RUnlock()
 
@@ -24,7 +27,7 @@ func IsCached(pos [3]int16) bool {
 // TryCache caches if mapblk is either not cached already
 // if cache is still valid, does nothing
 // Refreshes Loaded.
-func TryCache(pos [3]int16) error {
+func TryCache(pos IntPos) error {
 	if !IsCached(pos) {
 		return loadIntoCache(pos)
 	}
@@ -32,21 +35,39 @@ func TryCache(pos [3]int16) error {
 	return nil
 }
 
-func loadIntoCache(pos [3]int16) error {
+// loads Blks at pos into Cache
+// generates new if no Blk exists
+func loadIntoCache(pos IntPos) error {
 	if ConfigVerbose() {
-		MapLogger.Printf("Loading (%d,%d,%d) into cache\n", pos[0], pos[1], pos[2])
+		MapLogger.Printf("Loading (%d,%d,%d) %s (%d) into cache\n", pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim, pos.Dim)
 	}
 
 	mapCacheMu.Lock()
 	defer mapCacheMu.Unlock()
 
-	blk, err := activeDriver.GetBlk(pos)
+	dim := pos.Dim.Lookup()
+	if dim == nil {
+		MapLogger.Printf("Tired to access dimension %d, but is not registerd!\n", pos.Dim)
+		return ErrInvalidDim
+	}
+
+	drv := dim.Driver
+
+	blk, err := drv.GetBlk(pos.Pos)
 	if err != nil {
-		return err
+		MapLogger.Printf("Info: error encounterd in GetBlk: [%v]: %s\n", pos, err)
 	}
 
 	if mapCache == nil {
-		mapCache = make(map[[3]int16]*MapBlk)
+		mapCache = make(map[IntPos]*MapBlk)
+	}
+
+	if blk == nil {
+		MapLogger.Printf("blk at [%v] does not exists. generating\n", pos)
+		blk, err = dim.Generator.Generate(pos.Pos)
+		if err != nil {
+			return err
+		}
 	}
 
 	mapCache[pos] = blk
@@ -68,8 +89,13 @@ func CleanCache() {
 
 	for i := 0; i < len(delQueue); i++ {
 		if ConfigVerbose() {
-			MapLogger.Printf("Unloading (%d,%d,%d)", delQueue[i][0], delQueue[i][1], delQueue[2])
+			p := delQueue[i]
+			MapLogger.Printf("Unloading (%d,%d,%d) %s (%d)",
+				p.Pos[0], p.Pos[1], p.Pos,
+				p.Dim, p.Dim,
+			)
 		}
+
 		blk, ok := mapCache[delQueue[i]]
 		if ok {
 			blk.Save()
@@ -82,7 +108,7 @@ func CleanCache() {
 	}
 }
 
-func enumerateLoadedBlks() (s [][3]int16) {
+func enumerateLoadedBlks() (s []IntPos) {
 	mapCacheMu.RLock()
 	defer mapCacheMu.RUnlock()
 
@@ -109,7 +135,7 @@ func init() {
 }
 
 // enumerateExpiredBlks enumerates all blks that should be unloaded
-func enumerateExpiredBlks() (s [][3]int16) {
+func enumerateExpiredBlks() (s []IntPos) {
 	mapCacheMu.RLock()
 	defer mapCacheMu.RUnlock()
 
@@ -117,7 +143,7 @@ func enumerateExpiredBlks() (s [][3]int16) {
 		blk.Lock()
 
 		// check if pos matches:
-		if pos != blk.Pos {
+		if pos.Pos != blk.Pos {
 			log.Fatal(fmt.Sprintf("mapblk dosn't have correct pos has %v, was expecting %v", blk.Pos, pos))
 		}
 

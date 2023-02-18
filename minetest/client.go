@@ -47,7 +47,14 @@ type Client struct {
 
 	leaveOnce sync.Once // a client only can leave once
 
+	// TODO Move pos here
+	PosState sync.RWMutex
+
 	lang string
+}
+
+func (c *Client) String() string {
+	return fmt.Sprintf("[%s%s] ", c.Peer.RemoteAddr(), T(c.Name == "", "", " "+c.Name))
 }
 
 func (c *Client) Logf(format string, v ...any) {
@@ -61,7 +68,11 @@ func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 			break
 
 		default:
-			c.Log("<-", fmt.Sprintf("%T", cmd))
+			lpkts, ok := GetConfig("log-packets", false)
+
+			if (ConfigVerbose() && !(ok && !lpkts)) || lpkts {
+				c.Log("<-", fmt.Sprintf("%T", cmd))
+			}
 		}
 	}
 
@@ -141,10 +152,7 @@ func BroadcastClientS(s []*Client, cmd mt.Cmd) <-chan struct{} {
 		acks = append(acks, ack)
 	}
 
-	ack := make(chan struct{})
-	go Acks(ack, acks...)
-
-	return ack
+	return Acks(acks...)
 }
 
 // BroadcastClientM broadcasts a mt.Cmd to a client slice
@@ -156,22 +164,32 @@ func BroadcastClientM(s map[*Client]struct{}, cmd mt.Cmd) <-chan struct{} {
 		acks = append(acks, ack)
 	}
 
-	ack := make(chan struct{})
-	go Acks(ack, acks...)
-
-	return ack
+	return Acks(acks...)
 }
 
 // Combine acks into one ack
 // Waits for all acks to close then closes ack
-func Acks(ack chan struct{}, acks ...<-chan struct{}) {
-	if len(acks) == 0 {
-		close(ack)
-	}
+func Acks(acks ...<-chan struct{}) <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		for _, ack := range acks {
+			if ack == nil {
+				continue
+			}
 
-	for i := 0; i < len(acks); i++ {
-		<-acks[i]
-	}
+			<-ack
+		}
 
-	close(ack)
+		close(ch)
+	}()
+
+	return ch
+}
+
+func T[K any](c bool, t, f K) K {
+	if c {
+		return t
+	} else {
+		return f
+	}
 }

@@ -107,7 +107,7 @@ func MustGetConfig(key string) any {
 	return config[key]
 }
 
-func GetConfig(key string) (val any, ok bool) {
+func getConfig(key string) (val any, ok bool) {
 	LoadConfig()
 
 	configMu.RLock()
@@ -117,34 +117,24 @@ func GetConfig(key string) (val any, ok bool) {
 	return
 }
 
-// Returns value which is is the config field if set or d if not
-// ok is set if the config field existed
-func GetConfigBool(key string, d bool) (val bool, ok bool) {
-	v, ok := GetConfig(key)
-	if !ok {
-		return d, true
-	}
-
-	val, ok = v.(bool)
-	if !ok {
-		log.Printf("WARN: config field %s was requested as bool but is type %T!\n", key, v)
-		return d, false
-	}
+// Like GetConfig but does not return ok
+func GetConfigV[K any](key string, d K) (val K) {
+	val, _ = GetConfig[K](key, d)
 
 	return
 }
 
 // Returns value which is is the config field if set or d if not
 // ok is set if the config field existed
-func GetConfigString(key string, d string) (val string, ok bool) {
-	v, ok := GetConfig(key)
+func GetConfig[K any](key string, d K) (val K, ok bool) {
+	v, ok := getConfig(key)
 	if !ok {
 		return d, true
 	}
 
-	val, ok = v.(string)
+	val, ok = v.(K)
 	if !ok {
-		log.Printf("WARN: config field %s was requested as string but is type %T!\n", key, v)
+		log.Printf("WARN: config field %s was requested as %T but is type %T!\n", key, d, v)
 		return d, false
 	}
 
@@ -153,7 +143,7 @@ func GetConfigString(key string, d string) (val string, ok bool) {
 
 // ConfigVerbose is a helper function to indicate if verbose logging is turned on
 func ConfigVerbose() bool {
-	v, _ := GetConfigBool("verbose", false)
+	v, _ := GetConfig("log-verbose", false)
 	return v
 }
 

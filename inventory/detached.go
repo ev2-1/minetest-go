@@ -73,10 +73,7 @@ func (di *DetachedInv) SendUpdates() (<-chan struct{}, error) {
 		acks = append(acks, ack)
 	}
 
-	ack := make(chan struct{})
-	go minetest.Acks(ack, acks...)
-
-	return ack, nil
+	return minetest.Acks(acks...), nil
 }
 
 func (di *DetachedInv) AddClient(c *minetest.Client) (<-chan struct{}, error) {

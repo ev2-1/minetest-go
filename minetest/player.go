@@ -77,6 +77,11 @@ func Clts() map[*Client]struct{} {
 	return c
 }
 
+// like log.Fatalf but does not panic but kick Client with specified Message
+func (c *Client) Fatalf(str string, v ...any) (ack <-chan struct{}, err error) {
+	return c.Kick(mt.Custom, fmt.Sprintf(str, v...))
+}
+
 func (c *Client) Kick(r mt.KickReason, Custom string) (ack <-chan struct{}, err error) {
 	return CltLeave(&Leave{
 		Client: c,
@@ -155,7 +160,7 @@ func registerPlayer(c *Client) {
 	joinHooksMu.RUnlock()
 
 	// change prefix to new name
-	c.Logger.SetPrefix(fmt.Sprintf("[%s %s] ", c.RemoteAddr(), c.Name))
+	c.Logger.SetPrefix(c.String())
 }
 
 func InitClient(c *Client) {
@@ -183,12 +188,12 @@ func InitClient(c *Client) {
 	// data:
 	var bytes int
 	c.data, bytes, err = DB_PlayerGetData(c.UUID)
-	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytes)
-
 	if err != nil {
 		c.Log("Failed to get Player data!: %s\n", err)
 		panic("Failed to get Player data!")
 	}
+
+	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytes)
 
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()

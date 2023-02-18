@@ -1,52 +1,37 @@
 package ao
 
 import (
-	"github.com/anon55555/mt"
-	//	"github.com/ev2-1/minetest-go-plugins/tools/pos"
+	"github.com/ev2-1/minetest-go/minetest"
+
+	"github.com/g3n/engine/math32"
 )
 
-var (
-	ReleventDistance float32 = 100 // in nodes; distance around player their still informed about AOs
-)
+const RelevantDistance float32 = 100 * 10 // in 10th nodes
 
-func FilterRelevantAdds(pos mt.Pos, adds []mt.AOAdd) (r []mt.AOAdd) {
-	// mt.AOAdd.InitData.Pos (mt.Pos = mt.Vec)
-	//	for _, add := range adds {
-	//		if Distance(mt.Vec(pos), mt.Vec(add.InitData.Pos)) > ReleventDistance {
-	//			r = append(r, add)
-	//		}
-	//	}
-
-	return adds
-}
-
-func FilterRelevantRms(pos mt.Pos, rms []mt.AOID) (r []mt.AOID) {
-	for _, rm := range rms {
-		f, p := GetAOPos(rm)
-		if !f {
-			break
-		}
-
-		if Distance(mt.Vec(pos), mt.Vec(p.Pos)) > ReleventDistance {
-			r = append(r, rm)
-		}
+func Relevant(ao ActiveObject, clt *minetest.Client) bool {
+	if relao, ok := ao.(ActiveObjectRelevant); ok {
+		return relao.Relevant(clt)
 	}
 
-	return
+	// Default Relevance function:
+	if posao, ok := ao.(ActiveObjectAPIAOPos); ok {
+		aopos := posao.GetAOPos()
+		cltpos := minetest.GetPos(clt)
+
+		return aopos.Dim == cltpos.Dim &&
+			Distance(aopos.Pos, cltpos.Pos.Pos) <= RelevantDistance
+	}
+
+	// default true:
+	return true
 }
 
-func FilterRelevantMsgs(pos mt.Pos, msgs []mt.IDAOMsg) (r []mt.IDAOMsg) {
-	/*	for _, msg := range msgs {
-			f, p := GetAOPos(msg.ID)
-			if !f {
-				break
-			}
+func Distance(a, b [3]float32) float32 {
+	var number float32
 
-			if Distance(mt.Vec(pos), mt.Vec(p.Pos)) > ReleventDistance {
-				r = append(r, msg)
-			}
-		}
-	*/
+	number += math32.Pow((a[0] - b[0]), 2)
+	number += math32.Pow((a[1] - b[1]), 2)
+	number += math32.Pow((a[2] - b[2]), 2)
 
-	return msgs
+	return math32.Sqrt(number)
 }

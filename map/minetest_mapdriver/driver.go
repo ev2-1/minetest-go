@@ -38,6 +38,10 @@ var (
 	ErrDBMapBlockNoData = errors.New("No Data in field BLOB")
 )
 
+func (drv *MinetestMapDriver) Make() minetest.MapDriver {
+	return new(MinetestMapDriver)
+}
+
 func (drv *MinetestMapDriver) Open(file string) error {
 	db, err := sql.Open("sqlite3", file)
 	if err != nil {

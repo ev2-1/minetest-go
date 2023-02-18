@@ -20,10 +20,10 @@ func interact(c *minetest.Client, m *mt.ToSrvInteract) {
 	case *mt.PointedNode:
 		pos := thing.Under
 
+		c.Logf("interacted! (wow) %s\n", m.Action)
 		switch m.Action {
-		case mt.Dig:
-		case mt.Dug:
-			Dig(pos)
+		case mt.Dig, mt.Dug:
+			Dig(c, pos)
 
 		case mt.Place:
 			Place(c, m)

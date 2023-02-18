@@ -5,6 +5,9 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 )
 
-func Dig(pos [3]int16) {
-	minetest.SetNode(pos, mt.Node{Param0: mt.Air}, nil)
+func Dig(c *minetest.Client, pos [3]int16) {
+	p := minetest.GetPos(c).IntPos()
+	p.Pos = pos
+
+	minetest.SetNode(p, mt.Node{Param0: mt.Air}, nil)
 }
