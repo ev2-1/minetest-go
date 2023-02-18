@@ -4,7 +4,24 @@ import (
 	"github.com/anon55555/mt"
 
 	"fmt"
+	"time"
 )
+
+const defaultDuration = "10s"
+
+func makeTimeout() *time.Timer {
+	dstr := GetConfigV("pkt-timeout", defaultDuration)
+
+	duration, err := time.ParseDuration(dstr)
+	if err != nil {
+		duration, err = time.ParseDuration(defaultDuration)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return time.NewTimer(duration)
+}
 
 func (c *Client) process(pkt *mt.Pkt) {
 	lpkts, ok := GetConfig("log-packets", false)
@@ -17,7 +34,21 @@ func (c *Client) process(pkt *mt.Pkt) {
 
 	pktProcessorsMu.RLock()
 	for _, h := range pktProcessors {
-		h(c, pkt)
+		ch := make(chan struct{})
+		timeout := makeTimeout()
+
+		go func(h func(*Client, *mt.Pkt)) {
+			h(c, pkt)
+
+			close(ch)
+		}(h)
+
+		select {
+		case <-ch:
+			continue
+		case <-timeout.C:
+			c.Logf("Timeout waiting for pktProcessor! pkt: %T\n", pkt.Cmd)
+		}
 	}
 	pktProcessorsMu.RUnlock()
 

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func init() {
@@ -74,6 +75,23 @@ func init() {
 
 	chat.RegisterChatCmd("tp", tp)
 	chat.RegisterChatCmd("teleport", tp)
+
+	chat.RegisterChatCmd("sleep", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsgf(c, mt.RawMsg, "Usage: sleep <time>")
+			return
+		}
+
+		duration, err := time.ParseDuration(args[0])
+		if err != nil {
+			chat.SendMsgf(c, mt.RawMsg, "Err: %s", err)
+			return
+		}
+
+		time.Sleep(duration)
+
+		chat.SendMsgf(c, mt.RawMsg, "Slept for %s", duration)
+	})
 
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
 		pos := minetest.GetPos(c)
