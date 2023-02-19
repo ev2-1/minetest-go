@@ -47,7 +47,7 @@ func (c *Client) process(pkt *mt.Pkt) {
 		case <-ch:
 			continue
 		case <-timeout.C:
-			c.Logf("Timeout waiting for pktProcessor! pkt: %T\n", pkt.Cmd)
+			c.Logf("Timeout waiting for pktProcessor! pkt: %T, registerd at %s\n", pkt.Cmd, h.Path)
 		}
 	}
 	pktProcessorsMu.RUnlock()
