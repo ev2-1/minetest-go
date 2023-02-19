@@ -23,11 +23,3 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
 gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
-vimagination.zapto.org/boolmap v1.0.0 h1:IELceoXi/FkaxHgjWQBGzQE4B0ZGauXySJbuxo+7MkE=
-vimagination.zapto.org/boolmap v1.0.0/go.mod h1:DLOTUVFC0RqHAd8t7uWcq682O9c2Il5pbOWEQEveXiA=
-vimagination.zapto.org/byteio v1.0.1 h1:p22ga+TiTKQcHELUzSZIdWtfckv8C4GlKVIYo46AFqk=
-vimagination.zapto.org/byteio v1.0.1/go.mod h1:/cW+WW89mJiuXV8qy34hxPInzIiq6TW4DEE9GFrp/gI=
-vimagination.zapto.org/memio v1.0.0 h1:r0GDf430aNuGpOAV57UTvbUzAf82UclRyGG/pBp1uvU=
-vimagination.zapto.org/memio v1.0.0/go.mod h1:zHGDKp2tyvF4IAfLti4pKYqCJucXYmmKMb3UMrCHK/4=
-vimagination.zapto.org/minecraft v0.0.0-20220809132146-81a7bf7744c0 h1:orX+7MmaC/W/5JDVJ1T7/fqs10kMjGPf+wc7D8JbO9w=
-vimagination.zapto.org/minecraft v0.0.0-20220809132146-81a7bf7744c0/go.mod h1:KSiCU5//8C4biwPGQsIq9Y0IdzGn7kjWLY3liP1eFo4=

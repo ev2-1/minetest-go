@@ -104,7 +104,6 @@ func DebugPlace(def ItemDef) ItemPlaceFunc {
 }
 
 // Add more item definitions to pool
-// will panic if serverstate is `StateRunning`
 func AddItemDef(defs ...ItemDef) {
 	itemDefsMu.Lock()
 	defer itemDefsMu.Unlock()
