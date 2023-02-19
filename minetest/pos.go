@@ -231,7 +231,20 @@ func init() {
 		}()
 
 		for _, u := range posUpdaters {
-			u.Thing(c, cpos, dtime)
+			timeout := makePktTimeout()
+			done := make(chan struct{})
+
+			go func() {
+				u.Thing(c, cpos, dtime)
+				close(done)
+			}()
+
+			select {
+			case <-done:
+				timeout.Stop()
+			case <-timeout.C:
+				c.Logf("Timeout waiting for posUpdater! registerd at %s\n", u.Path)
+			}
 		}
 	})
 }

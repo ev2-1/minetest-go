@@ -9,7 +9,7 @@ import (
 
 const defaultDuration = "10s"
 
-func makeTimeout() *time.Timer {
+func makePktTimeout() *time.Timer {
 	dstr := GetConfigV("pkt-timeout", defaultDuration)
 
 	duration, err := time.ParseDuration(dstr)
@@ -35,7 +35,7 @@ func (c *Client) process(pkt *mt.Pkt) {
 	pktProcessorsMu.RLock()
 	for _, h := range pktProcessors {
 		ch := make(chan struct{})
-		timeout := makeTimeout()
+		timeout := makePktTimeout()
 
 		go func(h PktProcessor) {
 			h(c, pkt)
