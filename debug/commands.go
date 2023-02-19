@@ -15,6 +15,13 @@ import (
 )
 
 func init() {
+	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
+		c.SendCmd(&mt.ToCltShowFormspec{
+			Formspec: inventory.TestSpec(),
+			Formname: "lol",
+		})
+	})
+
 	tp := func(c *minetest.Client, args []string) {
 		switch len(args) {
 		case 1:

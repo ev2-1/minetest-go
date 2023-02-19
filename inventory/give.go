@@ -8,15 +8,11 @@ import (
 // If InvLocation.Stack is <0 the function will try to figure out a free slot
 // Returns the about of items added and any given error
 func Give(c *minetest.Client, inv *InvLocation, cnt uint16, itm string) (uint16, <-chan struct{}, error) {
-	defer c.Logger.Printf("ret")
-	c.Logf("1")
-
 	// aquire inv
 	rwinv, err := inv.Aquire(c)
 	if err != nil {
 		return 0, nil, err
 	}
-	c.Logf("2")
 
 	rwinv.Lock()
 	defer func() {
@@ -34,7 +30,6 @@ func Give(c *minetest.Client, inv *InvLocation, cnt uint16, itm string) (uint16,
 
 	// find free / usable slot
 	if inv.Stack >= 0 {
-		c.Logf("stack>=0")
 		// stack is specified
 		list, ok := rwinv.Get(inv.Name)
 		if !ok {
@@ -70,44 +65,35 @@ func Give(c *minetest.Client, inv *InvLocation, cnt uint16, itm string) (uint16,
 			return added, nil, ErrOutOfSpace
 		}
 	}
-	c.Logf("3")
 
 	// add item to first one
 	list, ok := rwinv.Get(inv.Name)
 	if !ok {
 		return added, nil, ErrInvalidStack
 	}
-	c.Logf("4")
 
 	for i := 0; i < list.Width(); i++ {
-		c.Logger.Printf("wi: %d", i)
-
 		stack, ok := list.GetStack(i)
 		if !ok {
-			c.Logf("!ok")
 			continue
 		}
 
 		if !(stack.Count == 0 || stack.Name == itm) {
-			c.Logf("!count==0")
 			continue
 		}
 
 		stack.Name = itm
 		oldcount := stack.Count
 		if stack.Count+cnt < stack.Count { // check if it would overflow
-			c.Logf("overflow")
 			stack.Count = 65535
 
 			added += stack.Count - oldcount
 			cnt -= stack.Count - oldcount
 		} else {
-			c.Logf("not overflow")
 			stack.Count += cnt
 			added += cnt
 		}
 
-		c.Logf("fix stack, %d, %+#v", i, stack)
 		ok = list.SetStack(i, stack)
 		if !ok {
 			return 0, nil, ErrInvalidStack

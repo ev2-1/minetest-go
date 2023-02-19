@@ -10,23 +10,16 @@ import (
 	"strings"
 )
 
+// TODO: clean
+//
 //go:embed inv.fs
 var formspec string
 
-func init() {
-	RegisterDetached("test", &DetachedInv{
-		SimpleInv: SimpleInv{
-			M: map[string]InvList{
-				"main": &SimpleInvList{
-					mt.InvList{
-						Width:  4 * 8,
-						Stacks: make([]mt.Stack, 4*8),
-					},
-				},
-			},
-		},
-	})
+func TestSpec() string {
+	return formspec
+}
 
+func init() {
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInvAction:
@@ -44,6 +37,7 @@ func init() {
 
 	minetest.RegisterInitHook(func(c *minetest.Client) {
 		// Send client inventory formspec
+		// TODO: formspecs based on setting in ClientData & config field
 		c.SendCmd(&mt.ToCltInvFormspec{
 			Formspec: formspec,
 		})
@@ -69,13 +63,6 @@ func init() {
 
 		<-ack
 		c.Logger.Printf("Sent CltInv")
-	})
-
-	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
-		c.SendCmd(&mt.ToCltShowFormspec{
-			Formspec: formspec,
-			Formname: "lol",
-		})
 	})
 
 	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
@@ -107,11 +94,12 @@ func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 	if !ok { // => not found, so initialize
 		c.Logger.Printf("Client does not have inventory yet, adding")
 
+		//TODO: clean
 		stacks := make([]mt.Stack, 4*8)
 		stacks[5] = mt.Stack{
 			Count: 69,
 			Item: mt.Item{
-				Name: "basenodes:cobble",
+				Name: "mcl_core:stone",
 			},
 		}
 

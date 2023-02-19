@@ -88,7 +88,7 @@ func (di *DetachedInv) AddClient(c *minetest.Client) (<-chan struct{}, error) {
 
 	// send detached inv to test:
 	ack, err := c.SendCmd(&mt.ToCltDetachedInv{
-		Name: "test",
+		Name: di.Name,
 		Keep: true,
 
 		Inv: str,
