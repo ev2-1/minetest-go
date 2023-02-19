@@ -167,15 +167,19 @@ func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
 	return
 }
 
-var posUpdatersMu sync.RWMutex
-var posUpdaters []func(c *Client, pos *ClientPos, lu time.Duration)
+type PosUpdater func(c *Client, pos *ClientPos, lu time.Duration)
+
+var (
+	posUpdatersMu sync.RWMutex
+	posUpdaters   []Registerd[PosUpdater]
+)
 
 // PosUpdater is called with a UNLOCKED ClientPos
-func RegisterPosUpdater(pu func(c *Client, pos *ClientPos, lu time.Duration)) {
+func RegisterPosUpdater(pu PosUpdater) {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
 
-	posUpdaters = append(posUpdaters, pu)
+	posUpdaters = append(posUpdaters, Registerd[PosUpdater]{Caller(1), pu})
 }
 
 func init() {
@@ -227,7 +231,7 @@ func init() {
 		}()
 
 		for _, u := range posUpdaters {
-			u(c, cpos, dtime)
+			u.Thing(c, cpos, dtime)
 		}
 	})
 }

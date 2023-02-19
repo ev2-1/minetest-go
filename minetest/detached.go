@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	detachedInvs   = make(map[string]*DetachedInv)
+	detachedInvs   = make(map[string]*Registerd[*DetachedInv])
 	detachedInvsMu sync.RWMutex
 )
 
@@ -21,7 +21,7 @@ type DetachedInv struct {
 	Clients   map[*Client]struct{}
 }
 
-func GetDetached(name string, c *Client) (inv *DetachedInv, err error) {
+func GetDetached(name string, c *Client) (inv *Registerd[*DetachedInv], err error) {
 	detachedInvsMu.RLock()
 	defer detachedInvsMu.RUnlock()
 
@@ -113,7 +113,7 @@ func RegisterDetached(name string, inv *DetachedInv) {
 		inv.Clients = make(map[*Client]struct{})
 	}
 
-	detachedInvs[name] = inv
+	detachedInvs[name] = &Registerd[*DetachedInv]{Caller(1), inv}
 }
 
 var _ RWInv = &DetachedInv{}

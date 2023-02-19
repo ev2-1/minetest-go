@@ -86,11 +86,13 @@ func init() {
 			return
 		}
 
-		d, err := minetest.GetDetached(args[0], c)
+		rd, err := minetest.GetDetached(args[0], c)
 		if err != nil {
 			c.Logger.Printf("Error: %s", err)
 			return
 		}
+
+		d := rd.Thing
 
 		ack, err := d.AddClient(c)
 		if err != nil {

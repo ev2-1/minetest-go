@@ -161,7 +161,7 @@ func (l *InvLocation) SendUpdate(list string, c *Client) (<-chan struct{}, error
 			return nil, err
 		}
 
-		return d.SendUpdates()
+		return d.Thing.SendUpdates()
 
 	default:
 		_ = ident
@@ -200,7 +200,11 @@ func (l *InvLocation) Aquire(c *Client) (RWInv, error) {
 		return GetInv(c)
 
 	case *InvIdentifierDetached:
-		return GetDetached(indent.name, c)
+		inv, err := GetDetached(indent.name, c)
+		if err != nil || inv == nil {
+			return nil, err
+		}
+		return inv.Thing, nil
 
 	default:
 		_ = indent
