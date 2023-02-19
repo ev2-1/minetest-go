@@ -32,9 +32,6 @@ github.com/ev2-1/minetest-go/init
 # basic chat just broadcasts chatmessages to all players
 github.com/ev2-1/minetest-go/chat
 
-# inventory tools
-github.com/ev2-1/minetest-go/inventory
-
 # testing:
 github.com/ev2-1/minetest-go/tnt_ao
 github.com/ev2-1/minetest-go/debug

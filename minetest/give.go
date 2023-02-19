@@ -1,13 +1,9 @@
-package inventory
-
-import (
-	"github.com/ev2-1/minetest-go/minetest"
-)
+package minetest
 
 // Give adds cnt itms to inv as seen out of cs view.
 // If InvLocation.Stack is <0 the function will try to figure out a free slot
 // Returns the about of items added and any given error
-func Give(c *minetest.Client, inv *InvLocation, cnt uint16, itm string) (uint16, <-chan struct{}, error) {
+func Give(c *Client, inv *InvLocation, cnt uint16, itm string) (uint16, <-chan struct{}, error) {
 	// aquire inv
 	rwinv, err := inv.Aquire(c)
 	if err != nil {

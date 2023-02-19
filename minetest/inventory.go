@@ -1,9 +1,7 @@
-package inventory
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/chat"
-	"github.com/ev2-1/minetest-go/minetest"
 
 	"bytes"
 	_ "embed"
@@ -20,7 +18,7 @@ func TestSpec() string {
 }
 
 func init() {
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInvAction:
 			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
@@ -35,7 +33,7 @@ func init() {
 		}
 	})
 
-	minetest.RegisterInitHook(func(c *minetest.Client) {
+	RegisterInitHook(func(c *Client) {
 		// Send client inventory formspec
 		// TODO: formspecs based on setting in ClientData & config field
 		c.SendCmd(&mt.ToCltInvFormspec{
@@ -64,32 +62,9 @@ func init() {
 		<-ack
 		c.Logger.Printf("Sent CltInv")
 	})
-
-	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
-		if len(args) != 1 {
-			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)
-			return
-		}
-
-		d, err := GetDetached(args[0], c)
-		if err != nil {
-			c.Logger.Printf("Error: %s", err)
-			return
-		}
-
-		ack, err := d.AddClient(c)
-		if err != nil {
-			c.Logger.Printf("Error: %s", err)
-			return
-		}
-
-		<-ack
-		c.Logger.Printf("Sent DetachedInv")
-
-	})
 }
 
-func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
+func GetInv(c *Client) (inv *SimpleInv, err error) {
 	data, ok := c.GetData("inv")
 	if !ok { // => not found, so initialize
 		c.Logger.Printf("Client does not have inventory yet, adding")
@@ -124,7 +99,7 @@ func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 		return inv, nil
 	}
 
-	if dat, ok := data.(*minetest.ClientDataSaved); ok {
+	if dat, ok := data.(*ClientDataSaved); ok {
 		inv = new(SimpleInv)
 
 		buf := bytes.NewBuffer(dat.Bytes())
@@ -135,5 +110,5 @@ func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 		return inv, err
 	}
 
-	return nil, minetest.ErrClientDataInvalidType
+	return nil, ErrClientDataInvalidType
 }

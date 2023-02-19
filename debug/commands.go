@@ -3,7 +3,6 @@ package debug
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/chat"
-	"github.com/ev2-1/minetest-go/inventory"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"fmt"
@@ -15,9 +14,32 @@ import (
 )
 
 func init() {
+	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)
+			return
+		}
+
+		d, err := minetest.GetDetached(args[0], c)
+		if err != nil {
+			c.Logger.Printf("Error: %s", err)
+			return
+		}
+
+		ack, err := d.AddClient(c)
+		if err != nil {
+			c.Logger.Printf("Error: %s", err)
+			return
+		}
+
+		<-ack
+		c.Logger.Printf("Sent DetachedInv")
+
+	})
+
 	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
 		c.SendCmd(&mt.ToCltShowFormspec{
-			Formspec: inventory.TestSpec(),
+			Formspec: minetest.TestSpec(),
 			Formname: "lol",
 		})
 	})
@@ -263,9 +285,9 @@ func init() {
 			return
 		}
 
-		i, ack, err := inventory.Give(c,
-			&inventory.InvLocation{
-				Identifier: &inventory.InvIdentifierCurrentPlayer{},
+		i, ack, err := minetest.Give(c,
+			&minetest.InvLocation{
+				Identifier: &minetest.InvIdentifierCurrentPlayer{},
 				Name:       "main",
 				Stack:      -1, // auto aquire
 			},
@@ -391,7 +413,7 @@ func init() {
 			return
 		}
 
-		inv, err := inventory.GetInv(c)
+		inv, err := minetest.GetInv(c)
 		if err != nil {
 			chat.SendMsgf(c, mt.RawMsg, "Error: %s", err)
 			return

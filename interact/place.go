@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/inventory"
 	"github.com/ev2-1/minetest-go/minetest"
 )
 
@@ -17,7 +16,7 @@ func Place(c *minetest.Client, i *mt.ToSrvInteract) {
 	pos := n.Above
 
 	// get item in hand:
-	inv, err := inventory.GetInv(c)
+	inv, err := minetest.GetInv(c)
 	if err != nil {
 		c.Logger.Printf("Error during GetInv trying to Place: %s\n", err)
 		return
@@ -70,15 +69,15 @@ func Place(c *minetest.Client, i *mt.ToSrvInteract) {
 	stack.Count--
 	l.SetStack(int(i.ItemSlot), stack)
 
-	str, err := inventory.SerializeString(inv.Serialize)
+	str, err := minetest.SerializeString(inv.Serialize)
 	if err != nil {
 		c.Logger.Printf("Error: cant serialize inv: %s\n", err)
 		return
 	}
 
 	// ahh yes, i *love* object orientation
-	(&inventory.InvLocation{
-		Identifier: &inventory.InvIdentifierCurrentPlayer{},
+	(&minetest.InvLocation{
+		Identifier: &minetest.InvIdentifierCurrentPlayer{},
 		Name:       "main",
 		Stack:      int(i.ItemSlot),
 	}).SendUpdate(str, c)

@@ -1,8 +1,7 @@
-package inventory
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/minetest"
 
 	"io"
 	"strconv"
@@ -149,7 +148,7 @@ type InvLocation struct {
 	Stack      int
 }
 
-func (l *InvLocation) SendUpdate(list string, c *minetest.Client) (<-chan struct{}, error) {
+func (l *InvLocation) SendUpdate(list string, c *Client) (<-chan struct{}, error) {
 	switch ident := l.Identifier.(type) {
 	case *InvIdentifierCurrentPlayer:
 		return c.SendCmd(&mt.ToCltInv{
@@ -195,7 +194,7 @@ func (l *InvLocation) Deserialize(r io.Reader) {
 	l.Stack = ReadInt(r, false)
 }
 
-func (l *InvLocation) Aquire(c *minetest.Client) (RWInv, error) {
+func (l *InvLocation) Aquire(c *Client) (RWInv, error) {
 	switch indent := l.Identifier.(type) {
 	case *InvIdentifierCurrentPlayer:
 		return GetInv(c)
