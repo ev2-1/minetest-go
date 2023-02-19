@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/g3n/engine/math32"
 	"io"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -195,15 +197,34 @@ func init() {
 		defer c.PosState.RUnlock()
 
 		cpos := GetFullPos(c)
-		cpos.Lock()
 
+		//calc dtime
 		now := time.Now()
 		dtime := now.Sub(cpos.LastUpdate)
 
-		cpos.LastUpdate = now
-		cpos.OldPos = cpos.CurPos
-		cpos.CurPos = PlayerPos2PPos(pp, cpos.CurPos.Dim)
-		cpos.Unlock()
+		func() {
+			cpos.Lock()
+			defer cpos.Unlock()
+
+			//anitcheat
+			newpos := PlayerPos2PPos(pp, cpos.CurPos.Dim)
+			if !anticheatPos(c, cpos.CurPos, newpos, dtime) {
+				c.Logf("client moved to fast!\n")
+
+				c.SendCmd(&mt.ToCltMovePlayer{
+					Pos: cpos.CurPos.Pos.Pos,
+
+					Pitch: cpos.CurPos.Pitch,
+					Yaw:   cpos.CurPos.Yaw,
+				})
+				return
+			}
+
+			//updatepos
+			cpos.LastUpdate = now
+			cpos.OldPos = cpos.CurPos
+			cpos.CurPos = newpos
+		}()
 
 		for _, u := range posUpdaters {
 			u(c, cpos, dtime)
@@ -312,4 +333,32 @@ func SetPos(c *Client, p PPos, send bool) PPos {
 	}
 
 	return cpos.OldPos
+}
+
+// Returns distance in 10th nodes
+// speed is < 0, no max speed
+func MaxSpeed(clt *Client) float64 {
+	return 100 //TODO
+}
+
+// Check if NewPos is valid
+func anticheatPos(clt *Client, old, new PPos, dtime time.Duration) bool {
+	speed := MaxSpeed(clt)
+	if speed < 0 {
+		return true
+	}
+
+	curspeed := Distance(old.Pos.Pos, new.Pos.Pos) / dtime.Seconds()
+
+	return curspeed < speed
+}
+
+func Distance(a, b [3]float32) float64 {
+	var number float32
+
+	number += math32.Pow((a[0] - b[0]), 2)
+	number += math32.Pow((a[1] - b[1]), 2)
+	number += math32.Pow((a[2] - b[2]), 2)
+
+	return math.Sqrt(float64(number))
 }

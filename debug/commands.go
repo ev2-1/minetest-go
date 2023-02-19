@@ -13,7 +13,73 @@ import (
 	"time"
 )
 
+type cltpos struct {
+	Pos   *minetest.ClientPos
+	Clt   *minetest.Client
+	dtime time.Duration
+}
+
+func makePosCh() <-chan *cltpos {
+	ch := make(chan *cltpos)
+
+	minetest.RegisterPosUpdater(func(c *minetest.Client, p *minetest.ClientPos, t time.Duration) {
+		ch <- &cltpos{p, c, t}
+	})
+
+	return ch
+}
+
 func init() {
+
+	chat.RegisterChatCmd("logpos", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: logpos on|off", mt.RawMsg)
+			return
+		}
+
+		stopCh := make(chan struct{})
+
+		if args[0] == "on" {
+			cd, ok := c.GetData("logpos")
+			if ok && cd != nil {
+				chat.SendMsg(c, "Already logging!", mt.NormalMsg)
+				return
+			}
+		} else {
+			cd, ok := c.GetData("logpos")
+			if !ok || cd == nil {
+				chat.SendMsg(c, "not logging!", mt.NormalMsg)
+				return
+			}
+
+			close(cd.(chan struct{}))
+			c.SetData("logpos", nil)
+			return
+		}
+
+		c.SetData("logpos", stopCh)
+
+		posch := makePosCh()
+
+		go func() {
+			for {
+				select {
+				case pos := <-posch:
+					apos := pos.Pos.CurPos.Pos
+					speed := minetest.Distance(pos.Pos.CurPos.Pos.Pos, pos.Pos.OldPos.Pos.Pos) / pos.dtime.Seconds()
+
+					chat.SendMsgf(c, mt.RawMsg, "Pos: %5.1f %5.1f %5.1f : %5s @ %.2fn/s",
+						apos.Pos[0], apos.Pos[1], apos.Pos[2], apos.Dim,
+						speed,
+					)
+
+				case <-stopCh:
+					return
+				}
+			}
+		}()
+	})
+
 	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)

@@ -99,7 +99,6 @@ func DebugPlace(def ItemDef) ItemPlaceFunc {
 			Name:       "main",
 			Stack:      int(i.ItemSlot),
 		}).SendUpdate(str, c)
-
 	}
 }
 

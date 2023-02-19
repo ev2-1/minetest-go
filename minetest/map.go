@@ -68,6 +68,17 @@ func init() {
 			log.Fatalf("Error: Map: can't create DIM0: %s\n", err)
 		}
 	})
+
+	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
+		if blks, ok := pkt.Cmd.(*mt.ToSrvDeletedBlks); ok {
+			for _, blk := range blks.Blks {
+				p := GetPos(c).IntPos()
+				p.Pos = blk
+
+				markUnloaded(c, p)
+			}
+		}
+	})
 }
 
 var ErrInvalidDriver = errors.New("invalid mapdriver")
