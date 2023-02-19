@@ -22,7 +22,7 @@ func initTicks() {
 					dtime := now - physHooksLast
 
 					for _, h := range physHooks {
-						go h(dtime)
+						go h.Thing(dtime)
 					}
 
 					physHooksLast = now
@@ -31,13 +31,13 @@ func initTicks() {
 
 				tickHooksMu.RLock()
 				for _, h := range tickHooks {
-					h()
+					h.Thing()
 				}
 				tickHooksMu.RUnlock()
 
 				pktTickHooksMu.RLock()
 				for _, h := range pktTickHooks {
-					h()
+					h.Thing()
 				}
 				pktTickHooksMu.RUnlock()
 			}

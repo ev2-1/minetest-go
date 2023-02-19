@@ -77,14 +77,12 @@ func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 	}
 
 	// packet preprocessor
-	{
-		packetPreMu.RLock()
-		defer packetPreMu.RUnlock()
+	packetPreMu.RLock()
+	defer packetPreMu.RUnlock()
 
-		for _, pre := range packetPre {
-			if pre(c, cmd) {
-				return nil, nil
-			}
+	for _, pre := range packetPre {
+		if pre.Thing(c, cmd) {
+			return nil, nil
 		}
 	}
 

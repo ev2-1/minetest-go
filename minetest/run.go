@@ -91,10 +91,10 @@ func runFunc() {
 
 		for _, h := range shutdownHooks {
 			wg.Add(1)
-			go func(h func()) {
+			go func(h ShutdownHook) {
 				h()
 				wg.Done()
-			}(h)
+			}(h.Thing)
 		}
 
 		wg.Wait()
@@ -103,10 +103,10 @@ func runFunc() {
 		log.Println("executing savefile Hooks")
 		for _, h := range saveFileHooks {
 			wg.Add(1)
-			go func(h func()) {
+			go func(h SaveFileHook) {
 				h()
 				wg.Done()
-			}(h)
+			}(h.Thing)
 		}
 
 		wg.Wait()

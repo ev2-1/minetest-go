@@ -36,7 +36,7 @@ func CltLeave(l *Leave) (ack <-chan struct{}, err error) {
 	l.Client.leaveOnce.Do(func() {
 		leaveHooksMu.RLock()
 		for _, h := range leaveHooks {
-			h(l)
+			h.Thing(l)
 		}
 
 		leaveHooksMu.RUnlock()
@@ -141,7 +141,7 @@ func firstJoin(c *Client) error {
 	registerHooksMu.RLock()
 	defer registerHooksMu.RUnlock()
 	for _, h := range registerHooks {
-		h(c)
+		h.Thing(c)
 	}
 
 	return nil
@@ -155,7 +155,7 @@ func registerPlayer(c *Client) {
 
 	joinHooksMu.RLock()
 	for _, h := range joinHooks {
-		h(c)
+		h.Thing(c)
 	}
 	joinHooksMu.RUnlock()
 
@@ -199,6 +199,6 @@ func InitClient(c *Client) {
 	defer initHooksMu.RUnlock()
 
 	for _, h := range initHooks {
-		h(c)
+		h.Thing(c)
 	}
 }

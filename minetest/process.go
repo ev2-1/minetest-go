@@ -37,11 +37,11 @@ func (c *Client) process(pkt *mt.Pkt) {
 		ch := make(chan struct{})
 		timeout := makeTimeout()
 
-		go func(h func(*Client, *mt.Pkt)) {
+		go func(h PktProcessor) {
 			h(c, pkt)
 
 			close(ch)
-		}(h)
+		}(h.Thing)
 
 		select {
 		case <-ch:
