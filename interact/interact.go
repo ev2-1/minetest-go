@@ -24,9 +24,6 @@ func interact(c *minetest.Client, m *mt.ToSrvInteract) {
 		switch m.Action {
 		case mt.Dig, mt.Dug:
 			Dig(c, pos)
-
-		case mt.Place:
-			Place(c, m)
 		}
 
 	default:

@@ -9,11 +9,6 @@ import (
 	"sync"
 )
 
-var (
-	itemDefsMu sync.RWMutex
-	itemDefs   = map[string]mt.ItemDef{}
-)
-
 type nodeDefNotFoundErr struct {
 	name string
 }
@@ -39,17 +34,6 @@ var mediaMu sync.RWMutex
 
 var NodeIdMap map[mt.Content]string
 var IdNodeMap map[string]mt.Content
-
-// Add more item definitions to pool
-// will panic if serverstate is `StateRunning`
-func AddItemDef(defs ...mt.ItemDef) {
-	itemDefsMu.Lock()
-	defer itemDefsMu.Unlock()
-
-	for _, def := range defs {
-		itemDefs[def.Name] = def
-	}
-}
 
 // Add more item definitions to pool
 // pls only use while init func
@@ -113,19 +97,6 @@ func GetNodeDef(name string) (def *mt.NodeDef) {
 	return def
 }
 
-// GetItemDef returns pointer to ItemDef if registerd
-func GetItemDef(name string) (def *mt.ItemDef) {
-	itemDefsMu.Lock()
-	defer itemDefsMu.Unlock()
-
-	d, found := itemDefs[name]
-	if !found {
-		return nil
-	}
-
-	return &d
-}
-
 // GetNodeID returns the Param0 of a node
 // panics if not found
 func GetNodeID(name string) mt.Content {
@@ -179,40 +150,6 @@ func AddMediaURL(url ...string) {
 	defer mediaMu.Unlock()
 
 	mediaURLs = append(mediaURLs, url...)
-}
-
-// Send (cached) ItemDefinitions to client
-func (c *Client) SendItemDefs() (<-chan struct{}, error) {
-	itemDefsMu.RLock()
-
-	// add to slice
-	defs := make([]mt.ItemDef, len(itemDefs))
-	var i int
-	for _, v := range itemDefs {
-		defs[i] = v
-		i++
-	}
-
-	itemDefsMu.RUnlock()
-
-	// add aliases to slice
-	aliasesMu.RLock()
-	alias := make([]struct{ Alias, Orig string }, len(aliases))
-
-	i = 0
-	for k, v := range aliases {
-		alias[i] = Alias{k, v}
-		i++
-	}
-
-	aliasesMu.RUnlock()
-
-	cmd := &mt.ToCltItemDefs{
-		Defs:    defs,
-		Aliases: alias,
-	}
-
-	return c.SendCmd(cmd)
 }
 
 // Send (cached) NodeDefinitions to client
