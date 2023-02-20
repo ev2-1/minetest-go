@@ -43,7 +43,7 @@ var (
 )
 
 // PlaceCond gets called before Place is acted upon
-// If returns false doesn't place node (NodeDef.OnPlace not called)
+// If returns false doesn't place node (ItemDef.OnPlace not called)
 // Gets called BEFORE NodeDef.OnPlace
 func RegisterPlaceCond(h PlaceCond) HookRef[Registerd[PlaceCond]] {
 	placeCondsMu.Lock()
@@ -161,4 +161,23 @@ func getItem(c *Client, slot int) (d *Registerd[ItemDef], inv RWInv) {
 	}
 
 	return item, inv
+}
+
+func DefaultPlace(c *Client, inv RWInv, i *mt.ToSrvInteract, def ItemDef) {
+	if !UseItem(inv, "main", int(i.ItemSlot), 1) {
+		return
+	}
+
+	Update(inv, &InvLocation{
+		Identifier: &InvIdentifierCurrentPlayer{},
+		Name:       "main",
+		Stack:      int(i.ItemSlot),
+	}, c)
+
+	//Get place predict
+	ndef := GetNodeDef(def.PlacePredict)
+	param0 := ndef.Thing.Param0
+
+	SetNode(IntPos{i.Pointed.(*mt.PointedNode).Above, GetPos(c).Dim},
+		mt.Node{Param0: param0}, nil)
 }

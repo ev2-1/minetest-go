@@ -28,8 +28,12 @@ func (hr *HookRef[H]) Stop() {
 }
 
 type Registerd[T any] struct {
-	Path  string
+	path  string
 	Thing T
+}
+
+func (r Registerd[T]) Path() string {
+	return r.path
 }
 
 // Returns file:line of caller at i

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"github.com/EliasFleckenstein03/mtmap"
+	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 	_ "github.com/mattn/go-sqlite3" // MIT licensed.
 
@@ -28,6 +29,9 @@ type MinetestMapDriver struct {
 
 	read  *sql.Stmt
 	write *sql.Stmt
+
+	NodeIdMap map[mt.Content]string
+	IdNodeMap map[string]mt.Content
 }
 
 func init() {
@@ -63,6 +67,8 @@ func (drv *MinetestMapDriver) Open(file string) error {
 	if err != nil {
 		return fmt.Errorf("Cant prepare writing statement: %s", err)
 	}
+
+	drv.NodeIdMap, drv.IdNodeMap = minetest.NodeMaps()
 
 	return nil
 }
@@ -109,13 +115,13 @@ func (drv *MinetestMapDriver) readBlkFromDB(p [3]int16) (*mtmap.MapBlk, error) {
 
 	reader := bytes.NewReader(buf)
 
-	return mtmap.Deserialize(reader, minetest.IdNodeMap), nil
+	return mtmap.Deserialize(reader, drv.IdNodeMap), nil
 }
 
 func (drv *MinetestMapDriver) writeBlkToDB(p [3]int16, blk *mtmap.MapBlk) error {
 	w := &bytes.Buffer{}
 
-	mtmap.Serialize(blk, w, minetest.NodeIdMap)
+	mtmap.Serialize(blk, w, drv.NodeIdMap)
 
 	pos := Blk2DBPos(p)
 

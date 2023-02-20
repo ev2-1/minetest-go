@@ -112,3 +112,37 @@ func GetInv(c *Client) (inv *SimpleInv, err error) {
 
 	return nil, ErrClientDataInvalidType
 }
+
+func UseItem(inv RWInv, name string, slot int, i int) bool {
+	inv.Lock()
+	defer inv.Unlock()
+
+	list, ok := inv.Get(name)
+	if !ok {
+		return false
+	}
+
+	stack, ok := list.GetStack(slot)
+	if !ok {
+		return false
+	}
+
+	if stack.Count <= 0 {
+		return false
+	}
+
+	stack.Count -= 1
+
+	ok = list.SetStack(slot, stack)
+
+	return ok
+}
+
+func Update(inv RWInv, loc *InvLocation, c *Client) (<-chan struct{}, error) {
+	str, err := SerializeString(inv.Serialize)
+	if err != nil {
+		return nil, err
+	}
+
+	return loc.SendUpdate(str, c)
+}

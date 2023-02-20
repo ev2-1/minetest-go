@@ -2,6 +2,9 @@ package minetest
 
 import (
 	"github.com/anon55555/mt"
+
+	"log"
+	"time"
 )
 
 func init() {
@@ -15,7 +18,76 @@ func init() {
 }
 
 func interact(c *Client, i *mt.ToSrvInteract) {
+	c.Logf("Interact: %s\n", i.Action)
+
 	switch i.Action {
+	case mt.Dig:
+		// get pointed node
+		pt, ok := i.Pointed.(*mt.PointedNode)
+		if !ok {
+			c.Logf("[WARN] tried to Dig %T!\n", pt)
+			return
+		}
+
+		c.setDigPos(&IntPos{pt.Under, GetPos(c).Dim})
+
+	case mt.StopDigging:
+		c.setDigPos(nil)
+
+	case mt.Dug:
+		pt, ok := i.Pointed.(*mt.PointedNode)
+		if !ok {
+			c.Logf("[WARN] tried to Dug %T!\n", pt)
+			return
+		}
+
+		ptpos := pt.Under
+
+		pos, start := c.DigPos()
+		c.setDigPos(nil)
+		if pos == nil || ptpos != pos.Pos {
+			c.Logf("[WARN] clt tired to bamboozle server. (DigPos == nil || DigPos != DugPos)\n")
+			return
+		}
+
+		dtime := time.Now().Sub(start)
+
+		cpos := GetPos(c)
+		if cpos.Dim != pos.Dim {
+			c.Logf("[WARN] clt tired to bamboozle server. (DigPos != DugPos (Dimensions dont match))\n")
+			return
+		}
+
+		blkipos, _ := Pos2Blkpos(cpos.IntPos())
+		if !doDigConds(c, i, dtime) && isLoaded(c, blkipos) {
+			return
+		}
+
+		// get node digged:
+		node, _ := GetNode(IntPos{ptpos, cpos.Dim})
+		param0 := node.Param0
+
+		rdef := GetNodeDefID(param0)
+		if rdef == nil {
+			return
+		}
+
+		def := rdef.Thing
+		if def.OnDig != nil {
+			def.OnDug(c, i, dtime)
+		} else {
+			//TODO: anticheat
+
+			//dig predict:
+			predict := GetNodeDef(rdef.Thing.DigPredict)
+			if predict == nil {
+				log.Printf("[WARN] DigPredict '%s' for '%s' is not defined\n", def.Name, def.DigPredict)
+				return
+			}
+
+			SetNode(IntPos{ptpos, cpos.Dim}, mt.Node{Param0: predict.Thing.Param0, Param1: 255}, nil)
+		}
+
 	case mt.Place:
 		// get pointed node
 		pt, ok := i.Pointed.(*mt.PointedNode)
@@ -40,10 +112,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 					KeepMeta: true,
 				})
 			}
-		}
 
-		//place conditions
-		if !doPlaceConds(c, i) {
 			return
 		}
 
@@ -57,7 +126,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		if def.OnPlace != nil {
 			def.OnPlace(c, inv, i)
 		} else {
-
+			DefaultPlace(c, inv, i, def)
 		}
 
 	case mt.Use:

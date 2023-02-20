@@ -2,6 +2,7 @@ package minetest
 
 import (
 	"errors"
+	"fmt"
 )
 
 var (
@@ -13,3 +14,11 @@ var (
 	ErrInvalidPos        = errors.New("the position supplied is not parsable (e.g. not 3 dimensional)")
 	ErrOutOfSpace        = errors.New("inventory already full")
 )
+
+type nodeDefNotFoundErr struct {
+	name string
+}
+
+func (ndnfe nodeDefNotFoundErr) Error() string {
+	return fmt.Sprintf("Node definition not Found: '%s'", ndnfe.name)
+}

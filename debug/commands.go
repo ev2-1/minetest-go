@@ -50,7 +50,7 @@ func init() {
 			return true
 		}
 
-		return !cd.(bool)
+		return cd.(bool)
 	})
 
 	chat.RegisterChatCmd("disable_place", func(c *minetest.Client, args []string) {
@@ -115,6 +115,23 @@ func init() {
 				}
 			}
 		}()
+	})
+
+	chat.RegisterChatCmd("nodeidmap", func(c *minetest.Client, args []string) {
+		nim, _ := minetest.NodeMaps()
+
+		var str string
+
+		for id, name := range nim {
+			if len(str) > 1000 {
+				chat.SendMsg(c, str, mt.RawMsg)
+				str = ""
+			}
+
+			str += fmt.Sprintf("%5d: %s\n", id, name)
+		}
+
+		chat.SendMsg(c, str, mt.RawMsg)
 	})
 
 	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
@@ -479,7 +496,9 @@ func init() {
 		for info := range argsMap {
 			switch info {
 			case "name":
-				msg += fmt.Sprintf("Name: %s\n", minetest.NodeIdMap[param0])
+				def := minetest.GetNodeDefID(param0)
+
+				msg += fmt.Sprintf("Name: %s\n", def.Thing.Name)
 				break
 
 			case "param0_raw":

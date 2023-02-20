@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/anon55555/mt"
 	"github.com/anon55555/mt/rudp"
@@ -51,6 +52,34 @@ type Client struct {
 	PosState sync.RWMutex
 
 	lang string
+
+	diggingMu    sync.RWMutex
+	digging      *IntPos
+	startDigging time.Time
+}
+
+func (c *Client) IsDigging() bool {
+	c.diggingMu.RLock()
+	defer c.diggingMu.RUnlock()
+
+	return c.digging != nil
+}
+
+// Returns nil if *Client is not digging
+func (c *Client) DigPos() (*IntPos, time.Time) {
+	c.diggingMu.RLock()
+	defer c.diggingMu.RUnlock()
+
+	return c.digging, c.startDigging
+}
+
+// Returns nil if *Client is not digging
+func (c *Client) setDigPos(p *IntPos) {
+	c.diggingMu.Lock()
+	defer c.diggingMu.Unlock()
+
+	c.digging = p
+	c.startDigging = time.Now()
 }
 
 func (c *Client) String() string {

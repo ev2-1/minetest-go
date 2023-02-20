@@ -58,7 +58,9 @@ func parseFileNode(r io.Reader) int {
 		log.Printf("Error parsing nodedef '%s'", err.Error())
 	}
 
-	minetest.AddNodeDef(defs...)
+	for _, def := range defs {
+		minetest.AddNodeDef(minetest.NodeDef{NodeDef: *def})
+	}
 
 	return len(defs)
 }
