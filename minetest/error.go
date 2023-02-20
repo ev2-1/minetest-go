@@ -15,6 +15,10 @@ var (
 	ErrOutOfSpace        = errors.New("inventory already full")
 )
 
+var (
+	ErrNilValue = errors.New("unexpected nil value")
+)
+
 type nodeDefNotFoundErr struct {
 	name string
 }

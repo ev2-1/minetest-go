@@ -216,7 +216,7 @@ var (
 	pktProcessorsMu sync.RWMutex
 )
 
-// Gets called for each packet received
+// Gets called for each packet received; as long as clt is initialized
 func RegisterPktProcessor(h PktProcessor) HookRef[Registerd[PktProcessor]] {
 	pktProcessorsMu.Lock()
 	defer pktProcessorsMu.Unlock()
@@ -225,6 +225,26 @@ func RegisterPktProcessor(h PktProcessor) HookRef[Registerd[PktProcessor]] {
 	ref := HookRef[Registerd[PktProcessor]]{&pktProcessorsMu, pktProcessors, r}
 
 	pktProcessors[r] = struct{}{}
+
+	return ref
+}
+
+type RawPktProcessor func(*Client, *mt.Pkt)
+
+var (
+	rawPktProcessors   = make(map[*Registerd[RawPktProcessor]]struct{})
+	rawPktProcessorsMu sync.RWMutex
+)
+
+// Gets called for each packet received; even for uninitialized clients
+func RegisterRawPktProcessor(h RawPktProcessor) HookRef[Registerd[RawPktProcessor]] {
+	rawPktProcessorsMu.Lock()
+	defer rawPktProcessorsMu.Unlock()
+
+	r := &Registerd[RawPktProcessor]{Caller(1), h}
+	ref := HookRef[Registerd[RawPktProcessor]]{&rawPktProcessorsMu, rawPktProcessors, r}
+
+	rawPktProcessors[r] = struct{}{}
 
 	return ref
 }

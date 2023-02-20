@@ -148,8 +148,8 @@ func firstJoin(c *Client) error {
 	return nil
 }
 
-// register Player as active
-func registerPlayer(c *Client) {
+// RegisterPlayer as active
+func RegisterPlayer(c *Client) {
 	clientsMu.Lock()
 	clients[c] = struct{}{}
 	clientsMu.Unlock()
@@ -162,6 +162,8 @@ func registerPlayer(c *Client) {
 
 	// change prefix to new name
 	c.Logger.SetPrefix(c.String())
+
+	close(c.initCh)
 }
 
 func InitClient(c *Client) {

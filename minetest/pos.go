@@ -152,6 +152,10 @@ type ClientPos struct {
 var be = binary.BigEndian
 
 func (cp *ClientPos) Serialize(w io.Writer) (err error) {
+	if cp == nil {
+		return ErrNilValue
+	}
+
 	return binary.Write(w, be, cp.CurPos)
 }
 

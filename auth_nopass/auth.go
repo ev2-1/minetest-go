@@ -9,7 +9,7 @@ func Stage1() {}
 func Stage2() {}
 
 func init() {
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+	minetest.RegisterRawPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInit:
 			if c.State > minetest.CsCreated {
@@ -101,6 +101,22 @@ func init() {
 
 			// is ignored anyways
 			c.SendCmd(&mt.ToCltCSMRestrictionFlags{MapRange: 3})
+
+		case *mt.ToSrvCltReady:
+			if c.State == minetest.CsActive {
+				minetest.RegisterPlayer(c)
+			} else {
+				minetest.CltLeave(&minetest.Leave{
+					Reason: mt.UnexpectedData,
+
+					Client: c,
+				})
+			}
+
+			return
+
+		case *mt.ToSrvGotBlks:
+			return
 
 		default:
 			return

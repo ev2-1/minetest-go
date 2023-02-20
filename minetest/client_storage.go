@@ -210,6 +210,11 @@ func SyncPlayerData(c *Client) {
 				return
 			}
 
+			if d == nil {
+				c.Logf("Type can't be saved '%s': is <NIL> value\n", k)
+				return
+			}
+
 			buf := &bytes.Buffer{}
 
 			d.Serialize(buf)
