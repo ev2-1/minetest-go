@@ -76,12 +76,20 @@ func init() {
 
 		case *mt.ToSrvFirstSRP:
 			minetest.InitClient(c)
+			cpos := c.GetPos()
 
 			c.SendCmd(&mt.ToCltAcceptAuth{
-				PlayerPos:       c.GetPos().Pos.Pos,
+				PlayerPos:       cpos.Pos.Pos,
 				MapSeed:         1337,
 				SendInterval:    0.09,
 				SudoAuthMethods: mt.SRP,
+			})
+
+			c.SendCmd(&mt.ToCltMovePlayer{
+				Pos: cpos.Pos.Pos,
+
+				Pitch: cpos.Pitch,
+				Yaw:   cpos.Yaw,
 			})
 
 			c.SetState(minetest.CsActive)
