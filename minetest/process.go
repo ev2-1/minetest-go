@@ -58,7 +58,7 @@ func (c *Client) process(pkt *mt.Pkt) {
 		// check if invalid pkt type while init seq:
 		switch pkt.Cmd.(type) {
 		//Allowed packets:
-		case *mt.ToSrvInit, *mt.ToSrvFirstSRP, *mt.ToSrvInit2, *mt.ToSrvCltReady:
+		case *mt.ToSrvInit, *mt.ToSrvFirstSRP, *mt.ToSrvInit2, *mt.ToSrvCltReady, *mt.ToSrvNil:
 			break
 
 		default:
