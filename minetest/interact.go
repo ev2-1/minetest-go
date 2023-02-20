@@ -16,55 +16,67 @@ func init() {
 
 func interact(c *Client, i *mt.ToSrvInteract) {
 	switch i.Action {
-	case mt.Place, mt.Use, mt.Activate:
+	case mt.Place:
+		// get pointed node
+		pt, ok := i.Pointed.(*mt.PointedNode)
+		if !ok {
+			c.Logf("[WARN] tried to Place: on %T!\n", pt)
+			return
+		}
+
+		dim := GetPos(c).Dim
+		pos := pt.Above
+		blkpos, _ := mt.Pos2Blkpos(pos)
+		blkipos := IntPos{blkpos, dim}
+		ipos := IntPos{pos, dim}
+
+		if !doPlaceConds(c, i) {
+			if isLoaded(c, blkipos) {
+				node, _ := GetNode(ipos)
+
+				c.SendCmd(&mt.ToCltAddNode{
+					Pos:      pos,
+					Node:     node,
+					KeepMeta: true,
+				})
+			}
+		}
+
+		//place conditions
+		if !doPlaceConds(c, i) {
+			return
+		}
+
 		// get item in hand:
-		inv, err := GetInv(c)
-		if err != nil {
-			c.Logger.Printf("Error during GetInv trying to Place: %s\n", err)
+		rdef, inv := getItem(c, int(i.ItemSlot))
+		if rdef == nil {
+			return
+		}
+		def := rdef.Thing
+
+		if def.OnPlace != nil {
+			def.OnPlace(c, inv, i)
+		} else {
+
+		}
+
+	case mt.Use:
+		def, inv := getItem(c, int(i.ItemSlot))
+		if def == nil {
 			return
 		}
 
-		inv.Lock()
-		defer inv.Unlock()
-
-		l, ok := inv.Get("main")
-		if !ok {
-			c.Logger.Printf("Error: main inv does not exist\n")
+		if def.Thing.OnUse != nil {
+			def.Thing.OnUse(c, inv, i)
+		}
+	case mt.Activate:
+		def, inv := getItem(c, int(i.ItemSlot))
+		if def == nil {
 			return
 		}
 
-		stack, ok := l.GetStack(int(i.ItemSlot))
-		if !ok {
-			c.Logger.Printf("Error: cant get slot %d on main inv\n", i.ItemSlot)
-			return
-		}
-
-		if stack.Count == 0 {
-			c.Logger.Printf("Error: tried to place 0 stack slot: %d\n", i.ItemSlot)
-			return
-		}
-
-		if stack.Name == "" {
-			c.Logger.Printf("Error: tried to place stack with no name slot: %d\n", i.ItemSlot)
-			return
-		}
-
-		item := GetItemDef(stack.Name)
-		if item == nil {
-			c.Logger.Printf("Error: tried to place item without definition! name: %s\n", stack.Name)
-			return
-		}
-
-		switch i.Action {
-		case mt.Place:
-			item.OnPlace(c, inv, i)
-		case mt.Use:
-			item.OnUse(c, inv, i)
-		case mt.Activate:
-			item.OnActivate(c, inv, i)
-
-		default:
-			panic("How did we get here?")
+		if def.Thing.OnActivate != nil {
+			def.Thing.OnActivate(c, inv, i)
 		}
 	}
 }

@@ -3,7 +3,6 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"log"
 	"sync"
 )
 
@@ -23,84 +22,45 @@ type ItemDef struct {
 	OnMove     ItemMoveFunc
 }
 
+func doPlaceConds(clt *Client, i *mt.ToSrvInteract) bool {
+	placeCondsMu.RLock()
+	defer placeCondsMu.RUnlock()
+
+	for c := range placeConds {
+		if !c.Thing(clt, i) {
+			return false
+		}
+	}
+
+	return true
+}
+
+type PlaceCond func(*Client, *mt.ToSrvInteract) bool
+
 var (
-	itemDefsMu sync.RWMutex
-	itemDefs   = map[string]ItemDef{}
+	placeConds   = make(map[*Registerd[PlaceCond]]struct{})
+	placeCondsMu sync.RWMutex
 )
 
-func DebugMove(def ItemDef) ItemMoveFunc {
-	return func(c *Client, inv Inv, i *InvAction) {}
+// PlaceCond gets called before Place is acted upon
+// If returns false doesn't place node (NodeDef.OnPlace not called)
+// Gets called BEFORE NodeDef.OnPlace
+func RegisterPlaceCond(h PlaceCond) HookRef[Registerd[PlaceCond]] {
+	placeCondsMu.Lock()
+	defer placeCondsMu.Unlock()
+
+	r := &Registerd[PlaceCond]{Caller(1), h}
+	ref := HookRef[Registerd[PlaceCond]]{&placeCondsMu, placeConds, r}
+
+	placeConds[r] = struct{}{}
+
+	return ref
 }
 
-func DebugActivate(def ItemDef) ItemActivateFunc {
-	return func(c *Client, inv Inv, i *mt.ToSrvInteract) {}
-}
-
-func DebugUse(def ItemDef) ItemUseFunc {
-	return func(c *Client, inv Inv, i *mt.ToSrvInteract) {}
-}
-
-func DebugPlace(def ItemDef) ItemPlaceFunc {
-	return func(c *Client, inv Inv, i *mt.ToSrvInteract) {
-		n, ok := i.Pointed.(*mt.PointedNode)
-		if !ok {
-			return
-		}
-
-		pos := n.Above
-		l, ok := inv.Get("main")
-		if !ok {
-			c.Logger.Printf("Error: main inv does not exist\n")
-			return
-		}
-
-		stack, ok := l.GetStack(int(i.ItemSlot))
-		if !ok {
-			c.Logger.Printf("Error: cant get slot %d on main inv\n", i.ItemSlot)
-			return
-		}
-
-		if stack.Count == 0 {
-			c.Logger.Printf("Error: tried to place 0 stack slot: %d\n", i.ItemSlot)
-			return
-		}
-
-		if stack.Name == "" {
-			c.Logger.Printf("Error: tried to place stack with no name slot: %d\n", i.ItemSlot)
-			return
-		}
-
-		node := GetNodeDef(def.PlacePredict)
-		if node == nil {
-			log.Fatalf("Error: item place prediction for %s (%s) does not exists as node\n", stack.Name, def.PlacePredict)
-		}
-
-		c.Logger.Printf("Placing %s (param0: %d) at (%d,%d,%d)", def.PlacePredict, node.Param0, pos[0], pos[1], pos[2])
-
-		// Get DIM:
-		p := GetPos(c).IntPos()
-		p.Pos = pos
-
-		SetNode(p, mt.Node{Param0: node.Param0}, nil)
-
-		// remove item from inv
-		stack.Count--
-		l.SetStack(int(i.ItemSlot), stack)
-
-		str, err := SerializeString(inv.Serialize)
-		if err != nil {
-			c.Logger.Printf("Error: cant serialize inv: %s\n", err)
-			return
-		}
-
-		// ahh yes, i *love* object orientation
-		(&InvLocation{
-			Identifier: &InvIdentifierCurrentPlayer{},
-			Name:       "main",
-			Stack:      int(i.ItemSlot),
-		}).SendUpdate(str, c)
-	}
-}
+var (
+	itemDefsMu sync.RWMutex
+	itemDefs   = map[string]Registerd[ItemDef]{}
+)
 
 // Add more item definitions to pool
 func AddItemDef(defs ...ItemDef) {
@@ -109,29 +69,13 @@ func AddItemDef(defs ...ItemDef) {
 
 	for _, def := range defs {
 		// Default debug defs:
-		if def.OnPlace == nil {
-			log.Printf("[WARN] ItemDef for %s has to OnPlace, using DebugPlace\n", def.Name)
-			def.OnPlace = DebugPlace(def)
-		}
 
-		if def.OnUse == nil {
-			def.OnUse = DebugUse(def)
-		}
-
-		if def.OnActivate == nil {
-			def.OnActivate = DebugActivate(def)
-		}
-
-		if def.OnMove == nil {
-			def.OnMove = DebugMove(def)
-		}
-
-		itemDefs[def.Name] = def
+		itemDefs[def.Name] = Registerd[ItemDef]{Caller(1), def}
 	}
 }
 
 // GetItemDef returns pointer to ItemDef if registerd
-func GetItemDef(name string) (def *ItemDef) {
+func GetItemDef(name string) (def *Registerd[ItemDef]) {
 	itemDefsMu.Lock()
 	defer itemDefsMu.Unlock()
 
@@ -151,7 +95,7 @@ func (c *Client) SendItemDefs() (<-chan struct{}, error) {
 	defs := make([]mt.ItemDef, len(itemDefs))
 	var i int
 	for _, v := range itemDefs {
-		defs[i] = v.ItemDef
+		defs[i] = v.Thing.ItemDef
 		i++
 	}
 
@@ -175,4 +119,46 @@ func (c *Client) SendItemDefs() (<-chan struct{}, error) {
 	}
 
 	return c.SendCmd(cmd)
+}
+
+// returns false if error is encountered
+func getItem(c *Client, slot int) (d *Registerd[ItemDef], inv RWInv) {
+	inv, err := GetInv(c)
+	if err != nil {
+		c.Logger.Printf("Error during GetInv trying to Place: %s\n", err)
+		return
+	}
+
+	inv.Lock()
+	defer inv.Unlock()
+
+	l, ok := inv.Get("main")
+	if !ok {
+		c.Logger.Printf("Error: main inv does not exist\n")
+		return
+	}
+
+	stack, ok := l.GetStack(slot)
+	if !ok {
+		c.Logger.Printf("Error: cant get slot %d on main inv\n", slot)
+		return
+	}
+
+	if stack.Count == 0 {
+		c.Logger.Printf("Error: tried to place 0 stack slot: %d\n", slot)
+		return
+	}
+
+	if stack.Name == "" {
+		c.Logger.Printf("Error: tried to place stack with no name slot: %d\n", slot)
+		return
+	}
+
+	item := GetItemDef(stack.Name)
+	if item == nil {
+		c.Logger.Printf("Error: tried to place item without definition! name: %s\n", stack.Name)
+		return
+	}
+
+	return item, inv
 }

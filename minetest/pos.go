@@ -171,15 +171,20 @@ type PosUpdater func(c *Client, pos *ClientPos, lu time.Duration)
 
 var (
 	posUpdatersMu sync.RWMutex
-	posUpdaters   []Registerd[PosUpdater]
+	posUpdaters   = make(map[*Registerd[PosUpdater]]struct{})
 )
 
 // PosUpdater is called with a UNLOCKED ClientPos
-func RegisterPosUpdater(pu PosUpdater) {
+func RegisterPosUpdater(pu PosUpdater) HookRef[Registerd[PosUpdater]] {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
 
-	posUpdaters = append(posUpdaters, Registerd[PosUpdater]{Caller(1), pu})
+	r := &Registerd[PosUpdater]{Caller(1), pu}
+	ref := HookRef[Registerd[PosUpdater]]{&posUpdatersMu, posUpdaters, r}
+
+	posUpdaters[r] = struct{}{}
+
+	return ref
 }
 
 func init() {
@@ -230,7 +235,18 @@ func init() {
 			cpos.CurPos = newpos
 		}()
 
-		for _, u := range posUpdaters {
+		//copy to prevent deadlock
+		posUpdatersMu.RLock()
+		updaters := make([]Registerd[PosUpdater], len(posUpdaters))
+		var i int
+		for k := range posUpdaters {
+			updaters[i] = *k
+
+			i++
+		}
+		posUpdatersMu.RUnlock()
+
+		for u := range posUpdaters {
 			timeout := makePktTimeout()
 			done := make(chan struct{})
 
@@ -355,7 +371,7 @@ func SetPos(c *Client, p PPos, send bool) PPos {
 // Returns distance in 10th nodes
 // speed is < 0, no max speed
 func MaxSpeed(clt *Client) float64 {
-	return 100 //TODO
+	return -100 //TODO
 }
 
 // Check if NewPos is valid

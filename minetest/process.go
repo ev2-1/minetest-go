@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 
 	"fmt"
+	"runtime"
 	"time"
 )
 
@@ -33,21 +34,32 @@ func (c *Client) process(pkt *mt.Pkt) {
 	}
 
 	pktProcessorsMu.RLock()
-	for _, h := range pktProcessors {
+	for h := range pktProcessors {
 		ch := make(chan struct{})
+		pc := make(chan uintptr, 1)
 		timeout := makePktTimeout()
 
 		go func(h PktProcessor) {
+			ptr, _, _, _ := runtime.Caller(0)
+			pc <- ptr
+			close(pc)
+
 			h(c, pkt)
 
 			close(ch)
 		}(h.Thing)
 
+		ptr := <-pc
+
 		select {
 		case <-ch:
 			continue
 		case <-timeout.C:
-			c.Logf("Timeout waiting for pktProcessor! pkt: %T, registerd at %s\n", pkt.Cmd, h.Path)
+			// aquire point in which code got stuck:
+			f := runtime.FuncForPC(ptr)
+			file, line := f.FileLine(ptr)
+
+			c.Logf("Timeout waiting for pktProcessor! pkt: %T, registerd at %s\ngot stuck in %s:%d\n", pkt.Cmd, h.Path, file, line)
 		}
 	}
 	pktProcessorsMu.RUnlock()

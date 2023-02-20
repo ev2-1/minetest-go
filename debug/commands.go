@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,17 +20,47 @@ type cltpos struct {
 	dtime time.Duration
 }
 
-func makePosCh() <-chan *cltpos {
+func makePosCh() (func(), chan *cltpos) {
 	ch := make(chan *cltpos)
+	var mu sync.Mutex
 
-	minetest.RegisterPosUpdater(func(c *minetest.Client, p *minetest.ClientPos, t time.Duration) {
+	ref := minetest.RegisterPosUpdater(func(c *minetest.Client, p *minetest.ClientPos, t time.Duration) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		//TODO: fix
 		ch <- &cltpos{p, c, t}
 	})
 
-	return ch
+	stop := func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		ref.Stop()
+		close(ch)
+	}
+
+	return stop, ch
 }
 
 func init() {
+	minetest.RegisterPlaceCond(func(clt *minetest.Client, i *mt.ToSrvInteract) bool {
+		cd, ok := clt.GetData("disable_place")
+		if !ok {
+			return true
+		}
+
+		return !cd.(bool)
+	})
+
+	chat.RegisterChatCmd("disable_place", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: disable_place on|off", mt.RawMsg)
+			return
+		}
+
+		c.SetData("disable_place", args[0] == "on")
+	})
 
 	chat.RegisterChatCmd("logpos", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
@@ -59,21 +90,27 @@ func init() {
 
 		c.SetData("logpos", stopCh)
 
-		posch := makePosCh()
+		stop, posch := makePosCh()
 
 		go func() {
 			for {
 				select {
 				case pos := <-posch:
-					apos := pos.Pos.CurPos.Pos
-					speed := minetest.Distance(pos.Pos.CurPos.Pos.Pos, pos.Pos.OldPos.Pos.Pos) / pos.dtime.Seconds()
+					func() {
+						pos.Pos.RLock()
+						defer pos.Pos.RUnlock()
 
-					chat.SendMsgf(c, mt.RawMsg, "Pos: %5.1f %5.1f %5.1f : %5s @ %.2fn/s",
-						apos.Pos[0], apos.Pos[1], apos.Pos[2], apos.Dim,
-						speed,
-					)
+						apos := pos.Pos.CurPos.Pos
+						speed := minetest.Distance(pos.Pos.CurPos.Pos.Pos, pos.Pos.OldPos.Pos.Pos) / pos.dtime.Seconds()
+
+						chat.SendMsgf(c, mt.RawMsg, "Pos: %5.1f %5.1f %5.1f : %5s @ %.2fn/s",
+							apos.Pos[0], apos.Pos[1], apos.Pos[2], apos.Dim,
+							speed,
+						)
+					}()
 
 				case <-stopCh:
+					stop()
 					return
 				}
 			}

@@ -8,9 +8,28 @@ import (
 	"sync"
 )
 
-type Registerd[K any] struct {
+type HookRef[H any] struct {
+	mapMu  *sync.RWMutex
+	mapRef map[*H]struct{}
+	ref    *H
+}
+
+// i: index; l: length of removal
+func splice[K any](s []K, i, l int) []K {
+	return append(s[:i], s[i+l:]...)
+}
+
+// Remove HookRef from Hooks
+func (hr *HookRef[H]) Stop() {
+	hr.mapMu.Lock()
+	defer hr.mapMu.Unlock()
+
+	delete(hr.mapRef, hr.ref)
+}
+
+type Registerd[T any] struct {
 	Path  string
-	Thing K
+	Thing T
 }
 
 // Returns file:line of caller at i
@@ -23,170 +42,225 @@ func Caller(i int) string {
 type LeaveHook func(*Leave)
 
 var (
-	leaveHooks   []Registerd[LeaveHook]
+	leaveHooks   = make(map[*Registerd[LeaveHook]]struct{})
 	leaveHooksMu sync.RWMutex
 )
 
 // Gets called after client has left (*Client struct still exists)
-func RegisterLeaveHook(h LeaveHook) {
+func RegisterLeaveHook(h LeaveHook) HookRef[Registerd[LeaveHook]] {
 	leaveHooksMu.Lock()
 	defer leaveHooksMu.Unlock()
 
-	leaveHooks = append(leaveHooks, Registerd[LeaveHook]{Caller(1), h})
+	r := &Registerd[LeaveHook]{Caller(1), h}
+	ref := HookRef[Registerd[LeaveHook]]{&leaveHooksMu, leaveHooks, r}
+
+	leaveHooks[r] = struct{}{}
+
+	return ref
 }
 
 type JoinHook func(*Client)
 
 var (
-	joinHooks   []Registerd[JoinHook]
+	joinHooks   = make(map[*Registerd[JoinHook]]struct{})
 	joinHooksMu sync.RWMutex
 )
 
 // Gets called after client is initialized
 // After player is given controll
-func RegisterJoinHook(h JoinHook) {
+func RegisterJoinHook(h JoinHook) HookRef[Registerd[JoinHook]] {
 	joinHooksMu.Lock()
 	defer joinHooksMu.Unlock()
 
-	joinHooks = append(joinHooks, Registerd[JoinHook]{Caller(1), h})
+	r := &Registerd[JoinHook]{Caller(1), h}
+	ref := HookRef[Registerd[JoinHook]]{&joinHooksMu, joinHooks, r}
+
+	joinHooks[r] = struct{}{}
+
+	return ref
 }
 
 type RegisterHook func(*Client)
 
 var (
-	registerHooks   []Registerd[RegisterHook]
+	registerHooks   = make(map[*Registerd[RegisterHook]]struct{})
 	registerHooksMu sync.RWMutex
 )
 
 // Gets called at registrationtime
 // intended to initialize client data
-func RegisterRegisterHook(h RegisterHook) {
+func RegisterRegisterHook(h RegisterHook) HookRef[Registerd[RegisterHook]] {
 	registerHooksMu.Lock()
 	defer registerHooksMu.Unlock()
 
-	registerHooks = append(registerHooks, Registerd[RegisterHook]{Caller(1), h})
+	r := &Registerd[RegisterHook]{Caller(1), h}
+	ref := HookRef[Registerd[RegisterHook]]{&registerHooksMu, registerHooks, r}
+
+	registerHooks[r] = struct{}{}
+
+	return ref
 }
 
 type InitHook func(*Client)
 
 var (
-	initHooks   []Registerd[InitHook]
+	initHooks   = make(map[*Registerd[InitHook]]struct{})
 	initHooksMu sync.RWMutex
 )
 
 // Gets called as soon as client authentication is successfull
-func RegisterInitHook(h InitHook) {
+func RegisterInitHook(h InitHook) HookRef[Registerd[InitHook]] {
 	initHooksMu.Lock()
 	defer initHooksMu.Unlock()
 
-	initHooks = append(initHooks, Registerd[InitHook]{Caller(1), h})
+	r := &Registerd[InitHook]{Caller(1), h}
+	ref := HookRef[Registerd[InitHook]]{&initHooksMu, initHooks, r}
+
+	initHooks[r] = struct{}{}
+
+	return ref
 }
 
 type TickHook func()
 
 var (
-	tickHooks   []Registerd[TickHook]
+	tickHooks   = make(map[*Registerd[TickHook]]struct{})
 	tickHooksMu sync.RWMutex
 )
 
 // Gets called each tick
-func RegisterTickHook(h func()) {
+func RegisterTickHook(h func()) HookRef[Registerd[TickHook]] {
 	tickHooksMu.Lock()
 	defer tickHooksMu.Unlock()
 
-	tickHooks = append(tickHooks, Registerd[TickHook]{Caller(1), h})
+	r := &Registerd[TickHook]{Caller(1), h}
+	ref := HookRef[Registerd[TickHook]]{&tickHooksMu, tickHooks, r}
+
+	tickHooks[r] = struct{}{}
+
+	return ref
 }
 
 type PhysHook func(dtime float32)
 
 var (
 	physHooksLast float32
-	physHooks     []Registerd[PhysHook]
+	physHooks     = make(map[*Registerd[PhysHook]]struct{})
 	physHooksMu   sync.RWMutex
 )
 
 // Gets called each tick
 // dtime is time since last tick
-func RegisterPhysTickHook(h PhysHook) {
+func RegisterPhysTickHook(h PhysHook) HookRef[Registerd[PhysHook]] {
 	physHooksMu.Lock()
 	defer physHooksMu.Unlock()
 
-	physHooks = append(physHooks, Registerd[PhysHook]{Caller(1), h})
+	r := &Registerd[PhysHook]{Caller(1), h}
+	ref := HookRef[Registerd[PhysHook]]{&physHooksMu, physHooks, r}
+
+	physHooks[r] = struct{}{}
+
+	return ref
 }
 
 type PktTickHook func()
 
 var (
-	pktTickHooks   []Registerd[PktTickHook]
+	pktTickHooks   = make(map[*Registerd[PktTickHook]]struct{})
 	pktTickHooksMu sync.RWMutex
 )
 
 // Gets called at end of each tick
 // If you can, send packets in here
-func RegisterPktTickHook(h PktTickHook) {
+func RegisterPktTickHook(h PktTickHook) HookRef[Registerd[PktTickHook]] {
 	pktTickHooksMu.Lock()
 	defer pktTickHooksMu.Unlock()
 
-	pktTickHooks = append(pktTickHooks, Registerd[PktTickHook]{Caller(1), h})
+	r := &Registerd[PktTickHook]{Caller(1), h}
+	ref := HookRef[Registerd[PktTickHook]]{&pktTickHooksMu, pktTickHooks, r}
+
+	pktTickHooks[r] = struct{}{}
+
+	return ref
 }
 
 type PacketPre func(*Client, mt.Cmd) bool
 
 var (
-	packetPre   []Registerd[PacketPre]
+	packetPre   = make(map[*Registerd[PacketPre]]struct{})
 	packetPreMu sync.RWMutex
 )
 
 // Gets called before packet reaches Processors
 // If (one) func returns false packet is dropped
-func RegisterPacketPre(h PacketPre) {
+func RegisterPacketPre(h PacketPre) HookRef[Registerd[PacketPre]] {
 	packetPreMu.Lock()
 	defer packetPreMu.Unlock()
 
-	packetPre = append(packetPre, Registerd[PacketPre]{Caller(1), h})
+	r := &Registerd[PacketPre]{Caller(1), h}
+	ref := HookRef[Registerd[PacketPre]]{&packetPreMu, packetPre, r}
+
+	packetPre[r] = struct{}{}
+
+	return ref
 }
 
 type PktProcessor func(*Client, *mt.Pkt)
 
 var (
-	pktProcessors   []Registerd[PktProcessor]
+	pktProcessors   = make(map[*Registerd[PktProcessor]]struct{})
 	pktProcessorsMu sync.RWMutex
 )
 
 // Gets called for each packet received
-func RegisterPktProcessor(h PktProcessor) {
+func RegisterPktProcessor(h PktProcessor) HookRef[Registerd[PktProcessor]] {
 	pktProcessorsMu.Lock()
 	defer pktProcessorsMu.Unlock()
 
-	pktProcessors = append(pktProcessors, Registerd[PktProcessor]{Caller(1), h})
+	r := &Registerd[PktProcessor]{Caller(1), h}
+	ref := HookRef[Registerd[PktProcessor]]{&pktProcessorsMu, pktProcessors, r}
+
+	pktProcessors[r] = struct{}{}
+
+	return ref
 }
 
 type ShutdownHook func()
 
 var (
-	shutdownHooks   []Registerd[ShutdownHook]
+	shutdownHooks   = make(map[*Registerd[ShutdownHook]]struct{})
 	shutdownHooksMu sync.RWMutex
 )
 
 // Gets called when server shuts down
 // NOTE: (Leave hooks also get called)
-func RegisterShutdownHook(h ShutdownHook) {
+func RegisterShutdownHook(h ShutdownHook) HookRef[Registerd[ShutdownHook]] {
 	shutdownHooksMu.Lock()
 	defer shutdownHooksMu.Unlock()
 
-	shutdownHooks = append(shutdownHooks, Registerd[ShutdownHook]{Caller(1), h})
+	r := &Registerd[ShutdownHook]{Caller(1), h}
+	ref := HookRef[Registerd[ShutdownHook]]{&shutdownHooksMu, shutdownHooks, r}
+
+	shutdownHooks[r] = struct{}{}
+
+	return ref
 }
 
 type SaveFileHook func()
 
 var (
-	saveFileHooks   []Registerd[SaveFileHook]
+	saveFileHooks   = make(map[*Registerd[SaveFileHook]]struct{})
 	saveFileHooksMu sync.RWMutex
 )
 
-func RegisterSaveFileHook(h SaveFileHook) {
+func RegisterSaveFileHook(h SaveFileHook) HookRef[Registerd[SaveFileHook]] {
 	saveFileHooksMu.Lock()
 	defer saveFileHooksMu.Unlock()
 
-	saveFileHooks = append(saveFileHooks, Registerd[SaveFileHook]{Caller(1), h})
+	r := &Registerd[SaveFileHook]{Caller(1), h}
+	ref := HookRef[Registerd[SaveFileHook]]{&saveFileHooksMu, saveFileHooks, r}
+
+	saveFileHooks[r] = struct{}{}
+
+	return ref
 }
