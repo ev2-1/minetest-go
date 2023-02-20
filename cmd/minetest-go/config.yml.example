@@ -11,6 +11,9 @@ default-aomaker: "default"
 # -- == Logging == --
 #
 
+# log-file - set logfile relative to executable
+log-file: "latest.log"
+
 # log-verbose - more verbose logging
 log-verbose: true
 
