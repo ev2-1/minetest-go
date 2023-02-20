@@ -29,7 +29,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 			return
 		}
 
-		c.setDigPos(&IntPos{pt.Under, GetPos(c).Dim})
+		c.setDigPos(&IntPos{pt.Under, c.GetPos().Dim})
 
 	case mt.StopDigging:
 		c.setDigPos(nil)
@@ -52,7 +52,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 
 		dtime := time.Now().Sub(start)
 
-		cpos := GetPos(c)
+		cpos := c.GetPos()
 		if cpos.Dim != pos.Dim {
 			c.Logf("[WARN] clt tired to bamboozle server. (DigPos != DugPos (Dimensions dont match))\n")
 			return
@@ -107,7 +107,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 			return
 		}
 
-		dim := GetPos(c).Dim
+		dim := c.GetPos().Dim
 		pos := pt.Above
 		blkpos, _ := mt.Pos2Blkpos(pos)
 		blkipos := IntPos{blkpos, dim}

@@ -16,7 +16,7 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("spawn_tnt", func(c *minetest.Client, args []string) {
-		pos := ao.AOPos{Pos: minetest.GetPos(c).Pos.Pos}
+		pos := ao.AOPos{Pos: c.GetPos().Pos.Pos}
 		chat.SendMsgf(c, mt.SysMsg, "Got pos: %v", pos)
 
 		_ao := MakeTNT(pos)

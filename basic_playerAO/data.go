@@ -34,7 +34,7 @@ func (player *AOPlayer) Relevant(clt *minetest.Client) bool {
 	cd := ao.GetClientData(clt)
 
 	aopos := player.GetPos()
-	cltpos := minetest.GetPos(clt)
+	cltpos := clt.GetPos()
 
 	cd.RLock()
 	defer cd.RUnlock()

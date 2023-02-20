@@ -183,6 +183,6 @@ func DefaultPlace(c *Client, inv RWInv, i *mt.ToSrvInteract, def ItemDef) {
 
 	param0 := ndef.Thing.Param0
 
-	SetNode(IntPos{i.Pointed.(*mt.PointedNode).Above, GetPos(c).Dim},
+	SetNode(IntPos{i.Pointed.(*mt.PointedNode).Above, c.GetPos().Dim},
 		mt.Node{Param0: param0}, nil)
 }

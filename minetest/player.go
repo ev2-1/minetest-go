@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/kevinburke/nacl/randombytes"
 
+	"bytes"
 	"fmt"
 	"log"
 )
@@ -186,14 +187,29 @@ func InitClient(c *Client) {
 	c.Logf("Got UUID: %s\n", c.UUID)
 
 	// data:
-	var bytes int
-	c.data, bytes, err = DB_PlayerGetData(c.UUID)
+	var bytesTtl int
+	c.data, bytesTtl, err = DB_PlayerGetData(c.UUID)
 	if err != nil {
 		c.Log("Failed to get Player data!: %s\n", err)
 		panic("Failed to get Player data!")
 	}
 
-	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytes)
+	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytesTtl)
+
+	//pos:
+	clientPos, ok := c.data["pos"]
+	if !ok {
+		c.Pos = MakePos(c)
+	} else {
+		dat := clientPos.(*ClientDataSaved)
+		c.Pos = new(ClientPos)
+
+		err := c.Pos.Deserialize(bytes.NewReader(dat.Bytes()))
+		if err != nil {
+			c.Logf("Error while Deserializing ClientPos: %s\n", err)
+			c.Pos = MakePos(c)
+		}
+	}
 
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()

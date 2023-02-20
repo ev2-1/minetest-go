@@ -187,7 +187,7 @@ func init() {
 	tp := func(c *minetest.Client, args []string) {
 		switch len(args) {
 		case 1:
-			pos := minetest.GetPos(c)
+			pos := c.GetPos()
 			dim := minetest.GetDim(args[0])
 			if dim == nil {
 				chat.SendMsgf(c, mt.SysMsg, "Dimension '%s' does not exists!", args[0])
@@ -199,7 +199,7 @@ func init() {
 			minetest.SetPos(c, pos, true)
 
 		case 3, 4:
-			pos := minetest.GetPos(c)
+			pos := c.GetPos()
 
 			x, err := strconv.ParseFloat(args[0], 32)
 			if err != nil {
@@ -263,7 +263,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
-		pos := minetest.GetPos(c)
+		pos := c.GetPos()
 
 		chat.SendMsgf(c, mt.SysMsg, "Your position: [%#v]",
 			pos,
@@ -275,7 +275,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("fullpos", func(c *minetest.Client, args []string) {
-		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", minetest.GetFullPos(c))
+		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", c.GetFullPos())
 	})
 
 	chat.RegisterChatCmd("dimension", func(c *minetest.Client, args []string) {
@@ -292,7 +292,7 @@ func init() {
 
 		chat.SendMsgf(c, mt.RawMsg, "Sending you to %s (%d)!", dim.Name, dim.ID)
 
-		pos := minetest.GetPos(c)
+		pos := c.GetPos()
 		pos.Dim = dim.ID
 
 		minetest.SetPos(c, pos, true)
@@ -357,7 +357,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
-		blkpos, _ := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
+		blkpos, _ := minetest.Pos2Blkpos(c.GetPos().IntPos())
 
 		go func() {
 			ack := minetest.LoadBlk(c, blkpos)
@@ -486,7 +486,7 @@ func init() {
 			return
 		}
 
-		p, pi := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
+		p, pi := minetest.Pos2Blkpos(c.GetPos().IntPos())
 		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})

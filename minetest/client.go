@@ -48,7 +48,7 @@ type Client struct {
 
 	leaveOnce sync.Once // a client only can leave once
 
-	// TODO Move pos here
+	Pos      *ClientPos
 	PosState sync.RWMutex
 
 	lang string

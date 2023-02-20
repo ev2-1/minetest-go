@@ -179,6 +179,8 @@ func initClientDataDB() (err error) {
 func SyncPlayerData(c *Client) {
 	c.Log("Saving client data!")
 
+	c.SetData("pos", c.GetFullPos())
+
 	// Serialize:
 	c.dataMu.RLock()
 	defer c.dataMu.RUnlock()

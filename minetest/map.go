@@ -72,7 +72,7 @@ func init() {
 	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
 		if blks, ok := pkt.Cmd.(*mt.ToSrvDeletedBlks); ok {
 			for _, blk := range blks.Blks {
-				p := GetPos(c).IntPos()
+				p := c.GetPos().IntPos()
 				p.Pos = blk
 
 				markUnloaded(c, p)
@@ -377,7 +377,7 @@ func enumerateLoaded(c *Client) [][3]int16 {
 }
 
 func unloadAll(clt *Client) (_ <-chan struct{}, err error) {
-	dim := GetFullPos(clt).OldPos.Dim
+	dim := clt.GetFullPos().OldPos.Dim
 	acks := make([]<-chan struct{}, len(loaded[clt]))
 	var i int
 
@@ -411,7 +411,7 @@ func isLoaded(clt *Client, p IntPos) bool {
 	loadedMu.RLock()
 	defer loadedMu.RUnlock()
 
-	pos := GetPos(clt)
+	pos := clt.GetPos()
 
 	if p.Dim != pos.Dim {
 		return false
