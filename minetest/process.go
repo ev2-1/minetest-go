@@ -59,7 +59,7 @@ func (c *Client) process(pkt *mt.Pkt) {
 			f := runtime.FuncForPC(ptr)
 			file, line := f.FileLine(ptr)
 
-			c.Logf("Timeout waiting for pktProcessor! pkt: %T, registerd at %s\ngot stuck in %s:%d\n", pkt.Cmd, h.Path, file, line)
+			c.Logf("Timeout waiting for pktProcessor! pkt: %T, registerd at %s\ngot stuck in %s:%d\n", pkt.Cmd, h.Path(), file, line)
 		}
 	}
 	pktProcessorsMu.RUnlock()

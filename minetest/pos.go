@@ -3,7 +3,6 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"github.com/g3n/engine/math32"
@@ -153,11 +152,11 @@ type ClientPos struct {
 var be = binary.BigEndian
 
 func (cp *ClientPos) Serialize(w io.Writer) (err error) {
-	return binary.Write(w, be, cp.CurPos.Pos)
+	return binary.Write(w, be, cp.CurPos)
 }
 
 func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
-	err = binary.Read(w, be, &cp.CurPos.Pos)
+	err = binary.Read(w, be, &cp.CurPos)
 	if err != nil {
 		return err
 	}
@@ -205,7 +204,7 @@ func init() {
 		c.PosState.RLock()
 		defer c.PosState.RUnlock()
 
-		cpos := GetFullPos(c)
+		cpos := c.GetFullPos()
 
 		//calc dtime
 		now := time.Now()
@@ -259,7 +258,7 @@ func init() {
 			case <-done:
 				timeout.Stop()
 			case <-timeout.C:
-				c.Logf("Timeout waiting for posUpdater! registerd at %s\n", u.Path)
+				c.Logf("Timeout waiting for posUpdater! registerd at %s\n", u.Path())
 			}
 		}
 	})
@@ -275,8 +274,8 @@ func MakePos(c *Client) *ClientPos {
 	}
 }
 
-func GetPos(c *Client) PPos {
-	pos := GetFullPos(c)
+func (c *Client) GetPos() PPos {
+	pos := c.GetFullPos()
 	pos.RLock()
 	defer pos.RUnlock()
 
@@ -284,44 +283,14 @@ func GetPos(c *Client) PPos {
 }
 
 // GetFullPos returns pos of player / client
-func GetFullPos(c *Client) *ClientPos {
-	cd, ok := c.GetData("pos")
-	if !ok {
-		c.Logf("Info: !ok %T\n", cd)
-		cd = MakePos(c)
-		c.SetData("pos", cd)
-	}
-
-	pos, ok := cd.(*ClientPos)
-	if !ok {
-		c.Logf("Info: !*ClientPos")
-		dat, ok := cd.(*ClientDataSaved)
-		if !ok {
-			c.Logf("Err: !*ClientDataSaved")
-			pos = MakePos(c)
-			c.SetData("pos", pos)
-			return pos
-		}
-
-		pos = new(ClientPos)
-		err := pos.Deserialize(bytes.NewReader(dat.Bytes()))
-		if err != nil {
-			c.Logf("Error while Deserializing ClientPos: %s\n", err)
-			pos = MakePos(c)
-			c.SetData("pos", pos)
-			return pos
-		}
-
-		c.SetData("pos", pos)
-	}
-
-	return pos
+func (c *Client) GetFullPos() *ClientPos {
+	return c.Pos
 }
 
 // SetPos sets position
 // returns old position
 func SetPos(c *Client, p PPos, send bool) PPos {
-	cpos := GetFullPos(c)
+	cpos := c.GetFullPos()
 	cpos.Lock()
 	defer cpos.Unlock()
 
