@@ -176,6 +176,11 @@ func DefaultPlace(c *Client, inv RWInv, i *mt.ToSrvInteract, def ItemDef) {
 
 	//Get place predict
 	ndef := GetNodeDef(def.PlacePredict)
+	if ndef == nil {
+		c.Logf("Error in DefaultPlace: PlacePredict of '%s' is not valid node '%s'\n", def.Name, def.PlacePredict)
+		return
+	}
+
 	param0 := ndef.Thing.Param0
 
 	SetNode(IntPos{i.Pointed.(*mt.PointedNode).Above, GetPos(c).Dim},

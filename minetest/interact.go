@@ -59,7 +59,18 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		}
 
 		blkipos, _ := Pos2Blkpos(cpos.IntPos())
-		if !doDigConds(c, i, dtime) && isLoaded(c, blkipos) {
+		if !isLoaded(c, blkipos) {
+			return
+		}
+
+		if !doDigConds(c, i, dtime) {
+			node, _ := GetNode(IntPos{ptpos, cpos.Dim})
+			c.SendCmd(&mt.ToCltAddNode{
+				Pos:      ptpos,
+				Node:     node,
+				KeepMeta: true,
+			})
+
 			return
 		}
 

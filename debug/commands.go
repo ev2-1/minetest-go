@@ -50,7 +50,25 @@ func init() {
 			return true
 		}
 
-		return cd.(bool)
+		return !cd.(bool)
+	})
+
+	minetest.RegisterDigCond(func(clt *minetest.Client, i *mt.ToSrvInteract, _ time.Duration) bool {
+		cd, ok := clt.GetData("disable_dig")
+		if !ok {
+			return true
+		}
+
+		return !cd.(bool)
+	})
+
+	chat.RegisterChatCmd("disable_dig", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: disable_dig on|off", mt.RawMsg)
+			return
+		}
+
+		c.SetData("disable_dig", args[0] == "on")
 	})
 
 	chat.RegisterChatCmd("disable_place", func(c *minetest.Client, args []string) {
