@@ -87,8 +87,12 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("blame", func(c *minetest.Client, args []string) {
+		usage := func() {
+			chat.SendMsg(c, "Usage: blame node|item <name>", mt.RawMsg)
+		}
+
 		if len(args) != 2 {
-			chat.SendMsg(c, "Usage: blame node <name>", mt.RawMsg)
+			usage()
 			return
 		}
 
@@ -101,6 +105,17 @@ func init() {
 			}
 
 			chat.SendMsgf(c, mt.RawMsg, "Node '%s' can be blamed on '%s'! fuck them", args[1], def.Path())
+		case "item":
+			def := minetest.GetItemDef(args[1])
+			if def == nil {
+				chat.SendMsgf(c, mt.RawMsg, "Item %s doesn't exist", args[1])
+				return
+			}
+
+			chat.SendMsgf(c, mt.RawMsg, "Item '%s' can be blamed on '%s'! fuck them", args[1], def.Path())
+
+		default:
+			usage()
 		}
 	})
 
