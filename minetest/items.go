@@ -164,6 +164,11 @@ func getItem(c *Client, slot int) (d *Registerd[ItemDef], inv RWInv) {
 }
 
 func DefaultPlace(c *Client, inv RWInv, i *mt.ToSrvInteract, def ItemDef) {
+	// Check if item is placable
+	if def.PlacePredict == "" {
+		return
+	}
+
 	if !UseItem(inv, "main", int(i.ItemSlot), 1) {
 		return
 	}
@@ -174,7 +179,6 @@ func DefaultPlace(c *Client, inv RWInv, i *mt.ToSrvInteract, def ItemDef) {
 		Stack:      int(i.ItemSlot),
 	}, c)
 
-	//Get place predict
 	ndef := GetNodeDef(def.PlacePredict)
 	if ndef == nil {
 		c.Logf("Error in DefaultPlace: PlacePredict of '%s' is not valid node '%s'\n", def.Name, def.PlacePredict)
