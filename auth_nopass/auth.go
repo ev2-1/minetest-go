@@ -9,7 +9,7 @@ func Stage1() {}
 func Stage2() {}
 
 func init() {
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+	minetest.RegisterRawPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInit:
 			if c.State > minetest.CsCreated {
@@ -76,12 +76,20 @@ func init() {
 
 		case *mt.ToSrvFirstSRP:
 			minetest.InitClient(c)
+			cpos := c.GetPos()
 
 			c.SendCmd(&mt.ToCltAcceptAuth{
-				PlayerPos:       minetest.GetPos(c).Pos.Pos,
+				PlayerPos:       cpos.Pos.Pos,
 				MapSeed:         1337,
 				SendInterval:    0.09,
 				SudoAuthMethods: mt.SRP,
+			})
+
+			c.SendCmd(&mt.ToCltMovePlayer{
+				Pos: cpos.Pos.Pos,
+
+				Pitch: cpos.Pitch,
+				Yaw:   cpos.Yaw,
 			})
 
 			c.SetState(minetest.CsActive)
@@ -93,6 +101,22 @@ func init() {
 
 			// is ignored anyways
 			c.SendCmd(&mt.ToCltCSMRestrictionFlags{MapRange: 3})
+
+		case *mt.ToSrvCltReady:
+			if c.State == minetest.CsActive {
+				minetest.RegisterPlayer(c)
+			} else {
+				minetest.CltLeave(&minetest.Leave{
+					Reason: mt.UnexpectedData,
+
+					Client: c,
+				})
+			}
+
+			return
+
+		case *mt.ToSrvGotBlks:
+			return
 
 		default:
 			return

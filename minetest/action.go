@@ -1,15 +1,13 @@
-package inventory
+package minetest
 
 import (
-	"github.com/ev2-1/minetest-go/minetest"
-
 	"fmt"
 	"io"
 )
 
 type InvAction interface {
 	InvActionVerb() string
-	Apply(c *minetest.Client) (<-chan struct{}, error)
+	Apply(c *Client) (<-chan struct{}, error)
 
 	String() string // String does NOT searialize
 }
@@ -35,8 +33,8 @@ func (act *InvActionDrop) String() string {
 	)
 }
 
-func (act *InvActionDrop) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
-	if minetest.ConfigVerbose() {
+func (act *InvActionDrop) Apply(c *Client) (_ <-chan struct{}, err error) {
+	if ConfigVerbose() {
 		c.Logger.Printf("[INV] %s", act.String())
 	}
 
@@ -108,8 +106,8 @@ func (act *InvActionMove) String() string {
 	)
 }
 
-func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err error) {
-	if minetest.ConfigVerbose() {
+func (act *InvActionMove) Apply(c *Client) (_ <-chan struct{}, err error) {
+	if ConfigVerbose() {
 		c.Logger.Printf("[INV] %s", act.String())
 	}
 
@@ -212,11 +210,7 @@ func (act *InvActionMove) Apply(c *minetest.Client) (_ <-chan struct{}, err erro
 		}
 	}
 
-	ack := make(chan struct{})
-
-	go minetest.Acks(ack, ack1, ack2)
-
-	return ack, err
+	return Acks(ack1, ack2), err
 }
 
 func DeserializeInvAction(r io.Reader) (act InvAction, err error) {

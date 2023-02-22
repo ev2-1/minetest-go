@@ -8,8 +8,6 @@ github.com/ev2-1/minetest-go/map/minetest_mapdriver
 github.com/ev2-1/minetest-go/map/loader_basic3x3
 github.com/ev2-1/minetest-go/map/generator_flat
 
-github.com/ev2-1/minetest-go/interact
-
 # http media serves media in `$pwd/media` to clients using mth
 github.com/ev2-1/minetest-go/http_media
 
@@ -31,9 +29,6 @@ github.com/ev2-1/minetest-go/init
 
 # basic chat just broadcasts chatmessages to all players
 github.com/ev2-1/minetest-go/chat
-
-# inventory tools
-github.com/ev2-1/minetest-go/inventory
 
 # testing:
 github.com/ev2-1/minetest-go/tnt_ao

@@ -16,7 +16,7 @@ func Relevant(ao ActiveObject, clt *minetest.Client) bool {
 	// Default Relevance function:
 	if posao, ok := ao.(ActiveObjectAPIAOPos); ok {
 		aopos := posao.GetAOPos()
-		cltpos := minetest.GetPos(clt)
+		cltpos := clt.GetPos()
 
 		return aopos.Dim == cltpos.Dim &&
 			Distance(aopos.Pos, cltpos.Pos.Pos) <= RelevantDistance

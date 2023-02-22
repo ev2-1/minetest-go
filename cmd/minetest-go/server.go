@@ -6,7 +6,6 @@ import (
 
 func main() {
 	minetest.Stage1()
-	minetest.FillNameIdMap()
 	minetest.Stage2()
 
 	// final step

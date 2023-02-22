@@ -3,7 +3,6 @@ package debug
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/chat"
-	"github.com/ev2-1/minetest-go/inventory"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"fmt"
@@ -11,14 +10,184 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
+type cltpos struct {
+	Pos   *minetest.ClientPos
+	Clt   *minetest.Client
+	dtime time.Duration
+}
+
+func makePosCh() (func(), chan *cltpos) {
+	ch := make(chan *cltpos)
+	var mu sync.Mutex
+
+	ref := minetest.RegisterPosUpdater(func(c *minetest.Client, p *minetest.ClientPos, t time.Duration) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		//TODO: fix
+		ch <- &cltpos{p, c, t}
+	})
+
+	stop := func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		ref.Stop()
+		close(ch)
+	}
+
+	return stop, ch
+}
+
 func init() {
+	minetest.RegisterPlaceCond(func(clt *minetest.Client, i *mt.ToSrvInteract) bool {
+		cd, ok := clt.GetData("disable_place")
+		if !ok {
+			return true
+		}
+
+		return !cd.(bool)
+	})
+
+	minetest.RegisterDigCond(func(clt *minetest.Client, i *mt.ToSrvInteract, _ time.Duration) bool {
+		cd, ok := clt.GetData("disable_dig")
+		if !ok {
+			return true
+		}
+
+		return !cd.(bool)
+	})
+
+	chat.RegisterChatCmd("disable_dig", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: disable_dig on|off", mt.RawMsg)
+			return
+		}
+
+		c.SetData("disable_dig", args[0] == "on")
+	})
+
+	chat.RegisterChatCmd("disable_place", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: disable_place on|off", mt.RawMsg)
+			return
+		}
+
+		c.SetData("disable_place", args[0] == "on")
+	})
+
+	chat.RegisterChatCmd("logpos", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: logpos on|off", mt.RawMsg)
+			return
+		}
+
+		stopCh := make(chan struct{})
+
+		if args[0] == "on" {
+			cd, ok := c.GetData("logpos")
+			if ok && cd != nil {
+				chat.SendMsg(c, "Already logging!", mt.NormalMsg)
+				return
+			}
+		} else {
+			cd, ok := c.GetData("logpos")
+			if !ok || cd == nil {
+				chat.SendMsg(c, "not logging!", mt.NormalMsg)
+				return
+			}
+
+			close(cd.(chan struct{}))
+			c.SetData("logpos", nil)
+			return
+		}
+
+		c.SetData("logpos", stopCh)
+
+		stop, posch := makePosCh()
+
+		go func() {
+			for {
+				select {
+				case pos := <-posch:
+					func() {
+						pos.Pos.RLock()
+						defer pos.Pos.RUnlock()
+
+						apos := pos.Pos.CurPos.Pos
+						speed := minetest.Distance(pos.Pos.CurPos.Pos.Pos, pos.Pos.OldPos.Pos.Pos) / pos.dtime.Seconds()
+
+						chat.SendMsgf(c, mt.RawMsg, "Pos: %5.1f %5.1f %5.1f : %5s @ %.2fn/s",
+							apos.Pos[0], apos.Pos[1], apos.Pos[2], apos.Dim,
+							speed,
+						)
+					}()
+
+				case <-stopCh:
+					stop()
+					return
+				}
+			}
+		}()
+	})
+
+	chat.RegisterChatCmd("nodeidmap", func(c *minetest.Client, args []string) {
+		nim, _ := minetest.NodeMaps()
+
+		var str string
+
+		for id, name := range nim {
+			if len(str) > 1000 {
+				chat.SendMsg(c, str, mt.RawMsg)
+				str = ""
+			}
+
+			str += fmt.Sprintf("%5d: %s\n", id, name)
+		}
+
+		chat.SendMsg(c, str, mt.RawMsg)
+	})
+
+	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)
+			return
+		}
+
+		rd, err := minetest.GetDetached(args[0], c)
+		if err != nil {
+			c.Logger.Printf("Error: %s", err)
+			return
+		}
+
+		d := rd.Thing
+
+		ack, err := d.AddClient(c)
+		if err != nil {
+			c.Logger.Printf("Error: %s", err)
+			return
+		}
+
+		<-ack
+		c.Logger.Printf("Sent DetachedInv")
+
+	})
+
+	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
+		c.SendCmd(&mt.ToCltShowFormspec{
+			Formspec: minetest.TestSpec(),
+			Formname: "lol",
+		})
+	})
+
 	tp := func(c *minetest.Client, args []string) {
 		switch len(args) {
 		case 1:
-			pos := minetest.GetPos(c)
+			pos := c.GetPos()
 			dim := minetest.GetDim(args[0])
 			if dim == nil {
 				chat.SendMsgf(c, mt.SysMsg, "Dimension '%s' does not exists!", args[0])
@@ -30,7 +199,7 @@ func init() {
 			minetest.SetPos(c, pos, true)
 
 		case 3, 4:
-			pos := minetest.GetPos(c)
+			pos := c.GetPos()
 
 			x, err := strconv.ParseFloat(args[0], 32)
 			if err != nil {
@@ -94,7 +263,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
-		pos := minetest.GetPos(c)
+		pos := c.GetPos()
 
 		chat.SendMsgf(c, mt.SysMsg, "Your position: [%#v]",
 			pos,
@@ -106,7 +275,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("fullpos", func(c *minetest.Client, args []string) {
-		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", minetest.GetFullPos(c))
+		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", c.GetFullPos())
 	})
 
 	chat.RegisterChatCmd("dimension", func(c *minetest.Client, args []string) {
@@ -123,7 +292,7 @@ func init() {
 
 		chat.SendMsgf(c, mt.RawMsg, "Sending you to %s (%d)!", dim.Name, dim.ID)
 
-		pos := minetest.GetPos(c)
+		pos := c.GetPos()
 		pos.Dim = dim.ID
 
 		minetest.SetPos(c, pos, true)
@@ -188,7 +357,7 @@ func init() {
 	})
 
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
-		blkpos, _ := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
+		blkpos, _ := minetest.Pos2Blkpos(c.GetPos().IntPos())
 
 		go func() {
 			ack := minetest.LoadBlk(c, blkpos)
@@ -256,9 +425,9 @@ func init() {
 			return
 		}
 
-		i, ack, err := inventory.Give(c,
-			&inventory.InvLocation{
-				Identifier: &inventory.InvIdentifierCurrentPlayer{},
+		i, ack, err := minetest.Give(c,
+			&minetest.InvLocation{
+				Identifier: &minetest.InvIdentifierCurrentPlayer{},
 				Name:       "main",
 				Stack:      -1, // auto aquire
 			},
@@ -317,7 +486,7 @@ func init() {
 			return
 		}
 
-		p, pi := minetest.Pos2Blkpos(minetest.GetPos(c).IntPos())
+		p, pi := minetest.Pos2Blkpos(c.GetPos().IntPos())
 		blk := minetest.GetBlk(p)
 
 		argsMap := make(map[string]struct{})
@@ -345,7 +514,9 @@ func init() {
 		for info := range argsMap {
 			switch info {
 			case "name":
-				msg += fmt.Sprintf("Name: %s\n", minetest.NodeIdMap[param0])
+				def := minetest.GetNodeDefID(param0)
+
+				msg += fmt.Sprintf("Name: %s\n", def.Thing.Name)
 				break
 
 			case "param0_raw":
@@ -384,7 +555,7 @@ func init() {
 			return
 		}
 
-		inv, err := inventory.GetInv(c)
+		inv, err := minetest.GetInv(c)
 		if err != nil {
 			chat.SendMsgf(c, mt.RawMsg, "Error: %s", err)
 			return

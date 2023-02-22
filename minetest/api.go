@@ -33,7 +33,7 @@ func LoadBlk(clt *Client, p IntPos) <-chan struct{} {
 		clt.Logf("WARN: TryCache: %s\n", err)
 		if errors.Is(ErrInvalidDim, err) {
 			clt.Logf("WARN: %s: resetting dimension to DIM0!\n", err)
-			pos := GetPos(clt)
+			pos := clt.GetPos()
 			pos.Dim = 0
 			SetPos(clt, pos, false)
 		}

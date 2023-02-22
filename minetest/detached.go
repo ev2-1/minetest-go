@@ -1,16 +1,14 @@
-package inventory
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/minetest"
 
-	//sync "github.com/sasha-s/go-deadlock"
 	"log"
 	"sync"
 )
 
 var (
-	detachedInvs   = make(map[string]*DetachedInv)
+	detachedInvs   = make(map[string]*Registerd[*DetachedInv])
 	detachedInvsMu sync.RWMutex
 )
 
@@ -20,10 +18,10 @@ type DetachedInv struct {
 
 	// List of clients suppost to have access
 	ClientsMu sync.RWMutex
-	Clients   map[*minetest.Client]struct{}
+	Clients   map[*Client]struct{}
 }
 
-func GetDetached(name string, c *minetest.Client) (inv *DetachedInv, err error) {
+func GetDetached(name string, c *Client) (inv *Registerd[*DetachedInv], err error) {
 	detachedInvsMu.RLock()
 	defer detachedInvsMu.RUnlock()
 
@@ -73,10 +71,10 @@ func (di *DetachedInv) SendUpdates() (<-chan struct{}, error) {
 		acks = append(acks, ack)
 	}
 
-	return minetest.Acks(acks...), nil
+	return Acks(acks...), nil
 }
 
-func (di *DetachedInv) AddClient(c *minetest.Client) (<-chan struct{}, error) {
+func (di *DetachedInv) AddClient(c *Client) (<-chan struct{}, error) {
 	di.ClientsMu.Lock()
 	defer di.ClientsMu.Unlock()
 
@@ -88,7 +86,7 @@ func (di *DetachedInv) AddClient(c *minetest.Client) (<-chan struct{}, error) {
 
 	// send detached inv to test:
 	ack, err := c.SendCmd(&mt.ToCltDetachedInv{
-		Name: "test",
+		Name: di.Name,
 		Keep: true,
 
 		Inv: str,
@@ -99,7 +97,7 @@ func (di *DetachedInv) AddClient(c *minetest.Client) (<-chan struct{}, error) {
 	return ack, err
 }
 
-func (di *DetachedInv) RmClient(c *minetest.Client) {
+func (di *DetachedInv) RmClient(c *Client) {
 	di.ClientsMu.Lock()
 	defer di.ClientsMu.Unlock()
 
@@ -112,10 +110,10 @@ func RegisterDetached(name string, inv *DetachedInv) {
 	inv.Name = name
 
 	if inv.Clients == nil {
-		inv.Clients = make(map[*minetest.Client]struct{})
+		inv.Clients = make(map[*Client]struct{})
 	}
 
-	detachedInvs[name] = inv
+	detachedInvs[name] = &Registerd[*DetachedInv]{Caller(1), inv}
 }
 
 var _ RWInv = &DetachedInv{}

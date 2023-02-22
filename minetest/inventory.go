@@ -1,33 +1,24 @@
-package inventory
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/chat"
-	"github.com/ev2-1/minetest-go/minetest"
 
 	"bytes"
 	_ "embed"
 	"strings"
 )
 
+// TODO: clean
+//
 //go:embed inv.fs
 var formspec string
 
-func init() {
-	RegisterDetached("test", &DetachedInv{
-		SimpleInv: SimpleInv{
-			M: map[string]InvList{
-				"main": &SimpleInvList{
-					mt.InvList{
-						Width:  4 * 8,
-						Stacks: make([]mt.Stack, 4*8),
-					},
-				},
-			},
-		},
-	})
+func TestSpec() string {
+	return formspec
+}
 
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+func init() {
+	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvInvAction:
 			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
@@ -42,8 +33,9 @@ func init() {
 		}
 	})
 
-	minetest.RegisterInitHook(func(c *minetest.Client) {
+	RegisterInitHook(func(c *Client) {
 		// Send client inventory formspec
+		// TODO: formspecs based on setting in ClientData & config field
 		c.SendCmd(&mt.ToCltInvFormspec{
 			Formspec: formspec,
 		})
@@ -70,48 +62,19 @@ func init() {
 		<-ack
 		c.Logger.Printf("Sent CltInv")
 	})
-
-	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
-		c.SendCmd(&mt.ToCltShowFormspec{
-			Formspec: formspec,
-			Formname: "lol",
-		})
-	})
-
-	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
-		if len(args) != 1 {
-			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)
-			return
-		}
-
-		d, err := GetDetached(args[0], c)
-		if err != nil {
-			c.Logger.Printf("Error: %s", err)
-			return
-		}
-
-		ack, err := d.AddClient(c)
-		if err != nil {
-			c.Logger.Printf("Error: %s", err)
-			return
-		}
-
-		<-ack
-		c.Logger.Printf("Sent DetachedInv")
-
-	})
 }
 
-func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
+func GetInv(c *Client) (inv *SimpleInv, err error) {
 	data, ok := c.GetData("inv")
 	if !ok { // => not found, so initialize
 		c.Logger.Printf("Client does not have inventory yet, adding")
 
+		//TODO: clean
 		stacks := make([]mt.Stack, 4*8)
 		stacks[5] = mt.Stack{
 			Count: 69,
 			Item: mt.Item{
-				Name: "basenodes:cobble",
+				Name: "mcl_core:stone",
 			},
 		}
 
@@ -136,7 +99,7 @@ func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 		return inv, nil
 	}
 
-	if dat, ok := data.(*minetest.ClientDataSaved); ok {
+	if dat, ok := data.(*ClientDataSaved); ok {
 		inv = new(SimpleInv)
 
 		buf := bytes.NewBuffer(dat.Bytes())
@@ -147,5 +110,39 @@ func GetInv(c *minetest.Client) (inv *SimpleInv, err error) {
 		return inv, err
 	}
 
-	return nil, minetest.ErrClientDataInvalidType
+	return nil, ErrClientDataInvalidType
+}
+
+func UseItem(inv RWInv, name string, slot int, i int) bool {
+	inv.Lock()
+	defer inv.Unlock()
+
+	list, ok := inv.Get(name)
+	if !ok {
+		return false
+	}
+
+	stack, ok := list.GetStack(slot)
+	if !ok {
+		return false
+	}
+
+	if stack.Count <= 0 {
+		return false
+	}
+
+	stack.Count -= 1
+
+	ok = list.SetStack(slot, stack)
+
+	return ok
+}
+
+func Update(inv RWInv, loc *InvLocation, c *Client) (<-chan struct{}, error) {
+	str, err := SerializeString(inv.Serialize)
+	if err != nil {
+		return nil, err
+	}
+
+	return loc.SendUpdate(str, c)
 }

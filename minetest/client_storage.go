@@ -179,6 +179,8 @@ func initClientDataDB() (err error) {
 func SyncPlayerData(c *Client) {
 	c.Log("Saving client data!")
 
+	c.SetData("pos", c.GetFullPos())
+
 	// Serialize:
 	c.dataMu.RLock()
 	defer c.dataMu.RUnlock()
@@ -205,6 +207,11 @@ func SyncPlayerData(c *Client) {
 				}
 
 				c.Logf("Type can't be saved '%s': can't be casted into ClientDataSerialize; type is '%T'\n", k, c.data[k])
+				return
+			}
+
+			if d == nil {
+				c.Logf("Type can't be saved '%s': is <NIL> value\n", k)
 				return
 			}
 

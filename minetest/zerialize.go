@@ -1,4 +1,4 @@
-package inventory
+package minetest
 
 import (
 	"bytes"

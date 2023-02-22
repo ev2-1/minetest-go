@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/kevinburke/nacl/randombytes"
 
+	"bytes"
 	"fmt"
 	"log"
 )
@@ -35,8 +36,8 @@ const (
 func CltLeave(l *Leave) (ack <-chan struct{}, err error) {
 	l.Client.leaveOnce.Do(func() {
 		leaveHooksMu.RLock()
-		for _, h := range leaveHooks {
-			h(l)
+		for h := range leaveHooks {
+			h.Thing(l)
 		}
 
 		leaveHooksMu.RUnlock()
@@ -140,27 +141,29 @@ func firstJoin(c *Client) error {
 
 	registerHooksMu.RLock()
 	defer registerHooksMu.RUnlock()
-	for _, h := range registerHooks {
-		h(c)
+	for h := range registerHooks {
+		h.Thing(c)
 	}
 
 	return nil
 }
 
-// register Player as active
-func registerPlayer(c *Client) {
+// RegisterPlayer as active
+func RegisterPlayer(c *Client) {
 	clientsMu.Lock()
 	clients[c] = struct{}{}
 	clientsMu.Unlock()
 
 	joinHooksMu.RLock()
-	for _, h := range joinHooks {
-		h(c)
+	for h := range joinHooks {
+		h.Thing(c)
 	}
 	joinHooksMu.RUnlock()
 
 	// change prefix to new name
 	c.Logger.SetPrefix(c.String())
+
+	close(c.initCh)
 }
 
 func InitClient(c *Client) {
@@ -186,19 +189,34 @@ func InitClient(c *Client) {
 	c.Logf("Got UUID: %s\n", c.UUID)
 
 	// data:
-	var bytes int
-	c.data, bytes, err = DB_PlayerGetData(c.UUID)
+	var bytesTtl int
+	c.data, bytesTtl, err = DB_PlayerGetData(c.UUID)
 	if err != nil {
 		c.Log("Failed to get Player data!: %s\n", err)
 		panic("Failed to get Player data!")
 	}
 
-	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytes)
+	c.Logf("Loaded %d fields. a total of %d bytes\n", len(c.data), bytesTtl)
+
+	//pos:
+	clientPos, ok := c.data["pos"]
+	if !ok {
+		c.Pos = MakePos(c)
+	} else {
+		dat := clientPos.(*ClientDataSaved)
+		c.Pos = new(ClientPos)
+
+		err := c.Pos.Deserialize(bytes.NewReader(dat.Bytes()))
+		if err != nil {
+			c.Logf("Error while Deserializing ClientPos: %s\n", err)
+			c.Pos = MakePos(c)
+		}
+	}
 
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()
 
-	for _, h := range initHooks {
-		h(c)
+	for h := range initHooks {
+		h.Thing(c)
 	}
 }

@@ -3,10 +3,11 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/g3n/engine/math32"
 	"io"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -151,11 +152,15 @@ type ClientPos struct {
 var be = binary.BigEndian
 
 func (cp *ClientPos) Serialize(w io.Writer) (err error) {
-	return binary.Write(w, be, cp.CurPos.Pos)
+	if cp == nil {
+		return ErrNilValue
+	}
+
+	return binary.Write(w, be, cp.CurPos)
 }
 
 func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
-	err = binary.Read(w, be, &cp.CurPos.Pos)
+	err = binary.Read(w, be, &cp.CurPos)
 	if err != nil {
 		return err
 	}
@@ -165,15 +170,24 @@ func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
 	return
 }
 
-var posUpdatersMu sync.RWMutex
-var posUpdaters []func(c *Client, pos *ClientPos, lu time.Duration)
+type PosUpdater func(c *Client, pos *ClientPos, lu time.Duration)
+
+var (
+	posUpdatersMu sync.RWMutex
+	posUpdaters   = make(map[*Registerd[PosUpdater]]struct{})
+)
 
 // PosUpdater is called with a UNLOCKED ClientPos
-func RegisterPosUpdater(pu func(c *Client, pos *ClientPos, lu time.Duration)) {
+func RegisterPosUpdater(pu PosUpdater) HookRef[Registerd[PosUpdater]] {
 	posUpdatersMu.Lock()
 	defer posUpdatersMu.Unlock()
 
-	posUpdaters = append(posUpdaters, pu)
+	r := &Registerd[PosUpdater]{Caller(1), pu}
+	ref := HookRef[Registerd[PosUpdater]]{&posUpdatersMu, posUpdaters, r}
+
+	posUpdaters[r] = struct{}{}
+
+	return ref
 }
 
 func init() {
@@ -194,19 +208,62 @@ func init() {
 		c.PosState.RLock()
 		defer c.PosState.RUnlock()
 
-		cpos := GetFullPos(c)
-		cpos.Lock()
+		cpos := c.GetFullPos()
 
+		//calc dtime
 		now := time.Now()
 		dtime := now.Sub(cpos.LastUpdate)
 
-		cpos.LastUpdate = now
-		cpos.OldPos = cpos.CurPos
-		cpos.CurPos = PlayerPos2PPos(pp, cpos.CurPos.Dim)
-		cpos.Unlock()
+		func() {
+			cpos.Lock()
+			defer cpos.Unlock()
 
-		for _, u := range posUpdaters {
-			u(c, cpos, dtime)
+			//anitcheat
+			newpos := PlayerPos2PPos(pp, cpos.CurPos.Dim)
+			if !anticheatPos(c, cpos.CurPos, newpos, dtime) {
+				c.Logf("client moved to fast!\n")
+
+				c.SendCmd(&mt.ToCltMovePlayer{
+					Pos: cpos.CurPos.Pos.Pos,
+
+					Pitch: cpos.CurPos.Pitch,
+					Yaw:   cpos.CurPos.Yaw,
+				})
+				return
+			}
+
+			//updatepos
+			cpos.LastUpdate = now
+			cpos.OldPos = cpos.CurPos
+			cpos.CurPos = newpos
+		}()
+
+		//copy to prevent deadlock
+		posUpdatersMu.RLock()
+		updaters := make([]Registerd[PosUpdater], len(posUpdaters))
+		var i int
+		for k := range posUpdaters {
+			updaters[i] = *k
+
+			i++
+		}
+		posUpdatersMu.RUnlock()
+
+		for u := range posUpdaters {
+			timeout := makePktTimeout()
+			done := make(chan struct{})
+
+			go func() {
+				u.Thing(c, cpos, dtime)
+				close(done)
+			}()
+
+			select {
+			case <-done:
+				timeout.Stop()
+			case <-timeout.C:
+				c.Logf("Timeout waiting for posUpdater! registerd at %s\n", u.Path())
+			}
 		}
 	})
 }
@@ -221,8 +278,8 @@ func MakePos(c *Client) *ClientPos {
 	}
 }
 
-func GetPos(c *Client) PPos {
-	pos := GetFullPos(c)
+func (c *Client) GetPos() PPos {
+	pos := c.GetFullPos()
 	pos.RLock()
 	defer pos.RUnlock()
 
@@ -230,44 +287,14 @@ func GetPos(c *Client) PPos {
 }
 
 // GetFullPos returns pos of player / client
-func GetFullPos(c *Client) *ClientPos {
-	cd, ok := c.GetData("pos")
-	if !ok {
-		c.Logf("Info: !ok %T\n", cd)
-		cd = MakePos(c)
-		c.SetData("pos", cd)
-	}
-
-	pos, ok := cd.(*ClientPos)
-	if !ok {
-		c.Logf("Info: !*ClientPos")
-		dat, ok := cd.(*ClientDataSaved)
-		if !ok {
-			c.Logf("Err: !*ClientDataSaved")
-			pos = MakePos(c)
-			c.SetData("pos", pos)
-			return pos
-		}
-
-		pos = new(ClientPos)
-		err := pos.Deserialize(bytes.NewReader(dat.Bytes()))
-		if err != nil {
-			c.Logf("Error while Deserializing ClientPos: %s\n", err)
-			pos = MakePos(c)
-			c.SetData("pos", pos)
-			return pos
-		}
-
-		c.SetData("pos", pos)
-	}
-
-	return pos
+func (c *Client) GetFullPos() *ClientPos {
+	return c.Pos
 }
 
 // SetPos sets position
 // returns old position
 func SetPos(c *Client, p PPos, send bool) PPos {
-	cpos := GetFullPos(c)
+	cpos := c.GetFullPos()
 	cpos.Lock()
 	defer cpos.Unlock()
 
@@ -312,4 +339,32 @@ func SetPos(c *Client, p PPos, send bool) PPos {
 	}
 
 	return cpos.OldPos
+}
+
+// Returns distance in 10th nodes
+// speed is < 0, no max speed
+func MaxSpeed(clt *Client) float64 {
+	return -100 //TODO
+}
+
+// Check if NewPos is valid
+func anticheatPos(clt *Client, old, new PPos, dtime time.Duration) bool {
+	speed := MaxSpeed(clt)
+	if speed < 0 {
+		return true
+	}
+
+	curspeed := Distance(old.Pos.Pos, new.Pos.Pos) / dtime.Seconds()
+
+	return curspeed < speed
+}
+
+func Distance(a, b [3]float32) float64 {
+	var number float32
+
+	number += math32.Pow((a[0] - b[0]), 2)
+	number += math32.Pow((a[1] - b[1]), 2)
+	number += math32.Pow((a[2] - b[2]), 2)
+
+	return math.Sqrt(float64(number))
 }

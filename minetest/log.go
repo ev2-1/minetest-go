@@ -42,7 +42,7 @@ func initLog() {
 	log.SetPrefix("[minetest] ")
 	log.SetFlags(logFlags)
 
-	f, err := os.OpenFile(Path("latest.log"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	f, err := os.OpenFile(Path(GetConfigV("log-file", "latest.log")), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
