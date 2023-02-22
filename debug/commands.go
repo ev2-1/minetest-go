@@ -71,6 +71,39 @@ func init() {
 		c.SetData("disable_dig", args[0] == "on")
 	})
 
+	chat.RegisterChatCmd("setnode", func(c *minetest.Client, args []string) {
+		if len(args) != 1 {
+			chat.SendMsg(c, "Usage: setnode <name>", mt.RawMsg)
+			return
+		}
+
+		def := minetest.GetNodeDef(args[0])
+		if def == nil {
+			chat.SendMsgf(c, mt.RawMsg, "Node %s doesn't exist", args[0])
+			return
+		}
+
+		minetest.SetNode(c.GetPos().IntPos(), mt.Node{Param0: def.Thing.Param0}, nil)
+	})
+
+	chat.RegisterChatCmd("blame", func(c *minetest.Client, args []string) {
+		if len(args) != 2 {
+			chat.SendMsg(c, "Usage: blame node <name>", mt.RawMsg)
+			return
+		}
+
+		switch args[0] {
+		case "node":
+			def := minetest.GetNodeDef(args[1])
+			if def == nil {
+				chat.SendMsgf(c, mt.RawMsg, "Node %s doesn't exist", args[1])
+				return
+			}
+
+			chat.SendMsgf(c, mt.RawMsg, "Node '%s' can be blamed on '%s'! fuck them", args[1], def.Path())
+		}
+	})
+
 	chat.RegisterChatCmd("disable_place", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: disable_place on|off", mt.RawMsg)
