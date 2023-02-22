@@ -104,7 +104,7 @@ func init() {
 				return
 			}
 
-			chat.SendMsgf(c, mt.RawMsg, "Node '%s' can be blamed on '%s'! fuck them", args[1], def.Path())
+			chat.SendMsgf(c, mt.RawMsg, "Node '%s' can be blamed on '%s'!", args[1], def.Path())
 		case "item":
 			def := minetest.GetItemDef(args[1])
 			if def == nil {
@@ -112,7 +112,7 @@ func init() {
 				return
 			}
 
-			chat.SendMsgf(c, mt.RawMsg, "Item '%s' can be blamed on '%s'! fuck them", args[1], def.Path())
+			chat.SendMsgf(c, mt.RawMsg, "Item '%s' can be blamed on '%s'!", args[1], def.Path())
 
 		default:
 			usage()
