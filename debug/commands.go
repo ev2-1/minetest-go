@@ -5,6 +5,8 @@ import (
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
 
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -13,6 +15,19 @@ import (
 	"sync"
 	"time"
 )
+
+func Encode(v any) string {
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetIndent("| ", "  ")
+
+	err := enc.Encode(v)
+	if err != nil {
+		return "Error encoding: " + err.Error()
+	}
+
+	return "| " + buf.String() + "^^^"
+}
 
 type cltpos struct {
 	Pos   *minetest.ClientPos
@@ -60,6 +75,49 @@ func init() {
 		}
 
 		return !cd.(bool)
+	})
+
+	chat.RegisterChatCmd("info", func(c *minetest.Client, args []string) {
+		usage := func() {
+			chat.SendMsg(c, "Usage: info node|item|mt_item <name>", mt.RawMsg)
+		}
+
+		if len(args) != 2 {
+			usage()
+			return
+		}
+
+		switch args[0] {
+		case "node":
+			def := minetest.GetNodeDef(args[1])
+			if def == nil {
+				chat.SendMsgf(c, mt.RawMsg, "Node '%s' doesn't exist", args[1])
+				return
+			}
+
+			chat.SendMsgf(c, mt.RawMsg, "Registerd By %s\nDef:\n%s", def.Path(), Encode(def.Thing))
+
+		case "item":
+			def := minetest.GetItemDef(args[1])
+			if def == nil {
+				chat.SendMsgf(c, mt.RawMsg, "Item %s doesn't exist", args[1])
+				return
+			}
+
+			chat.SendMsgf(c, mt.RawMsg, "Registerd By %s\nDef:\n%s", def.Path(), Encode(def.Thing))
+
+		case "mt_item":
+			def := minetest.GetItemDef(args[1])
+			if def == nil {
+				chat.SendMsgf(c, mt.RawMsg, "Item %s doesn't exist", args[1])
+				return
+			}
+
+			chat.SendMsgf(c, mt.RawMsg, "Registerd By %s\nDef:\n%s", def.Path(), Encode(def.Thing.ItemDef()))
+
+		default:
+			usage()
+		}
 	})
 
 	chat.RegisterChatCmd("disable_dig", func(c *minetest.Client, args []string) {
@@ -167,7 +225,7 @@ func init() {
 						defer pos.Pos.RUnlock()
 
 						apos := pos.Pos.CurPos.Pos
-						speed := minetest.Distance(pos.Pos.CurPos.Pos.Pos, pos.Pos.OldPos.Pos.Pos) / pos.dtime.Seconds()
+						speed := minetest.Distance(pos.Pos.CurPos.Pos.Pos, pos.Pos.OldPos.Pos.Pos) / float32(pos.dtime.Seconds())
 
 						chat.SendMsgf(c, mt.RawMsg, "Pos: %5.1f %5.1f %5.1f : %5s @ %.2fn/s",
 							apos.Pos[0], apos.Pos[1], apos.Pos[2], apos.Dim,

@@ -3,6 +3,8 @@ package auth_nopass
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+
+	"time"
 )
 
 func Stage1() {}
@@ -104,6 +106,9 @@ func init() {
 
 		case *mt.ToSrvCltReady:
 			if c.State == minetest.CsActive {
+				// Wait to ensure client is *actually* ready (TODO: find better work around)
+				time.Sleep(time.Second)
+
 				minetest.RegisterPlayer(c)
 			} else {
 				minetest.CltLeave(&minetest.Leave{

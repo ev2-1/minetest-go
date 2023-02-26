@@ -74,9 +74,16 @@ func parseFileItem(r io.Reader) int {
 		log.Printf("Error parsing itemdef '%s'", err.Error())
 	}
 
-	var rdefs = make([]minetest.ItemDef, len(defs))
-	for k, v := range defs {
-		rdefs[k] = minetest.ItemDef{ItemDef: *v}
+	var rdefs []minetest.ItemDef
+	for _, v := range defs {
+		def, ok := minetest.TryItemDef(*v)
+		if !ok {
+			log.Printf("[WARN] item '%s' cant be converted into minetest.ItemDef!\n", v.Name)
+
+			continue
+		}
+
+		rdefs = append(rdefs, def)
 	}
 
 	minetest.AddItemDef(rdefs...)
