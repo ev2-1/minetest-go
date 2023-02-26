@@ -13,6 +13,10 @@ var (
 	ErrStackNotEmpty     = errors.New("the stack interacted with is not empty")
 	ErrInvalidPos        = errors.New("the position supplied is not parsable (e.g. not 3 dimensional)")
 	ErrOutOfSpace        = errors.New("inventory already full")
+
+	ErrInvalidFormspec = errors.New("formspec is not registered")
+
+	ErrClientNotReady = errors.New("client not ready")
 )
 
 var (
@@ -25,4 +29,20 @@ type nodeDefNotFoundErr struct {
 
 func (ndnfe nodeDefNotFoundErr) Error() string {
 	return fmt.Sprintf("Node definition not Found: '%s'", ndnfe.name)
+}
+
+type BlamedErr struct {
+	Err   error
+	Cause string
+}
+
+func (err *BlamedErr) Error() string {
+	return fmt.Sprintf("%s because of %s!", err.Err, err.Cause)
+}
+
+func (r Registerd[T]) Blame(err error) error {
+	return &BlamedErr{
+		Err:   err,
+		Cause: r.Path(),
+	}
 }
