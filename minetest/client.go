@@ -56,6 +56,10 @@ type Client struct {
 	diggingMu    sync.RWMutex
 	digging      *IntPos
 	startDigging time.Time
+
+	//formspecs
+	openSpecsMu sync.RWMutex
+	openSpecs   map[string]time.Time
 }
 
 func (c *Client) IsDigging() bool {
