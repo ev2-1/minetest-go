@@ -73,6 +73,13 @@ func Pos2Blkpos(p IntPos) (ni IntPos, i uint16) {
 	return ni, i
 }
 
+func Blkpos2Pos(p IntPos, i uint16) (ni IntPos) {
+	return IntPos{
+		Pos: mt.Blkpos2Pos(p.Pos, i),
+		Dim: p.Dim,
+	}
+}
+
 // GetNode returns a mt.Node and NodeMeta for a coordinate
 // If no NodeMeta is specified returns mt.Node and nil
 func GetNode(p IntPos) (node mt.Node, meta *mt.NodeMeta) {
@@ -116,7 +123,8 @@ func SetNode(p IntPos, node mt.Node, meta *mt.NodeMeta) {
 		})
 	}
 
-	if !keepMeta {
+	if !keepMeta && meta != nil {
+
 		BroadcastClientM(mapblk.loadedBy, &mt.ToCltNodeMetasChanged{
 			Changed: map[[3]int16]*mt.NodeMeta{
 				p.Pos: meta,
@@ -131,6 +139,9 @@ func SetNode(p IntPos, node mt.Node, meta *mt.NodeMeta) {
 	if meta == nil {
 		delete(mtblk.NodeMetas, i)
 	} else {
+		if mtblk.NodeMetas == nil {
+			mtblk.NodeMetas = make(map[uint16]*mt.NodeMeta)
+		}
 		mtblk.NodeMetas[i] = meta
 	}
 
@@ -150,8 +161,16 @@ func Fields2map(s []mt.NodeMetaField) map[string]mt.NodeMetaField {
 }
 
 func NodeMetasEqual(m1, m2 *mt.NodeMeta) bool {
-	if m1 == nil && m2 == nil {
-		return true
+	if m1 == nil {
+		if m2 == nil {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	if m2 == nil {
+		return false
 	}
 
 	buf1 := &bytes.Buffer{}

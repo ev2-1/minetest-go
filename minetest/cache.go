@@ -71,8 +71,39 @@ func loadIntoCache(pos IntPos) error {
 	}
 
 	mapCache[pos] = blk
+	go mapALH(pos, blk)
 
 	return nil
+}
+
+// map after load hooks
+type ALH func(IntPos, *MapBlk)
+
+// mapALH
+var (
+	mapALHs   = make(map[*Registerd[ALH]]struct{})
+	mapALHsMu sync.RWMutex
+)
+
+func RegisterALH(h ALH) HookRef[Registerd[ALH]] {
+	mapALHsMu.Lock()
+	defer mapALHsMu.Unlock()
+
+	r := &Registerd[ALH]{Caller(1), h}
+	ref := HookRef[Registerd[ALH]]{&mapALHsMu, mapALHs, r}
+
+	mapALHs[r] = struct{}{}
+
+	return ref
+}
+
+func mapALH(pos IntPos, blk *MapBlk) {
+	mapALHsMu.RLock()
+	defer mapALHsMu.RUnlock()
+
+	for alh := range mapALHs {
+		alh.Thing(pos, blk)
+	}
 }
 
 // CleanCache cleans the cache of expired blks

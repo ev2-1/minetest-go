@@ -84,7 +84,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		}
 
 		def := rdef.Thing
-		if def.OnDig != nil {
+		if def.OnDug != nil {
 			def.OnDug(c, i, dtime)
 		} else {
 			//TODO: anticheat
@@ -128,35 +128,38 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		}
 
 		// get item in hand:
-		rdef, inv := getItem(c, int(i.ItemSlot))
+		rdef, stack, uch := getItem(c, int(i.ItemSlot))
+		// update
+		defer func() { uch <- stack }()
+
 		if rdef == nil {
 			return
 		}
 		def := rdef.Thing
 
-		if def.OnPlace != nil {
-			def.OnPlace(c, inv, i)
-		} else {
-			DefaultPlace(c, inv, i, def)
-		}
+		stack = def.OnPlace(c, stack, i)
 
 	case mt.Use:
-		def, inv := getItem(c, int(i.ItemSlot))
+		// get item in hand:
+		def, stack, uch := getItem(c, int(i.ItemSlot))
+		// update
+		defer func() { uch <- stack }()
 		if def == nil {
 			return
 		}
 
-		if def.Thing.OnUse != nil {
-			def.Thing.OnUse(c, inv, i)
-		}
+		stack = def.Thing.OnUse(c, stack, i)
+
 	case mt.Activate:
-		def, inv := getItem(c, int(i.ItemSlot))
+		// get item in hand:
+		def, stack, uch := getItem(c, int(i.ItemSlot))
+		// update
+		defer func() { uch <- stack }()
 		if def == nil {
 			return
 		}
 
-		if def.Thing.OnActivate != nil {
-			def.Thing.OnActivate(c, inv, i)
-		}
+		def.Thing.OnActivate(c, stack, i)
+
 	}
 }

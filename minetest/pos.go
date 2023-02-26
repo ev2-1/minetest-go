@@ -220,7 +220,7 @@ func init() {
 
 			//anitcheat
 			newpos := PlayerPos2PPos(pp, cpos.CurPos.Dim)
-			if !anticheatPos(c, cpos.CurPos, newpos, dtime) {
+			if !AnticheatPos(c, cpos.CurPos, newpos, dtime) {
 				c.Logf("client moved to fast!\n")
 
 				c.SendCmd(&mt.ToCltMovePlayer{
@@ -343,28 +343,44 @@ func SetPos(c *Client, p PPos, send bool) PPos {
 
 // Returns distance in 10th nodes
 // speed is < 0, no max speed
-func MaxSpeed(clt *Client) float64 {
+func MaxSpeed(clt *Client) float32 {
 	return -100 //TODO
 }
 
+func (c *Client) PointRange() float32 {
+	return 65 + 5 //TODO
+}
+
+// PointRange or Default
+// Returns pr if pr >= 0 && pr >= default else default
+func (c *Client) PRoD(pr float32) float32 {
+	d := c.PointRange()
+
+	if pr >= 0 && pr >= d {
+		return pr
+	} else {
+		return d
+	}
+}
+
 // Check if NewPos is valid
-func anticheatPos(clt *Client, old, new PPos, dtime time.Duration) bool {
+func AnticheatPos(clt *Client, old, new PPos, dtime time.Duration) bool {
 	speed := MaxSpeed(clt)
 	if speed < 0 {
 		return true
 	}
 
-	curspeed := Distance(old.Pos.Pos, new.Pos.Pos) / dtime.Seconds()
+	curspeed := Distance(old.Pos.Pos, new.Pos.Pos) / float32(dtime.Seconds())
 
 	return curspeed < speed
 }
 
-func Distance(a, b [3]float32) float64 {
+func Distance(a, b [3]float32) float32 {
 	var number float32
 
 	number += math32.Pow((a[0] - b[0]), 2)
 	number += math32.Pow((a[1] - b[1]), 2)
 	number += math32.Pow((a[2] - b[2]), 2)
 
-	return math.Sqrt(float64(number))
+	return float32(math.Sqrt(float64(number)))
 }

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"time"
 )
 
 type Leave struct {
@@ -212,6 +213,8 @@ func InitClient(c *Client) {
 			c.Pos = MakePos(c)
 		}
 	}
+
+	c.openSpecs = make(map[string]time.Time)
 
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()

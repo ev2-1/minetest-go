@@ -25,6 +25,9 @@ func runFunc() {
 	// initialize Logging
 	initLog()
 
+	// create ItemDef net cache
+	makeItemNetCache()
+
 	// initialize ticks:
 	initTicks()
 
