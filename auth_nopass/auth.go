@@ -81,7 +81,11 @@ func init() {
 			cpos := c.GetPos()
 
 			c.SendCmd(&mt.ToCltAcceptAuth{
-				PlayerPos:       cpos.Pos.Pos,
+				PlayerPos: mt.Pos{
+					cpos.Pos.Pos[0],
+					cpos.Pos.Pos[1] + 5,
+					cpos.Pos.Pos[2],
+				},
 				MapSeed:         1337,
 				SendInterval:    0.09,
 				SudoAuthMethods: mt.SRP,
