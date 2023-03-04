@@ -23,11 +23,23 @@ const (
 
 type UUID [16]byte
 
+// Returns UUID.RFC4122
 func (u UUID) String() string {
+	return u.RFC4122()
+}
+
+// Returns a RFC4122 formatted UUID
+func (u UUID) RFC4122() string {
+	//4 2 2 2 6
+	return fmt.Sprintf("%x-%x-%x-%x", u[0:3], u[4:5], u[6:7], u[8:16])
+}
+
+// Returns UUID in 4 hex-encoded 4byte blocks seperated by dashes
+func (u UUID) Quaters() string {
 	return fmt.Sprintf("%x-%x-%x-%x", u[0:3], u[4:8], u[9:12], u[13:16])
 }
 
-var UUIDNil = [16]byte{}
+var UUIDNil UUID
 
 // A Client represents a client
 type Client struct {
