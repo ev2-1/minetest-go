@@ -28,7 +28,9 @@ func UpdateAOs() <-chan time.Duration {
 		for clt := range minetest.Clts() {
 			err := UpdateAOsClt(clt)
 			if err != nil {
-				clt.Logf("Error while updating AOs!\n")
+				if minetest.ConfigVerbose() {
+					clt.Logf("Error while updating AOs! (%s)\n", err)
+				}
 			}
 		}
 
