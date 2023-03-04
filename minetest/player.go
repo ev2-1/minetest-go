@@ -215,6 +215,27 @@ func InitClient(c *Client) {
 	}
 
 	c.openSpecs = make(map[string]time.Time)
+	loaderName := DefaultMapLoader()
+	if loaderName == "" {
+		c.SendCmd(&mt.ToCltKick{
+			Reason: mt.SrvErr,
+		})
+
+		c.Logf("DefaultMapLoader is empty")
+		return
+	}
+
+	mapLoader := GetMapLoader(loaderName)
+	if mapLoader == nil {
+		c.SendCmd(&mt.ToCltKick{
+			Reason: mt.SrvErr,
+		})
+
+		c.Logf("DefaultMapLoader is not registerd \"%s\"", loaderName)
+		return
+	}
+
+	c.SetMapLoader(mapLoader)
 
 	initHooksMu.RLock()
 	defer initHooksMu.RUnlock()

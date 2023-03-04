@@ -2,44 +2,42 @@ package mapLoader
 
 import (
 	"github.com/ev2-1/minetest-go/minetest"
-
-	"time"
+	"log"
+	"sync"
 )
 
-func lastDim(c *minetest.Client, dim minetest.DimID) *minetest.DimID {
-	data, ok := c.GetData("last_dim")
-	if !ok {
-		c.SetData("last_dim", dim)
+type Loader3x3 struct {
+	sync.Mutex
 
-		return nil
+	clt *minetest.Client
+
+	lastDim *minetest.DimID
+}
+
+func (l *Loader3x3) Load() {
+	l.Lock()
+	defer l.Unlock()
+
+	if l.clt == nil {
+		log.Fatalf("Loader3x3.Load() called without clt.")
 	}
 
-	cdim, ok := data.(minetest.DimID)
-	if !ok {
-		c.Logf("last_dim has type %T\n", data)
-		c.SetData("last_dim", dim)
+	pos := l.clt.GetFullPos().Copy()
 
-		return nil
+	pos.RLock()
+	newPos, _ := minetest.Pos2Blkpos(pos.CurPos.IntPos())
+	oldPos, _ := minetest.Pos2Blkpos(pos.OldPos.IntPos())
+	pos.RUnlock()
+
+	if newPos != oldPos || l.lastDim == nil || pos.CurPos.Dim != *l.lastDim {
+		go loadAround(newPos, l.clt)
 	}
+}
 
-	c.SetData("last_dim", dim)
-
-	return &cdim
+func (l *Loader3x3) Make(clt *minetest.Client) minetest.MapLoader {
+	return &Loader3x3{clt: clt}
 }
 
 func init() {
-	minetest.RegisterPosUpdater(func(c *minetest.Client, pos *minetest.ClientPos, lu time.Duration) {
-		pos.RLock()
-		newPos, _ := minetest.Pos2Blkpos(pos.CurPos.IntPos())
-		oldPos, _ := minetest.Pos2Blkpos(pos.OldPos.IntPos())
-		pos.RUnlock()
-
-		dim := lastDim(c, pos.CurPos.Dim)
-
-		if newPos != oldPos || dim == nil || pos.CurPos.Dim != *dim {
-			c.Logf("Blkpos changed. %v %v %v\n", newPos != oldPos, newPos != oldPos || dim == nil, newPos != oldPos || dim == nil || pos.CurPos.Dim != *dim)
-
-			go loadAround(newPos, c)
-		}
-	})
+	minetest.RegisterMapLoader("loader3x3", &Loader3x3{})
 }

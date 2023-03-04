@@ -151,6 +151,21 @@ type ClientPos struct {
 
 var be = binary.BigEndian
 
+func (cp *ClientPos) Copy() ClientPos {
+	cp.RLock()
+	defer cp.RUnlock()
+
+	if cp == nil {
+		return ClientPos{}
+	} else {
+		return ClientPos{
+			CurPos:     cp.CurPos,
+			OldPos:     cp.OldPos,
+			LastUpdate: cp.LastUpdate,
+		}
+	}
+}
+
 func (cp *ClientPos) Serialize(w io.Writer) (err error) {
 	if cp == nil {
 		return ErrNilValue
@@ -164,8 +179,6 @@ func (cp *ClientPos) Deserialize(w io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
-
-	cp.CurPos.Pos.Pos[1] += 10
 
 	return
 }
@@ -265,6 +278,8 @@ func init() {
 				c.Logf("Timeout waiting for posUpdater! registerd at %s\n", u.Path())
 			}
 		}
+
+		c.MapLoad()
 	})
 }
 

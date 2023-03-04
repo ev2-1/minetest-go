@@ -60,6 +60,41 @@ type Client struct {
 	//formspecs
 	openSpecsMu sync.RWMutex
 	openSpecs   map[string]time.Time
+
+	//         set by     registerd
+	mapLoader *Registerd[*Registerd[MapLoader]]
+}
+
+func (c *Client) MapLoad() bool {
+	loader := c.GetMapLoader()
+
+	if loader == nil || loader.Thing == nil {
+		return false
+	}
+
+	loader.Thing.Thing.Load()
+
+	return true
+}
+
+func (c *Client) GetMapLoader() *Registerd[*Registerd[MapLoader]] {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.mapLoader
+}
+
+func (c *Client) SetMapLoader(loader *Registerd[MapLoader]) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.mapLoader = &Registerd[*Registerd[MapLoader]]{
+		Caller(1),
+		&Registerd[MapLoader]{
+			loader.Path(),
+			loader.Thing.Make(c),
+		},
+	}
 }
 
 func (c *Client) IsDigging() bool {
