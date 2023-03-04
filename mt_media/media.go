@@ -40,7 +40,7 @@ func init() {
 
 	fmt.Printf("\n")
 
-	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
+	minetest.RegisterRawPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		switch cmd := pkt.Cmd.(type) {
 		case *mt.ToSrvReqMedia:
 			// respond:

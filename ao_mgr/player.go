@@ -47,6 +47,8 @@ func init() {
 
 // initPlayerAO initializes a players ActiveObject
 func initPlayerAO(clt *minetest.Client) {
+	clt.Logf("initializing Player AO\n")
+
 	id := getAOID()
 
 	//get playerAOmaker:
@@ -62,6 +64,7 @@ func initPlayerAO(clt *minetest.Client) {
 			},
 		},
 	})
+
 	if err != nil {
 		clt.Fatalf("Error encountered: %s\n", err)
 		return
@@ -84,8 +87,8 @@ func initPlayerAO(clt *minetest.Client) {
 		cd := GetClientData(clt)
 
 		cd.Lock()
+		defer cd.Unlock()
 		cd.Ready = true
-		cd.Unlock()
 	}()
 
 	clt.Logf("Registered with AOID %d", id)
