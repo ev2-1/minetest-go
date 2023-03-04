@@ -29,8 +29,10 @@ func lastDim(c *minetest.Client, dim minetest.DimID) *minetest.DimID {
 
 func init() {
 	minetest.RegisterPosUpdater(func(c *minetest.Client, pos *minetest.ClientPos, lu time.Duration) {
+		pos.RLock()
 		newPos, _ := minetest.Pos2Blkpos(pos.CurPos.IntPos())
 		oldPos, _ := minetest.Pos2Blkpos(pos.OldPos.IntPos())
+		pos.RUnlock()
 
 		dim := lastDim(c, pos.CurPos.Dim)
 
