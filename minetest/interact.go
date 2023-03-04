@@ -18,23 +18,22 @@ func init() {
 }
 
 func interact(c *Client, i *mt.ToSrvInteract) {
-	c.Logf("Interact: %s\n", i.Action)
+	if ConfigVerbose() {
+		c.Logf("Interact: %s\n", i.Action)
+	}
 
 	switch i.Action {
-	case mt.Dig:
+	case mt.Dig: // or hit
 		// get pointed node
 		pt, ok := i.Pointed.(*mt.PointedNode)
 		if !ok {
-			c.Logf("[WARN] tried to Dig %T!\n", pt)
 			return
 		}
 
 		ipos := &IntPos{pt.Under, c.GetPos().Dim}
-		c.Logf("setting DigPos to [%v]\n", ipos)
 		c.setDigPos(ipos)
 
 	case mt.StopDigging:
-		c.Logf("setting DigPos to [%v]\n", nil)
 		c.setDigPos(nil)
 
 	case mt.Dug:
