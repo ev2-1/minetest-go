@@ -2,6 +2,7 @@ package debug
 
 import (
 	"github.com/anon55555/mt"
+	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
 
@@ -495,6 +496,10 @@ func init() {
 
 		v, ok := minetest.GetConfig(args[0], any(0))
 		chat.SendMsgf(c, mt.RawMsg, "value: %v, %s", v, T(ok, "set", "not set"))
+	})
+
+	chat.RegisterChatCmd("aoid", func(c *minetest.Client, args []string) {
+		chat.SendMsgf(c, mt.RawMsg, "Your AOID is %d", ao.GetPAOID(c))
 	})
 
 	chat.RegisterChatCmd("savedata", func(c *minetest.Client, args []string) {

@@ -123,6 +123,10 @@ func BroadcastAOMsgs(ao ActiveObject, msgs ...mt.AOMsg) (<-chan struct{}, error)
 	}
 }
 
+func GetPAOID(clt *minetest.Client) mt.AOID {
+	return GetPAO(clt).GetAO()
+}
+
 // GetPAO returns the ActiveObject representing clt.
 func GetPAO(clt *minetest.Client) ActiveObjectPlayer {
 	cd := GetClientData(clt)
