@@ -29,7 +29,7 @@ func UpdateAOs() <-chan time.Duration {
 			err := UpdateAOsClt(clt)
 			if err != nil {
 				if minetest.ConfigVerbose() {
-					clt.Logf("Error while updating AOs! (%s)\n", err)
+					clt.Logf("[INFO] err while updating AOs! (%s) (can be normal during join)\n", err)
 				}
 			}
 		}
