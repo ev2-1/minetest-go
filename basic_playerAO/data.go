@@ -63,9 +63,12 @@ func (player *AOPlayer) SetPos(p minetest.PPos) {
 	player.Pos = p
 	player.Unlock()
 
+	aopos := ao.PPos2AOPos(p).AOPos()
+	aopos.Interpolate = true // if you do a ~360 it still doesn't spin around...
+
 	ao.BroadcastAOMsgs(player,
 		&mt.AOCmdPos{
-			Pos: ao.PPos2AOPos(p).AOPos(),
+			Pos: aopos,
 		},
 		&mt.AOCmdBonePos{
 			Bone: "Head_Control",
