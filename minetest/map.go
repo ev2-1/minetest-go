@@ -306,7 +306,7 @@ func markLoaded(clt *Client, p IntPos) {
 	mapCacheMu.RLock()
 	blk := mapCache[p]
 	loaded[clt][p.Pos] = blk
-	defer mapCacheMu.RUnlock()
+	mapCacheMu.RUnlock()
 
 	if blk == nil {
 		MapLogger.Println("blk is nil while marking loaded")
@@ -408,9 +408,6 @@ func unloadAll(clt *Client) (_ <-chan struct{}, err error) {
 }
 
 func isLoaded(clt *Client, p IntPos) bool {
-	loadedMu.RLock()
-	defer loadedMu.RUnlock()
-
 	pos := clt.GetPos()
 
 	if p.Dim != pos.Dim {
@@ -427,10 +424,7 @@ func isLoaded(clt *Client, p IntPos) bool {
 }
 
 func sendCltBlk(clt *Client, p IntPos) <-chan struct{} {
-	mapCacheMu.RLock()
-	defer mapCacheMu.RUnlock()
-
-	blk := GetBlk(p)
+	blk := getBlk(p)
 
 	blk.RLock()
 	defer blk.RUnlock()

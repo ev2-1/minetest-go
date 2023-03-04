@@ -238,7 +238,7 @@ func (c *Client) SendItemDefs() (<-chan struct{}, error) {
 	return c.SendCmd(cmd)
 }
 
-// returns false if error is encountered
+// returns nil if error is encountered
 func getItem(c *Client, slot int) (d *Registerd[ItemDef], s mt.Stack, ch chan mt.Stack) {
 	ch = make(chan mt.Stack, 1)
 

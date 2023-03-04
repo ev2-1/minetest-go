@@ -19,6 +19,10 @@ func IsCached(pos IntPos) bool {
 	mapCacheMu.RLock()
 	defer mapCacheMu.RUnlock()
 
+	return isCached(pos)
+}
+
+func isCached(pos IntPos) bool {
 	_, f := mapCache[pos]
 
 	return f
@@ -28,7 +32,14 @@ func IsCached(pos IntPos) bool {
 // if cache is still valid, does nothing
 // Refreshes Loaded.
 func TryCache(pos IntPos) error {
-	if !IsCached(pos) {
+	mapCacheMu.Lock()
+	defer mapCacheMu.Unlock()
+
+	return tryCache(pos)
+}
+
+func tryCache(pos IntPos) error {
+	if !isCached(pos) {
 		return loadIntoCache(pos)
 	}
 
@@ -41,9 +52,6 @@ func loadIntoCache(pos IntPos) error {
 	if ConfigVerbose() {
 		MapLogger.Printf("Loading (%d,%d,%d) %s (%d) into cache\n", pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim, pos.Dim)
 	}
-
-	mapCacheMu.Lock()
-	defer mapCacheMu.Unlock()
 
 	dim := pos.Dim.Lookup()
 	if dim == nil {

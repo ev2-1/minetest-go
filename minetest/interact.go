@@ -29,9 +29,12 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 			return
 		}
 
-		c.setDigPos(&IntPos{pt.Under, c.GetPos().Dim})
+		ipos := &IntPos{pt.Under, c.GetPos().Dim}
+		c.Logf("setting DigPos to [%v]\n", ipos)
+		c.setDigPos(ipos)
 
 	case mt.StopDigging:
+		c.Logf("setting DigPos to [%v]\n", nil)
 		c.setDigPos(nil)
 
 	case mt.Dug:
@@ -129,6 +132,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 
 		// get item in hand:
 		rdef, stack, uch := getItem(c, int(i.ItemSlot))
+
 		// update
 		defer func() { uch <- stack }()
 
@@ -142,6 +146,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 	case mt.Use:
 		// get item in hand:
 		def, stack, uch := getItem(c, int(i.ItemSlot))
+
 		// update
 		defer func() { uch <- stack }()
 		if def == nil {
@@ -153,6 +158,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 	case mt.Activate:
 		// get item in hand:
 		def, stack, uch := getItem(c, int(i.ItemSlot))
+
 		// update
 		defer func() { uch <- stack }()
 		if def == nil {
@@ -160,6 +166,5 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		}
 
 		def.Thing.OnActivate(c, stack, i)
-
 	}
 }

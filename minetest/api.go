@@ -24,11 +24,14 @@ func AddExpiredCondition(f func(*MapBlk) bool) {
 // LoadBlk sends a blk and marks it as send
 // only sends updates after that until client send DeletedBlks
 func LoadBlk(clt *Client, p IntPos) <-chan struct{} {
+	mapCacheMu.Lock()
+	defer mapCacheMu.Unlock()
+
 	if isLoaded(clt, p) {
 		return nil
 	}
 
-	err := TryCache(p)
+	err := tryCache(p)
 	if err != nil {
 		clt.Logf("WARN: TryCache: %s\n", err)
 		if errors.Is(ErrInvalidDim, err) {
@@ -52,18 +55,23 @@ func LoadBlk(clt *Client, p IntPos) <-chan struct{} {
 
 // GetBlk returns a pointer to block at a BlkPos
 func GetBlk(p IntPos) *MapBlk {
+	mapCacheMu.Lock()
+	defer mapCacheMu.Unlock()
+
+	return getBlk(p)
+}
+
+func getBlk(p IntPos) *MapBlk {
 	if ConfigVerbose() {
 		MapLogger.Printf("GetBlk(%d,%d,%d, %s (%d))\n", p.Pos[0], p.Pos[1], p.Pos[2], p.Dim, p.Dim)
 	}
 
-	if err := TryCache(p); err != nil {
+	if err := tryCache(p); err != nil {
 		panic(err)
 	}
 
-	mapCacheMu.RLock()
-	defer mapCacheMu.RUnlock()
-
 	return mapCache[p]
+
 }
 
 func Pos2Blkpos(p IntPos) (ni IntPos, i uint16) {
