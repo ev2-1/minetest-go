@@ -249,32 +249,38 @@ func getItem(c *Client, slot int) (d *Registerd[ItemDef], s mt.Stack, ch chan mt
 	}
 
 	inv.Lock()
+	//TODO: figure out how to do defer inv.Unlock()
 
 	l, ok := inv.Get("main")
 	if !ok {
 		c.Logger.Printf("Error: main inv does not exist\n")
+		inv.Unlock()
 		return
 	}
 
 	s, ok = l.GetStack(slot)
 	if !ok {
 		c.Logger.Printf("Error: cant get slot %d on main inv\n", slot)
+		inv.Unlock()
 		return
 	}
 
 	if s.Count == 0 {
 		c.Logger.Printf("Error: tried to place 0 stack slot: %d\n", slot)
+		inv.Unlock()
 		return
 	}
 
 	if s.Name == "" {
 		c.Logger.Printf("Error: tried to place stack with no name slot: %d\n", slot)
+		inv.Unlock()
 		return
 	}
 
 	item := GetItemDef(s.Name)
 	if item == nil {
 		c.Logger.Printf("Error: tried to place item without definition! name: %s\n", s.Name)
+		inv.Unlock()
 		return
 	}
 
