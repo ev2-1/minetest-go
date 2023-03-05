@@ -3,7 +3,6 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"log"
 	"sync"
 )
 
@@ -25,7 +24,7 @@ func GetDetached(name string, c *Client) (inv *Registerd[*DetachedInv], err erro
 	detachedInvsMu.RLock()
 	defer detachedInvsMu.RUnlock()
 
-	c.Logger.Printf("[INV] access detached inv '%s'", name)
+	c.Log("[INV] access detached inv '%s'", name)
 
 	inv, ok := detachedInvs[name]
 	if !ok {
@@ -41,7 +40,7 @@ func (di *DetachedInv) Set(k string, v InvList) {
 	// Update:
 	_, err := di.SendUpdates()
 	if err != nil {
-		log.Printf("Error occured while updating DetachedInv: %s\n", err)
+		Loggers.Errorf("error occured while updating DetachedInv: %s\n", 1, err)
 	}
 }
 
@@ -80,7 +79,7 @@ func (di *DetachedInv) AddClient(c *Client) (<-chan struct{}, error) {
 
 	str, err := SerializeString(di.Serialize)
 	if err != nil {
-		c.Logger.Printf("Error: %s", err)
+		c.Log("Error: %s", err)
 		return nil, err
 	}
 

@@ -3,7 +3,6 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"log"
 	"time"
 )
 
@@ -94,7 +93,7 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 			//dig predict:
 			predict := GetNodeDef(rdef.Thing.DigPredict)
 			if predict == nil {
-				log.Printf("[WARN] DigPredict '%s' for '%s' is not defined\n", def.Name, def.DigPredict)
+				Loggers.Warnf("DigPredict '%s' for '%s' is not defined\n", 1, def.Name, def.DigPredict)
 				return
 			}
 

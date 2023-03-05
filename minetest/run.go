@@ -2,7 +2,6 @@ package minetest
 
 import (
 	"errors"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -33,24 +32,27 @@ func runFunc() {
 
 	// open ClientDataDB
 	if err := initClientDataDB(); err != nil {
-		log.Fatalf("Error initializing Client Data DB: %s!", err)
+		Loggers.Errorf("Error initializing Client Data DB: %s!", 1, err)
+		os.Exit(1)
 	}
 
 	listenAddr, _ := GetConfig("listen", ":30000")
 	addr, err := net.ResolveUDPAddr("udp", listenAddr)
 	if err != nil {
-		log.Fatal(err)
+		Loggers.Errorf("udp resolve: %s", 1, err)
+		os.Exit(1)
 	}
 
 	pc, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Fatal(err)
+		Loggers.Errorf("%s", 1, err)
+		os.Exit(1)
 	}
 
 	l := listen(pc)
 	defer l.Close()
 
-	log.Println("listen", l.Addr())
+	Loggers.Defaultf("listening on %s\n", 1, l.Addr())
 
 	// set state to Online
 	stateMu.Lock()
@@ -63,7 +65,7 @@ func runFunc() {
 		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		<-sig
 
-		log.Print("received SIGINT or other Interrupt - Shutting Down")
+		Loggers.Defaultf("received SIGINT or other Interrupt - Shutting Down\n", 1)
 		stateMu.Lock()
 		state = StateShuttingDown
 		stateMu.Unlock()
@@ -73,7 +75,7 @@ func runFunc() {
 		// Kicking all clients
 		clts := Clts()
 
-		log.Print("sending shutdown to all clients")
+		Loggers.Defaultf("sending shutdown to all clients\n", 1)
 		for c := range clts {
 			wg.Add(1)
 
@@ -90,7 +92,7 @@ func runFunc() {
 		shutdownHooksMu.RLock()
 		defer shutdownHooksMu.RUnlock()
 
-		log.Println("executing shutdown Hooks")
+		Loggers.Defaultf("executing shutdown Hooks\n", 1)
 
 		for h := range shutdownHooks {
 			wg.Add(1)
@@ -103,7 +105,7 @@ func runFunc() {
 		wg.Wait()
 		wg = sync.WaitGroup{}
 
-		log.Println("executing savefile Hooks")
+		Loggers.Defaultf("executing savefile Hooks\n", 1)
 		for h := range saveFileHooks {
 			wg.Add(1)
 			go func(h SaveFileHook) {
@@ -114,7 +116,7 @@ func runFunc() {
 
 		wg.Wait()
 
-		log.Printf("os.Exit(0)")
+		Loggers.Defaultf("os.Exit(0)\n", 1)
 		os.Exit(0)
 	}()
 
@@ -122,11 +124,11 @@ func runFunc() {
 		c, err := l.accept()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
-				log.Print("stop listening")
+				Loggers.Defaultf("stop listening\n", 1)
 				continue
 			}
 
-			log.Print(err)
+			Loggers.Defaultf("%s", 1, err)
 			continue
 		}
 

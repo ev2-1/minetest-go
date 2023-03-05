@@ -17,7 +17,7 @@ func Give(c *Client, inv *InvLocation, cnt uint16, itm string) (uint16, <-chan s
 			panic(err)
 		}
 
-		c.Logger.Printf("sendupdate")
+		c.Log("sendupdate")
 		inv.SendUpdate(str, c)
 	}()
 	defer rwinv.Unlock()

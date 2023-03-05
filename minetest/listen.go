@@ -3,7 +3,6 @@ package minetest
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 
@@ -62,7 +61,7 @@ func (l *listener) accept() (*Client, error) {
 			Reconnect: true,
 		})
 
-		log.Printf("WARN: %s tried to connect but state 1= StateOnline!\n", p.RemoteAddr())
+		Loggers.Warnf("%s tried to connect but state 1= StateOnline!\n", 1, p.RemoteAddr())
 
 		return nil, ErrServerShuttingDown
 	}
@@ -71,8 +70,6 @@ func (l *listener) accept() (*Client, error) {
 		Peer:   p,
 		initCh: make(chan struct{}),
 	}
-
-	c.Logger = log.New(logWriter, c.String(), logFlags)
 
 	l.mu.Lock()
 	l.clts = append(l.clts, c)

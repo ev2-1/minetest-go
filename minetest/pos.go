@@ -21,7 +21,7 @@ func GetDim(name string) *Dimension {
 
 	dim, ok := dimensions[name]
 	if !ok {
-		MapLogger.Printf("WARN: dimension %s does not exist!\n", name)
+		Loggers.Defaultf("WARN: dimension %s does not exist!\n", 1, name)
 		return nil
 	}
 
@@ -33,7 +33,7 @@ type DimID uint16
 func (d DimID) String() string {
 	dim := d.Lookup()
 	if dim == nil {
-		MapLogger.Printf("WARN: dimension %d is not defined!\n", d)
+		Loggers.Warnf("dimension %d is not defined!\n", 1, d)
 		return fmt.Sprintf("%d", d)
 	}
 
@@ -46,7 +46,7 @@ func (d DimID) Lookup() *Dimension {
 
 	name, ok := dimensionsR[d]
 	if !ok {
-		MapLogger.Printf("WARN: dimension %d has no name!\n", d)
+		Loggers.Warnf("dimension %d has no name!\n", 1, d)
 		return nil
 	}
 

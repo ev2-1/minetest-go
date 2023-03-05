@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"sync"
 )
@@ -41,6 +42,14 @@ func (r Registerd[T]) Path() string {
 func Caller(i int) string {
 	_, file, line, _ := runtime.Caller(i + 1)
 	return fmt.Sprintf("%s:%d", file, line)
+}
+
+func SCaller(i int) string {
+	_, file, line, _ := runtime.Caller(i + 1)
+	_, file = filepath.Split(file)
+
+	return fmt.Sprintf("%s:%d", file, line)
+
 }
 
 type LeaveHook func(*Leave)

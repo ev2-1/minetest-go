@@ -3,7 +3,6 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"log"
 	"sync"
 	"time"
 )
@@ -158,7 +157,7 @@ func GetNodeID(name string) mt.Content {
 	def := GetNodeDef(name)
 
 	if def == nil {
-		log.Printf("WARN: %s\n", nodeDefNotFoundErr{name})
+		Loggers.Warnf("%s\n", 1, nodeDefNotFoundErr{name})
 		return mt.Unknown
 	}
 

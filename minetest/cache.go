@@ -2,8 +2,7 @@ package minetest
 
 import (
 	"errors"
-	"fmt"
-	"log"
+	"os"
 	"sync"
 
 	"time"
@@ -50,12 +49,12 @@ func tryCache(pos IntPos) error {
 // generates new if no Blk exists
 func loadIntoCache(pos IntPos) error {
 	if ConfigVerbose() {
-		MapLogger.Printf("Loading (%d,%d,%d) %s (%d) into cache\n", pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim, pos.Dim)
+		Loggers.Verbosef("Loading (%d,%d,%d) %s (%d) into cache\n", 1, pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim, pos.Dim)
 	}
 
 	dim := pos.Dim.Lookup()
 	if dim == nil {
-		MapLogger.Printf("Tired to access dimension %d, but is not registerd!\n", pos.Dim)
+		Loggers.Verbosef("Tired to access dimension %d, but is not registerd!\n", 1, pos.Dim)
 		return ErrInvalidDim
 	}
 
@@ -63,7 +62,7 @@ func loadIntoCache(pos IntPos) error {
 
 	blk, err := drv.GetBlk(pos.Pos)
 	if err != nil {
-		MapLogger.Printf("Info: error encounterd in GetBlk: [%v]: %s\n", pos, err)
+		Loggers.Verbosef("Info: error encounterd in GetBlk: [%v]: %s\n", 1, pos, err)
 	}
 
 	if mapCache == nil {
@@ -71,7 +70,7 @@ func loadIntoCache(pos IntPos) error {
 	}
 
 	if blk == nil {
-		MapLogger.Printf("blk at [%v] does not exists. generating\n", pos)
+		Loggers.Verbosef("blk at [%v] does not exists. generating\n", 1, pos)
 		blk, err = dim.Generator.Generate(pos.Pos)
 		if err != nil {
 			return err
@@ -129,7 +128,7 @@ func CleanCache() {
 	for i := 0; i < len(delQueue); i++ {
 		if ConfigVerbose() {
 			p := delQueue[i]
-			MapLogger.Printf("Unloading (%d,%d,%d) %s (%d)",
+			Loggers.Verbosef("Unloading (%d,%d,%d) %s (%d)", 1,
 				p.Pos[0], p.Pos[1], p.Pos,
 				p.Dim, p.Dim,
 			)
@@ -143,7 +142,7 @@ func CleanCache() {
 	}
 
 	if unloaded > 0 {
-		MapLogger.Printf("Unloaded %d chunks", unloaded)
+		Loggers.Verbosef("Unloaded %d chunks", 1, unloaded)
 	}
 }
 
@@ -168,7 +167,7 @@ func SaveCache() {
 
 func init() {
 	RegisterSaveFileHook(func() {
-		MapLogger.Printf("Saving to disk")
+		Loggers.Defaultf("Saving map to disk", 1)
 		SaveCache()
 	})
 }
@@ -183,7 +182,8 @@ func enumerateExpiredBlks() (s []IntPos) {
 
 		// check if pos matches:
 		if pos.Pos != blk.Pos {
-			log.Fatal(fmt.Sprintf("mapblk dosn't have correct pos has %v, was expecting %v", blk.Pos, pos))
+			Loggers.Errorf("mapblk dosn't have correct pos has %v, was expecting %v", 1, blk.Pos, pos)
+			os.Exit(1)
 		}
 
 		if blk.expired() {

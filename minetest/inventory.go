@@ -23,12 +23,12 @@ func init() {
 		case *mt.ToSrvInvAction:
 			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
 			if err != nil {
-				c.Logger.Printf("Error: %s", err)
+				c.Log("Error: %s", err)
 				break
 			}
 
 			if _, err := action.Apply(c); err != nil {
-				c.Logger.Printf("Error: %s", err)
+				c.Log("Error: %s", err)
 			}
 		}
 	})
@@ -42,7 +42,7 @@ func init() {
 
 		Inv, err := GetInv(c)
 		if err != nil {
-			c.Logger.Printf("Error: %s", err)
+			c.Log("Error: %s", err)
 			return
 		}
 
@@ -51,7 +51,7 @@ func init() {
 
 		str, err := SerializeString(Inv.Serialize)
 		if err != nil {
-			c.Logger.Printf("Error: %s", err)
+			c.Log("Error: %s", err)
 			return
 		}
 
@@ -60,14 +60,14 @@ func init() {
 		})
 
 		<-ack
-		c.Logger.Printf("Sent CltInv")
+		c.Log("Sent CltInv")
 	})
 }
 
 func GetInv(c *Client) (inv *SimpleInv, err error) {
 	data, ok := c.GetData("inv")
 	if !ok { // => not found, so initialize
-		c.Logger.Printf("Client does not have inventory yet, adding")
+		c.Log("Client does not have inventory yet, adding")
 
 		//TODO: clean
 		stacks := make([]mt.Stack, 4*8)

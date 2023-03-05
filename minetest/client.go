@@ -3,7 +3,6 @@ package minetest
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -45,8 +44,6 @@ var UUIDNil UUID
 type Client struct {
 	mt.Peer
 	mu sync.RWMutex
-
-	Logger *log.Logger
 
 	UUID UUID
 	Name string
@@ -138,7 +135,7 @@ func (c *Client) String() string {
 }
 
 func (c *Client) Logf(format string, v ...any) {
-	c.Logger.Output(2, fmt.Sprintf(format, v...))
+	Loggers.Defaultf(c.String()+format, 2, v...)
 }
 
 func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
@@ -178,8 +175,8 @@ func (c *Client) SetState(state ClientState) {
 	//	}
 }
 
-func (c *Client) Log(dir string, v ...any) {
-	c.Logger.Println(append([]any{dir}, v...)...)
+func (c *Client) Log(v ...any) {
+	Loggers.Default(c.String()+fmt.Sprint(v...), 2)
 }
 
 func handleClt(c *Client) {

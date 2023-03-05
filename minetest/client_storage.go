@@ -8,16 +8,12 @@ import (
 
 	"bytes"
 	"errors"
-	"log"
+	"os"
 	"sync"
 )
 
 var (
 	clientDB *sql.DB
-)
-
-var (
-	DBLog *log.Logger
 )
 
 var (
@@ -137,15 +133,14 @@ func DB_PlayerDelData(uuid UUID, name string) (err error) {
 func mustPrepare(q string) (stmt *sql.Stmt) {
 	stmt, err := clientDB.Prepare(q)
 	if err != nil {
-		DBLog.Fatalf("Can't prepare statement '%s': %s", q, err)
+		Loggers.Errorf("Can't prepare statement '%s': %s", 1, q, err)
+		os.Exit(1)
 	}
 
 	return
 }
 
 func initClientDataDB() (err error) {
-	DBLog = log.New(log.Writer(), "[DB] ", log.Flags())
-
 	configuredPath, _ := GetConfig("playerdb", "players.sqlite")
 
 	clientDB, err = sql.Open("sqlite3", configuredPath)

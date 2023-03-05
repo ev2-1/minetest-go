@@ -1,57 +1,209 @@
 package minetest
 
 import (
-	"log"
+	"encoding/csv"
+	"fmt"
 	"os"
+	"strings"
+	"sync"
+	"time"
 )
 
-var logFlags = log.Flags() | log.LstdFlags | log.Lmsgprefix | log.Lshortfile
+type lineParams struct {
+	Level   string
+	Time    time.Time
+	File    string
+	Content string
+}
 
-var MapLogger = func() *log.Logger {
-	lpkts, ok := GetConfig("log-map", false)
+func (l lineParams) strS() []string {
+	return []string{
+		l.Level,
+		l.Time.Format("2006-01-02 15:04:05"),
+		l.File,
+		l.Content,
+	}
+}
 
-	if (ConfigVerbose() && !(ok && !lpkts)) || lpkts {
-		return log.New(log.Writer(), "[map] ", logFlags)
+func (l lineParams) strRaw() []string {
+	return []string{
+		l.Level,
+		l.Time.Format("2006-01-02T15:04:05"),
+		l.File,
+		strings.TrimSuffix(l.Content, "\n"),
+	}
+}
+
+func logLine(line lineParams) {
+	logWriterMu.Lock()
+	defer logWriterMu.Unlock()
+
+	err := logWriter.Write(line.strRaw())
+	if err != nil {
+		panic(fmt.Sprintf("Failed to log: %s\n", err))
 	}
 
-	return log.New(&nilWriter{}, "", 0)
-}()
+	logWriter.Flush()
 
-type nilWriter struct{}
+	log := strings.Join(line.strS()[1:], " ")
 
-func (nw *nilWriter) Write(b []byte) (n int, err error) {
-	return len(b), nil
+	//make sure line has a newline at the end
+	if !strings.HasSuffix(log, "\n") {
+		log += "\n"
+	}
+
+	fmt.Fprintf(os.Stderr, "%s %s", strings.ToUpper(line.Level[:1]), log)
 }
 
-var logWriter *LogWriter
+var (
+	logWriter   *csv.Writer
+	logWriterMu sync.Mutex
+)
 
-type LogWriter struct {
-	f *os.File
-}
-
-func (lw *LogWriter) Write(p []byte) (n int, err error) {
-	n, err = os.Stderr.Write(p)
-	if err != nil {
+func initLog() {
+	logWriterMu.Lock()
+	defer logWriterMu.Unlock()
+	if logWriter != nil {
 		return
 	}
 
-	return lw.f.Write(p)
-}
-
-func initLog() {
-	log.SetPrefix("[minetest] ")
-	log.SetFlags(logFlags)
-
 	f, err := os.OpenFile(Path(GetConfigV("log-file", "latest.log")), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	go func() {
-		defer f.Close()
-		select {}
-	}()
+	logWriter = csv.NewWriter(f)
+}
 
-	logWriter = &LogWriter{f}
-	log.SetOutput(logWriter)
+var Loggers interface {
+	Default(s string, depth int)
+	Defaultf(s string, depth int, v ...any)
+
+	Info(s string, depth int)
+	Infof(s string, depth int, v ...any)
+
+	Verbose(s string, depth int)
+	Verbosef(s string, depth int, v ...any)
+
+	Warn(s string, depth int)
+	Warnf(s string, depth int, v ...any)
+
+	Error(s string, depth int)
+	Errorf(s string, depth int, v ...any)
+
+	ll()
+} = logLevels{}
+
+type logLevels struct{}
+
+func (logLevels) ll() {} // Dummy func to prevent overwriting the variable
+
+func (logLevels) Default(str string, depth int) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "default",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: str,
+	})
+}
+
+func (logLevels) Defaultf(str string, depth int, v ...any) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "default",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: fmt.Sprintf(str, v...),
+	})
+}
+
+func (logLevels) Info(str string, depth int) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "info",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: str,
+	})
+}
+
+func (logLevels) Infof(str string, depth int, v ...any) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "info",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: fmt.Sprintf(str, v...),
+	})
+}
+
+func (logLevels) Verbose(str string, depth int) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "verbose",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: str,
+	})
+}
+
+func (logLevels) Verbosef(str string, depth int, v ...any) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "verbose",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: fmt.Sprintf(str, v...),
+	})
+}
+
+func (logLevels) Warn(str string, depth int) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "warn",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: str,
+	})
+}
+
+func (logLevels) Warnf(str string, depth int, v ...any) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "warn",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: fmt.Sprintf(str, v...),
+	})
+}
+
+func (logLevels) Error(str string, depth int) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "error",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: str,
+	})
+}
+
+func (logLevels) Errorf(str string, depth int, v ...any) {
+	initLog()
+
+	logLine(lineParams{
+		Level:   "error",
+		Time:    time.Now(),
+		File:    SCaller(depth),
+		Content: fmt.Sprintf(str, v...),
+	})
 }

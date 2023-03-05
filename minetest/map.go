@@ -4,7 +4,7 @@ import (
 	"github.com/anon55555/mt"
 
 	"errors"
-	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -14,13 +14,15 @@ func init() {
 	RegisterStage2(func() {
 		drv, ok := GetConfig("map-driver", "")
 		if !ok {
-			log.Fatalf("Error: Map: no driver specified config field 'map-driver' is empty!\nAvailable: %s\n", strings.Join(ListDrivers(), ", "))
+			Loggers.Errorf("Error: Map: no driver specified config field 'map-driver' is empty!\nAvailable: %s\n", 1, strings.Join(ListDrivers(), ", "))
+			os.Exit(1)
 		}
 
 		driversMu.RLock()
 		driver, ok := drivers[drv]
 		if !ok {
-			log.Fatalf("Error: Map: driver specified is invalid!\nAvailable: %s\n", strings.Join(ListDrivers(), ", "))
+			Loggers.Errorf("Error: Map: driver specified is invalid!\nAvailable: %s\n", 1, strings.Join(ListDrivers(), ", "))
+			os.Exit(1)
 		}
 
 		driversMu.RUnlock()
@@ -29,28 +31,31 @@ func init() {
 
 		file, ok := GetConfig("map-path", "map.sqlite")
 		if !ok {
-			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
+			Loggers.Errorf("Error: Map: no map specified config field 'map-path' is empty!\n", 1)
+			os.Exit(1)
 		}
 
 		err := driver.Open(file)
 		if err != nil {
-			log.Fatalf("Error: Can't open '%s' for DIM0: %s", file, err)
+			Loggers.Errorf("Error: Can't open '%s' for DIM0: %s", 1, file, err)
 		}
 
 		mapgen, ok := GetConfig("map-generator", "flat")
 		if !ok {
-			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
+			Loggers.Errorf("Error: Map: no map specified config field 'map-path' is empty!\n", 1)
+			os.Exit(1)
 		}
 
 		mapargs, ok := GetConfig("map-generator-args", "")
 		if !ok {
-			log.Fatalf("Error: Map: no map specified config field 'map-path' is empty!\n")
+			Loggers.Errorf("Error: Map: no map specified config field 'map-path' is empty!\n", 1)
 		}
 
 		generatorsMu.RLock()
 		generator, ok := generators[mapgen]
 		if !ok {
-			log.Fatalf("Error for DIM0: %s\n", ErrInvalidGenerator)
+			Loggers.Errorf("Error for DIM0: %s\n", 1, ErrInvalidGenerator)
+			os.Exit(1)
 		}
 
 		generatorsMu.RUnlock()
@@ -65,7 +70,8 @@ func init() {
 		})
 
 		if err != nil {
-			log.Fatalf("Error: Map: can't create DIM0: %s\n", err)
+			Loggers.Errorf("Error: Map: can't create DIM0: %s\n", 1, err)
+			os.Exit(1)
 		}
 	})
 
@@ -140,7 +146,7 @@ func RegisterDim(d *Dimension) (DimID, error) {
 
 	err := registerDim(d)
 	if err != nil {
-		MapLogger.Printf("WARN: failed to register new dimension %s (%d)\n", d.Name, d.ID)
+		Loggers.Defaultf("WARN: failed to register new dimension %s (%d)\n", 1, d.Name, d.ID)
 
 		return 0, nil
 	}
@@ -158,7 +164,7 @@ type Dimension struct {
 }
 
 func registerDim(d *Dimension) error {
-	MapLogger.Printf("Registering DIM %s (%d): though %T\n", d.Name, d.ID, d.Driver)
+	Loggers.Defaultf("Registering DIM %s (%d): though %T\n", 1, d.Name, d.ID, d.Driver)
 
 	dimensionsMu.Lock()
 	dimensions[d.Name] = d
@@ -292,7 +298,7 @@ func markLoaded(clt *Client, p IntPos) {
 	defer loadedMu.Unlock()
 
 	if ConfigVerbose() {
-		MapLogger.Printf("[%s] marking [%v] loaded\n", clt, p)
+		Loggers.Defaultf("[%s] marking [%v] loaded\n", 1, clt, p)
 	}
 
 	if loaded == nil {
@@ -309,7 +315,7 @@ func markLoaded(clt *Client, p IntPos) {
 	mapCacheMu.RUnlock()
 
 	if blk == nil {
-		MapLogger.Println("blk is nil while marking loaded")
+		Loggers.Default("blk is nil while marking loaded\n", 1)
 		return
 	}
 

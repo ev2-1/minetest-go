@@ -6,7 +6,7 @@ import (
 
 	"bytes"
 	"fmt"
-	"log"
+	"os"
 	"time"
 )
 
@@ -133,9 +133,8 @@ func firstJoin(c *Client) error {
 
 	c.Logf("Generated UUID %s for Player %s", id, c.Name)
 	if err := DB_PlayerSet(id, c.Name); err != nil {
-		log.Fatalf("Failed to add new player to database: %s\n", err)
-
-		return err
+		Loggers.Errorf("Failed to add new player to database: %s\n", 1, err)
+		os.Exit(1)
 	}
 
 	c.UUID = id
@@ -160,9 +159,6 @@ func RegisterPlayer(c *Client) {
 		h.Thing(c)
 	}
 	joinHooksMu.RUnlock()
-
-	// change prefix to new name
-	c.Logger.SetPrefix(c.String())
 
 	close(c.initCh)
 }

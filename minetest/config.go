@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/spf13/pflag"
 	"io"
-	"log"
 	"os"
 	"sync"
 
@@ -44,7 +43,8 @@ func LoadConfig() {
 			buf = bytes.NewBufferString(v)
 			key, err := buf.ReadString(byte(':'))
 			if err != nil {
-				log.Fatalf("Error decoding config overwrite: %s", err)
+				Loggers.Errorf("Error decoding config overwrite: %s", 1, err)
+				os.Exit(1)
 			}
 
 			d = yaml.NewDecoder(buf)
@@ -53,7 +53,8 @@ func LoadConfig() {
 
 			err = d.Decode(overwrite)
 			if err != nil {
-				log.Fatalf("Error decoding config overwrite '%s': %s", key, err)
+				Loggers.Errorf("Error decoding config overwrite '%s': %s", 1, key, err)
+				os.Exit(1)
 			}
 
 			config[key] = overwrite
@@ -71,7 +72,8 @@ func LoadConfig() {
 func loadConfig() {
 	f, err := os.OpenFile(*configPath, os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
-		log.Fatalf("Failed to open config file '%s': %s", *configPath, err)
+		Loggers.Errorf("Failed to open config file '%s': %s", 1, *configPath, err)
+		os.Exit(1)
 	}
 
 	d := yaml.NewDecoder(f)
@@ -79,14 +81,14 @@ func loadConfig() {
 
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF while parsing config file '%s'. Ignoring configuration\n", *configPath)
+			Loggers.Defaultf("EOF while parsing config file '%s'. Ignoring configuration\n", 1, *configPath)
 		} else {
-			log.Fatalf("Failed to parse config file '%s': %s", *configPath, err)
+			Loggers.Defaultf("Failed to parse config file '%s': %s", 1, *configPath, err)
 		}
 	}
 
 	if *verbose {
-		log.Printf("Loaded %d configuration fields!", len(config))
+		Loggers.Defaultf("Loaded %d configuration fields!", 1, len(config))
 	}
 }
 
@@ -134,7 +136,7 @@ func GetConfig[K any](key string, d K) (val K, ok bool) {
 
 	val, ok = v.(K)
 	if !ok {
-		log.Printf("WARN: config field %s was requested as %T but is type %T!\n", key, d, v)
+		Loggers.Defaultf("WARN: config field %s was requested as %T but is type %T!\n", 1, key, d, v)
 		return d, false
 	}
 

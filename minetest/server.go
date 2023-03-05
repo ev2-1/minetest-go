@@ -4,7 +4,6 @@ minetest-go is a *very* simple minetest server written in golang
 package minetest
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,7 +27,8 @@ func Path(path string) string {
 	execDirOnce.Do(func() {
 		f, err := os.Executable()
 		if err != nil {
-			log.Fatal(err)
+			Loggers.Errorf("%s", 1, err)
+			os.Exit(1)
 		}
 
 		execDir = filepath.Dir(f)
