@@ -23,12 +23,12 @@ func init() {
 		case *mt.ToSrvInvAction:
 			action, err := DeserializeInvAction(strings.NewReader(cmd.Action))
 			if err != nil {
-				c.Log("Error: %s", err)
+				c.Logf("Error: %s", err)
 				break
 			}
 
 			if _, err := action.Apply(c); err != nil {
-				c.Log("Error: %s", err)
+				c.Logf("Error: %s", err)
 			}
 		}
 	})
@@ -42,7 +42,7 @@ func init() {
 
 		Inv, err := GetInv(c)
 		if err != nil {
-			c.Log("Error: %s", err)
+			c.Logf("Error: %s", err)
 			return
 		}
 
@@ -51,7 +51,7 @@ func init() {
 
 		str, err := SerializeString(Inv.Serialize)
 		if err != nil {
-			c.Log("Error: %s", err)
+			c.Logf("Error: %s", err)
 			return
 		}
 

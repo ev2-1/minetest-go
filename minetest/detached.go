@@ -24,7 +24,7 @@ func GetDetached(name string, c *Client) (inv *Registerd[*DetachedInv], err erro
 	detachedInvsMu.RLock()
 	defer detachedInvsMu.RUnlock()
 
-	c.Log("[INV] access detached inv '%s'", name)
+	c.Logf("[INV] access detached inv '%s'", name)
 
 	inv, ok := detachedInvs[name]
 	if !ok {
@@ -79,7 +79,7 @@ func (di *DetachedInv) AddClient(c *Client) (<-chan struct{}, error) {
 
 	str, err := SerializeString(di.Serialize)
 	if err != nil {
-		c.Log("Error: %s", err)
+		c.Logf("Error: %s", err)
 		return nil, err
 	}
 

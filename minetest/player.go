@@ -173,7 +173,7 @@ func InitClient(c *Client) {
 
 		err = firstJoin(c)
 		if err != nil {
-			c.Log("Failed to Register: %s\n", err)
+			c.Logf("Failed to Register: %s\n", err)
 
 			c.SendCmd(&mt.ToCltKick{
 				Reason: mt.SrvErr,
@@ -189,7 +189,7 @@ func InitClient(c *Client) {
 	var bytesTtl int
 	c.data, bytesTtl, err = DB_PlayerGetData(c.UUID)
 	if err != nil {
-		c.Log("Failed to get Player data!: %s\n", err)
+		c.Logf("Failed to get Player data!: %s\n", err)
 		panic("Failed to get Player data!")
 	}
 

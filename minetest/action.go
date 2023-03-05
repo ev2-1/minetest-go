@@ -75,7 +75,7 @@ func (act *InvActionDrop) Apply(c *Client) (_ <-chan struct{}, err error) {
 	var str string
 	str, err = SerializeString(fromInv.Serialize)
 	if err != nil {
-		c.Log("Error: %s", err)
+		c.Logf("Error: %s", err)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (act *InvActionMove) String() string {
 
 func (act *InvActionMove) Apply(c *Client) (_ <-chan struct{}, err error) {
 	if ConfigVerbose() {
-		c.Log("[INV] %s", act.String())
+		c.Logf("[INV] %s", act.String())
 	}
 
 	var fromInv, toInv RWInv
@@ -188,7 +188,7 @@ func (act *InvActionMove) Apply(c *Client) (_ <-chan struct{}, err error) {
 	// updating client:
 	fromStr, err := SerializeString(fromInv.Serialize)
 	if err != nil {
-		c.Log("Error: %s", err)
+		c.Logf("Error: %s", err)
 		return
 	}
 	ack1, err := act.From.SendUpdate(fromStr, c)
@@ -200,7 +200,7 @@ func (act *InvActionMove) Apply(c *Client) (_ <-chan struct{}, err error) {
 		var toStr string
 		toStr, err = SerializeString(toInv.Serialize)
 		if err != nil {
-			c.Log("Error: %s", err)
+			c.Logf("Error: %s", err)
 			return
 		}
 

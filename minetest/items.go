@@ -244,7 +244,7 @@ func getItem(c *Client, slot int) (d *Registerd[ItemDef], s mt.Stack, ch chan mt
 
 	inv, err := GetInv(c)
 	if err != nil {
-		c.Log("Error during GetInv trying to Place: %s\n", err)
+		c.Logf("Error during GetInv trying to Place: %s\n", err)
 		return
 	}
 
@@ -253,33 +253,33 @@ func getItem(c *Client, slot int) (d *Registerd[ItemDef], s mt.Stack, ch chan mt
 
 	l, ok := inv.Get("main")
 	if !ok {
-		c.Log("Error: main inv does not exist\n")
+		c.Logf("Error: main inv does not exist\n")
 		inv.Unlock()
 		return
 	}
 
 	s, ok = l.GetStack(slot)
 	if !ok {
-		c.Log("Error: cant get slot %d on main inv\n", slot)
+		c.Logf("Error: cant get slot %d on main inv\n", slot)
 		inv.Unlock()
 		return
 	}
 
 	if s.Count == 0 {
-		c.Log("Error: tried to place 0 stack slot: %d\n", slot)
+		c.Logf("Error: tried to place 0 stack slot: %d\n", slot)
 		inv.Unlock()
 		return
 	}
 
 	if s.Name == "" {
-		c.Log("Error: tried to place stack with no name slot: %d\n", slot)
+		c.Logf("Error: tried to place stack with no name slot: %d\n", slot)
 		inv.Unlock()
 		return
 	}
 
 	item := GetItemDef(s.Name)
 	if item == nil {
-		c.Log("Error: tried to place item without definition! name: %s\n", s.Name)
+		c.Logf("Error: tried to place item without definition! name: %s\n", s.Name)
 		inv.Unlock()
 		return
 	}
