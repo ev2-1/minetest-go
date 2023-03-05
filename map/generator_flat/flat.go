@@ -4,7 +4,6 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
 
-	"log"
 	"strings"
 	"time"
 )
@@ -30,8 +29,6 @@ func (gen *FlatMapGenerator) FromS(s []string) {
 
 		gen.Config[i][k-i*16] = s[k]
 	}
-
-	log.Printf("-%v-\n", gen.Config)
 }
 
 func (*FlatMapGenerator) Make(drv minetest.MapDriver, args string) minetest.MapGenerator {

@@ -1,14 +1,15 @@
 package http_media
 
 import (
-	"log"
+	"github.com/ev2-1/minetest-go/minetest/log"
+
 	"net"
 )
 
 func getOutboundIP() string {
 	conn, err := net.Dial("udp", "1.1.1.1:80")
 	if err != nil {
-		log.Print("Couldn't get outbound IP using localhost (127.0.0.1)", err)
+		log.Warnf("Couldn't get outbound IP using localhost (127.0.0.1): %s", err)
 		return "127.0.0.1"
 	}
 	defer conn.Close()

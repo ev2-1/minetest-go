@@ -267,7 +267,7 @@ func init() {
 
 		rd, err := minetest.GetDetached(args[0], c)
 		if err != nil {
-			c.Logger.Printf("Error: %s", err)
+			c.Log("Error: %s", err)
 			return
 		}
 
@@ -275,13 +275,12 @@ func init() {
 
 		ack, err := d.AddClient(c)
 		if err != nil {
-			c.Logger.Printf("Error: %s", err)
+			c.Log("Error: %s", err)
 			return
 		}
 
 		<-ack
-		c.Logger.Printf("Sent DetachedInv")
-
+		c.Log("Sent DetachedInv")
 	})
 
 	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {

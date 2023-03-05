@@ -4,11 +4,11 @@ import (
 	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 
 	"github.com/anon55555/mt"
 
 	"image/color"
-	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -89,7 +89,7 @@ func (tnt *AOTNT) GetAOPos() ao.AOPos {
 }
 
 func (tnt *AOTNT) Clean() {
-	log.Printf("Removing TNT (aoid. %d)\n", tnt.AOID)
+	log.Verbosef("Removing TNT (aoid. %d)\n", tnt.AOID)
 }
 
 func (tnt *AOTNT) AOInit(c *minetest.Client) *ao.AOInit {

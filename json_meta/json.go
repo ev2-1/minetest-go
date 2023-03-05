@@ -3,8 +3,8 @@ package json_nodemeta
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 	"io"
-	"log"
 	"os"
 
 	"encoding/json"
@@ -16,13 +16,15 @@ func init() {
 
 	dir, err := os.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Error reading dir nodedefs/: %s", err)
+		os.Exit(1)
 	}
 
 	for _, file := range dir {
 		f, err := os.Open(path + file.Name())
 		if err != nil {
-			log.Fatal(err)
+			log.Errorf("Error opening file %s: %s", file.Name(), err)
+			os.Exit(1)
 		}
 
 		n := parseFileNode(f)
@@ -35,13 +37,15 @@ func init() {
 
 	dir, err = os.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Error reading dir itemdefs/: %s", err)
+		os.Exit(1)
 	}
 
 	for _, file := range dir {
 		f, err := os.Open(path + file.Name())
 		if err != nil {
-			log.Fatal(err)
+			log.Errorf("Error opening file %s: %s", file.Name(), err)
+			os.Exit(1)
 		}
 
 		n := parseFileItem(f)

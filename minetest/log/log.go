@@ -5,6 +5,7 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"fmt"
+	"os"
 )
 
 func Default(str string) {
@@ -57,4 +58,14 @@ func Error(str string) {
 
 func Errorf(str string, v ...any) {
 	minetest.Loggers.Error(fmt.Sprintf(str, v...), 2)
+}
+
+func Fatal(str string) {
+	minetest.Loggers.Error(str, 2)
+	os.Exit(1)
+}
+
+func Fatalf(str string, v ...any) {
+	minetest.Loggers.Error(fmt.Sprintf(str, v...), 2)
+	os.Exit(1)
 }

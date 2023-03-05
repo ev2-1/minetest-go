@@ -3,8 +3,8 @@ package ao
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 
-	"log"
 	"time"
 )
 
@@ -15,7 +15,7 @@ func init() {
 		duration := <-UpdateAOs()
 
 		if duration > time.Millisecond*64 {
-			log.Printf("[WARN] AO tick took %s!\n", duration)
+			log.Warnf("AO tick took %s!\n", duration)
 		}
 	})
 }

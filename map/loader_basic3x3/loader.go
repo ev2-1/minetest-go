@@ -2,7 +2,8 @@ package mapLoader
 
 import (
 	"github.com/ev2-1/minetest-go/minetest"
-	"log"
+	"github.com/ev2-1/minetest-go/minetest/log"
+
 	"sync"
 )
 

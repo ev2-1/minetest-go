@@ -3,25 +3,19 @@ package chat
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 
-	"log"
 	"strings"
 )
 
-var logger *log.Logger
-
-const loggingSuffix = "[CHAT] "
+const loggingPrefix = "[CHAT] "
 
 // Log loggs like its a chat msg
 func Log(str string) {
-	log.Println(loggingSuffix + str)
+	log.Println(loggingPrefix + str)
 }
 
 func init() {
-	minetest.RegisterStage1(func() {
-		logger = log.New(log.Writer(), "", log.Flags())
-	})
-
 	minetest.RegisterPktProcessor(func(c *minetest.Client, pkt *mt.Pkt) {
 		cmd, ok := pkt.Cmd.(*mt.ToSrvChatMsg)
 		if ok {

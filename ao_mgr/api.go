@@ -3,8 +3,8 @@ package ao
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 
-	"log"
 	"sync"
 )
 
@@ -56,7 +56,7 @@ func RmAO(id mt.AOID) bool {
 
 	ao, ok := ActiveObjects[id]
 	if !ok {
-		log.Printf("[WARN] tried to delete unregistered AO (aoid: %d)\n", id)
+		log.Warnf("tried to delete unregistered AO (aoid: %d)\n", id)
 
 		return false
 	}

@@ -2,13 +2,13 @@ package http_media
 
 import (
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"os"
 )
 
@@ -17,13 +17,13 @@ func generateIndex() {
 
 	files, err := os.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error reading dir media/: %s", err)
 	}
 
 	os.Mkdir(minetest.Path("hashfiles/"), 0777)
 	indexFile, err := os.Create(minetest.Path("hashfiles/index.mth"))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error reading dir hashfiles/: %s", err)
 	}
 
 	indexFile.Write([]byte("MTHS\x00\x01")) // header
@@ -39,7 +39,7 @@ func generateIndex() {
 
 		data, err := os.ReadFile(minetest.Path("media/" + file.Name()))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error opening file %s: %s", file.Name(), err)
 		}
 
 		// generate hashes
@@ -68,20 +68,20 @@ func generateIndex() {
 func copyFile(src, dst string) {
 	srcf, err := os.Open(src)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error opening file: %s: %s", src, err)
 	}
 
 	defer srcf.Close()
 
 	dstf, err := os.Create(dst)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error creating file %s: %s", dst, err)
 	}
 
 	defer dstf.Close()
 
 	_, err = io.Copy(dstf, srcf)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error copying file %s to %s: %s", src, dst, err)
 	}
 }

@@ -3,10 +3,9 @@ package chat
 import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 	"github.com/mattn/go-shellwords"
 
-	"fmt"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -19,12 +18,12 @@ func handleCmd(c *minetest.Client, msg string) {
 
 	args, err := shellwords.Parse(msg)
 	if err != nil {
-		log.Println("[cmd] error parsing message ", msg, "error: ", err)
+		log.Errorf("[cmd] error parsing message %s: %s", msg, err)
 		return
 	}
 
 	if len(args) == 0 {
-		log.Println("[cmd] error: no arguments")
+		log.Error("[cmd] error: no arguments")
 		return
 	}
 
@@ -57,7 +56,7 @@ func RegisterChatCmd(name string, f func(c *minetest.Client, args []string)) {
 	defer cmdsMu.Unlock()
 
 	if _, ok := cmds[name]; ok {
-		log.Println(fmt.Sprintf("[warning] [cmd] overwriting command \"%s\"", name))
+		log.Warnf("[cmd] overwriting command \"%s\"", name)
 	}
 
 	cmds[name] = f
