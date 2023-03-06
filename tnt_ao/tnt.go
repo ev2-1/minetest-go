@@ -67,6 +67,12 @@ func (tnt *AOTNT) SetAO(i mt.AOID) {
 	tnt.AOID = i
 }
 
+func (tnt *AOTNT) Punch(c *minetest.Client, i *mt.ToSrvInteract) {
+	chat.SendMsgf(c, mt.NormalMsg, "kaboom")
+
+	ao.RmAO(tnt.AOID)
+}
+
 func (tnt *AOTNT) GetAO() mt.AOID {
 	tnt.RLock()
 	defer tnt.RUnlock()

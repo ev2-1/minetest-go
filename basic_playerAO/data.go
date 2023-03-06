@@ -44,6 +44,8 @@ func (player *AOPlayer) Relevant(clt *minetest.Client) bool {
 		ao.Distance(aopos.Pos.Pos, cltpos.Pos.Pos) <= ao.RelevantDistance
 }
 
+func (player *AOPlayer) Punch(*minetest.Client, *mt.ToSrvInteract) {}
+
 func (player *AOPlayer) SetAO(i mt.AOID) {
 	player.Lock()
 	defer player.Unlock()

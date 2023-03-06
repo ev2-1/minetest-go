@@ -20,6 +20,8 @@ type ActiveObject interface {
 	//AOInit should return Initialisation data for the AO
 	AOInit(*minetest.Client) *AOInit
 
+	Punch(clt *minetest.Client, i *mt.ToSrvInteract)
+
 	//is called when removing AO
 	Clean()
 }
