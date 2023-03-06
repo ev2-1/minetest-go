@@ -48,6 +48,7 @@ func Give(c *Client, inv *InvLocation, cnt uint16, itm string) (uint16, <-chan s
 			added = s.Count - oldcount
 		} else {
 			s.Count += cnt
+			added = s.Count - oldcount
 		}
 
 		ok = list.SetStack(inv.Stack, s)
