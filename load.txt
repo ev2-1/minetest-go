@@ -35,4 +35,6 @@ github.com/ev2-1/minetest-go/tnt_ao
 github.com/ev2-1/minetest-go/debug
 #github.com/ev2-1/minetest-go/inventory/example
 
-mcl/signs
+github.com/ev2-1/minetest-go/item_ao
+
+#mcl/signs

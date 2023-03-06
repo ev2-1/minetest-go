@@ -16,7 +16,6 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kevinburke/nacl v0.0.0-20210405173606-cd9060f5f776
 	github.com/spf13/pflag v1.0.5
-	mcl v0.0.0-00010101000000-000000000000
 )
 
 require (
