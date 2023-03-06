@@ -27,6 +27,15 @@ func init() {
 				break
 			}
 
+			// some specific thins:
+			switch a := action.(type) {
+			case *InvActionDrop:
+				// Will be 0 if just Q is pressed
+				if a.Count == 0 {
+					a.Count = 65535
+				}
+			}
+
 			if _, err := action.Apply(c); err != nil {
 				c.Logf("Error: %s", err)
 			}

@@ -62,7 +62,8 @@ func (act *InvActionDrop) Apply(c *Client) (_ <-chan struct{}, err error) {
 
 	// ensure quantity
 	if fromStack.Count < act.Count {
-		return nil, ErrStackInsufficient
+		Loggers.Infof("[%s] Insufficient stack count (%d instead of %d)", 1, c, act.Count, fromStack.Count)
+		act.Count = fromStack.Count
 	}
 
 	// Drop: TODO: make item actually drop though magic
