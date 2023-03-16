@@ -61,3 +61,18 @@ func RegisterChatCmd(name string, f func(c *minetest.Client, args []string)) {
 
 	cmds[name] = f
 }
+
+func ChatCmds() []string {
+	cmdsMu.RLock()
+	defer cmdsMu.RUnlock()
+
+	s := make([]string, len(cmds))
+	var i int
+	for name := range cmds {
+		s[i] = name
+
+		i++
+	}
+
+	return s
+}

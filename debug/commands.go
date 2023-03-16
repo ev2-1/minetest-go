@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
+	"github.com/ev2-1/minetest-go/chat/help"
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"bytes"
@@ -78,6 +79,10 @@ func init() {
 		return !cd.(bool)
 	})
 
+	help.RegisterHelp("info", &help.Help{
+		Desc: "prints information about node- and itemdefs",
+		Args: help.MustParseArgs("string:mode string:name"),
+	})
 	chat.RegisterChatCmd("info", func(c *minetest.Client, args []string) {
 		usage := func() {
 			chat.SendMsg(c, "Usage: info node|item|mt_item <name>", mt.RawMsg)
@@ -121,6 +126,10 @@ func init() {
 		}
 	})
 
+	help.RegisterHelp("disable_dig", &help.Help{
+		Desc: "disables digging for self though a DigCondition",
+		Args: help.MustParseArgs("bool:toggle"),
+	})
 	chat.RegisterChatCmd("disable_dig", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: disable_dig on|off", mt.RawMsg)
@@ -130,6 +139,10 @@ func init() {
 		c.SetData("disable_dig", args[0] == "on")
 	})
 
+	help.RegisterHelp("setnode", &help.Help{
+		Desc: "sets node in which player stands to given name",
+		Args: help.MustParseArgs("string:name"),
+	})
 	chat.RegisterChatCmd("setnode", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: setnode <name>", mt.RawMsg)
@@ -145,6 +158,10 @@ func init() {
 		minetest.SetNode(c.GetPos().IntPos(), mt.Node{Param0: def.Thing.Param0}, nil)
 	})
 
+	help.RegisterHelp("blame", &help.Help{
+		Desc: "prints the line of code a given node or item was registered",
+		Args: help.MustParseArgs("string:type string:name"),
+	})
 	chat.RegisterChatCmd("blame", func(c *minetest.Client, args []string) {
 		usage := func() {
 			chat.SendMsg(c, "Usage: blame node|item <name>", mt.RawMsg)
@@ -178,6 +195,10 @@ func init() {
 		}
 	})
 
+	help.RegisterHelp("disable_place", &help.Help{
+		Desc: "disables the placing of nodes for player",
+		Args: help.MustParseArgs("string:toggle"),
+	})
 	chat.RegisterChatCmd("disable_place", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: disable_place on|off", mt.RawMsg)
@@ -187,6 +208,10 @@ func init() {
 		c.SetData("disable_place", args[0] == "on")
 	})
 
+	help.RegisterHelp("logpos", &help.Help{
+		Desc: "toggles logging of client pos to chat",
+		Args: help.MustParseArgs("string:toggle"),
+	})
 	chat.RegisterChatCmd("logpos", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: logpos on|off", mt.RawMsg)
@@ -242,6 +267,10 @@ func init() {
 		}()
 	})
 
+	help.RegisterHelp("nodeidmap", &help.Help{
+		Desc: "prints nodeidmap",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("nodeidmap", func(c *minetest.Client, args []string) {
 		nim, _ := minetest.NodeMaps()
 
@@ -259,6 +288,10 @@ func init() {
 		chat.SendMsg(c, str, mt.RawMsg)
 	})
 
+	help.RegisterHelp("getdetached", &help.Help{
+		Desc: "sends client detached inventory",
+		Args: help.MustParseArgs("string:name"),
+	})
 	chat.RegisterChatCmd("getdetached", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage: getdetached [name]", mt.RawMsg)
@@ -283,6 +316,10 @@ func init() {
 		c.Log("Sent DetachedInv")
 	})
 
+	help.RegisterHelp("showspec", &help.Help{
+		Desc: "shows client a test formspec",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("showspec", func(c *minetest.Client, args []string) {
 		c.SendCmd(&mt.ToCltShowFormspec{
 			Formspec: minetest.TestSpec(),
@@ -348,9 +385,21 @@ func init() {
 		}
 	}
 
+	help.RegisterHelp("tp", &help.Help{
+		Desc: "short command for teleport",
+		Args: help.MustParseArgs("pos:destination string:dimension"),
+	})
 	chat.RegisterChatCmd("tp", tp)
+	help.RegisterHelp("teleport", &help.Help{
+		Desc: "teleports player",
+		Args: help.MustParseArgs("pos:destination string:dimension"),
+	})
 	chat.RegisterChatCmd("teleport", tp)
 
+	help.RegisterHelp("sleep", &help.Help{
+		Desc: "sleeps before returning; time is parsed using time.ParseDuration",
+		Args: help.MustParseArgs("string:duration"),
+	})
 	chat.RegisterChatCmd("sleep", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: sleep <time>")
@@ -368,6 +417,10 @@ func init() {
 		chat.SendMsgf(c, mt.RawMsg, "Slept for %s", duration)
 	})
 
+	help.RegisterHelp("pos", &help.Help{
+		Desc: "pos prints current PPos",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("pos", func(c *minetest.Client, _ []string) {
 		pos := c.GetPos()
 
@@ -376,14 +429,26 @@ func init() {
 		)
 	})
 
+	help.RegisterHelp("uuid", &help.Help{
+		Desc: "prints your uuid",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("uuid", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your UUID is %s", c.UUID)
 	})
 
+	help.RegisterHelp("fullpos", &help.Help{
+		Desc: "prints full client position",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("fullpos", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", c.GetFullPos())
 	})
 
+	help.RegisterHelp("fix_aos", &help.Help{
+		Desc: "resends all ActiveObjects",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("fix_aos", func(c *minetest.Client, args []string) {
 		cd := ao.GetClientData(c)
 		if cd == nil {
@@ -399,6 +464,10 @@ func init() {
 		chat.SendMsgf(c, mt.RawMsg, "reset cd.AOs!")
 	})
 
+	help.RegisterHelp("list_aos", &help.Help{
+		Desc: "lists all ActiveObjects in space",
+		Args: help.MustParseArgs("string:space"),
+	})
 	chat.RegisterChatCmd("list_aos", func(c *minetest.Client, args []string) {
 		usage := func() { chat.SendMsg(c, "usage: list_aos local|global", mt.RawMsg) }
 
@@ -434,6 +503,10 @@ func init() {
 		}
 	})
 
+	help.RegisterHelp("dimension", &help.Help{
+		Desc: "sends client to specified dimension",
+		Args: help.MustParseArgs("string:dimension"),
+	})
 	chat.RegisterChatCmd("dimension", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: dimension <name>")
@@ -454,6 +527,10 @@ func init() {
 		minetest.SetPos(c, pos, true)
 	})
 
+	help.RegisterHelp("open_dim", &help.Help{
+		Desc: "opens dimension with parameters",
+		Args: help.MustParseArgs("string:name string:mapgen_arguments string:mapdriver_arguments"),
+	})
 	chat.RegisterChatCmd("open_dim", func(c *minetest.Client, args []string) {
 		usage := func(str string, v ...any) {
 			chat.SendMsgf(c, mt.RawMsg, str+"Usage: open_dim <name> <args>@<mapgen> <mapdriver>:<file>", v...)
@@ -512,6 +589,10 @@ func init() {
 		)
 	})
 
+	help.RegisterHelp("load_here", &help.Help{
+		Desc: "loads mapblock corosponding to clients position",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("load_here", func(c *minetest.Client, args []string) {
 		blkpos, _ := minetest.Pos2Blkpos(c.GetPos().IntPos())
 
@@ -525,6 +606,10 @@ func init() {
 		}()
 	})
 
+	help.RegisterHelp("kickme", &help.Help{
+		Desc: "kicks yourself",
+		Args: help.MustParseArgs("string:reason"),
+	})
 	chat.RegisterChatCmd("kickme", func(c *minetest.Client, args []string) {
 		var msg string
 
@@ -537,6 +622,10 @@ func init() {
 		c.Kick(mt.Custom, msg)
 	})
 
+	help.RegisterHelp("config", &help.Help{
+		Desc: "reads out config value",
+		Args: help.MustParseArgs("string:key"),
+	})
 	chat.RegisterChatCmd("config", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: config <key>")
@@ -547,10 +636,18 @@ func init() {
 		chat.SendMsgf(c, mt.RawMsg, "value: %v, %s", v, T(ok, "set", "not set"))
 	})
 
+	help.RegisterHelp("aoid", &help.Help{
+		Desc: "prints aoid nelonging to playerAO",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("aoid", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your AOID is %d", ao.GetPAOID(c))
 	})
 
+	help.RegisterHelp("savedata", &help.Help{
+		Desc: "modiefies clientdata",
+		Args: help.MustParseArgs("string:key string:value"),
+	})
 	chat.RegisterChatCmd("savedata", func(c *minetest.Client, args []string) {
 		if len(args) < 2 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: savedata <field> <data>...")
@@ -566,6 +663,10 @@ func init() {
 		return
 	})
 
+	help.RegisterHelp("give", &help.Help{
+		Desc: "adds items to inventory",
+		Args: help.MustParseArgs("string:item int:count"),
+	})
 	chat.RegisterChatCmd("give", func(c *minetest.Client, args []string) {
 		if len(args) < 2 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: give <item> <count>")
@@ -608,6 +709,10 @@ func init() {
 		return
 	})
 
+	help.RegisterHelp("getdata", &help.Help{
+		Desc: "prints clientdata",
+		Args: help.MustParseArgs("string:key"),
+	})
 	chat.RegisterChatCmd("getdata", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: getdata <field>")
@@ -634,12 +739,20 @@ func init() {
 		return
 	})
 
+	help.RegisterHelp("cleanmapcache", &help.Help{
+		Desc: "triggers map cache clean",
+		Args: help.MustParseArgs(""),
+	})
 	chat.RegisterChatCmd("cleanmapcache", func(c *minetest.Client, args []string) {
 		minetest.CleanCache()
 
 		chat.SendMsgf(c, mt.RawMsg, "cleaning map cache done")
 	})
 
+	help.RegisterHelp("nodeinfo", &help.Help{
+		Desc: "prints node information client is standing in",
+		Args: help.MustParseArgs("any:arguments"),
+	})
 	chat.RegisterChatCmd("nodeinfo", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsg(c, "Usage nodeinfo <[name] [param0_raw] [param1] [param2] [meta] | all>", mt.RawMsg)
@@ -709,6 +822,10 @@ func init() {
 		chat.SendMsg(c, msg, mt.RawMsg)
 	})
 
+	help.RegisterHelp("inv", &help.Help{
+		Desc: "prints clients inv with specified name",
+		Args: help.MustParseArgs("string:name"),
+	})
 	chat.RegisterChatCmd("inv", func(c *minetest.Client, args []string) {
 		if len(args) != 1 {
 			chat.SendMsgf(c, mt.RawMsg, "Usage: inv <name>")
@@ -726,6 +843,23 @@ func init() {
 		i := inv.M[args[0]]
 
 		chat.SendMsgf(c, mt.RawMsg, "value: %+v", i)
+	})
+
+	help.RegisterHelp("help", &help.Help{
+		Desc: "prints basic help menu",
+		Args: help.MustParseArgs(""),
+	})
+	chat.RegisterChatCmd("help", func(c *minetest.Client, args []string) {
+		texts := HelpTexts()
+		s := make([]string, len(texts))
+		var i int
+		for name, desc := range texts {
+			s[i] = fmt.Sprintf("%s: \n %s", name, strings.ReplaceAll(desc, "\n", "\n "))
+
+			i++
+		}
+
+		chat.SendMsg(c, strings.Join(s, "\n"), mt.NormalMsg)
 	})
 }
 
@@ -746,4 +880,32 @@ func T[V any](c bool, t, f V) V {
 	} else {
 		return f
 	}
+}
+
+func HelpTexts() map[string]string {
+	cmds := chat.ChatCmds()
+	m := make(map[string]string, len(cmds))
+
+	for _, cmd := range cmds {
+		if h := help.GetHelp(cmd); h == nil {
+			m[cmd] = "no help provided"
+		} else {
+			m[cmd] = fmt.Sprintf("%s\nusage:\n %s", h.Desc,
+				strings.ReplaceAll(Args(h.Args), "\n", "\n  "))
+		}
+	}
+
+	return m
+}
+
+func Args(args []help.Argument) (s string) {
+	if args == nil || len(args) == 0 {
+		return "none provided"
+	}
+
+	for _, arg := range args {
+		s += fmt.Sprintf("%s - %s\n", arg.Name, arg.Type)
+	}
+
+	return s[:len(s)-1]
 }
