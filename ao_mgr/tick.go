@@ -78,7 +78,7 @@ func UpdateAOsClt(clt *minetest.Client) error {
 	laq := len(addQueue)
 
 	//skip
-	if laq <= 0 && len(rmQueue) <= 0 {
+	if laq == 0 && len(rmQueue) == 0 {
 		return nil
 	}
 

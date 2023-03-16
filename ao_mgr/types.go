@@ -103,6 +103,8 @@ func (i *AOInit) AOInitData(id mt.AOID) mt.AOInitData {
 func makeClientData() *ClientData {
 	return &ClientData{
 		AOs: make(map[mt.AOID]struct{}),
+
+		Age: time.Now(),
 	}
 }
 
@@ -115,4 +117,10 @@ type ClientData struct {
 
 	//is the clients AOID (client self does not have)
 	AOID mt.AOID
+
+	Age time.Time
+}
+
+func (cd *ClientData) age() time.Duration {
+	return time.Now().Sub(cd.Age)
 }

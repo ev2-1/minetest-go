@@ -6,6 +6,7 @@ import (
 	"github.com/ev2-1/minetest-go/minetest/log"
 
 	"sync"
+	"time"
 )
 
 const (
@@ -77,6 +78,11 @@ func GetClientData(clt *minetest.Client) *ClientData {
 		clt.Logf("[WARN] Client does not have ao.ClientData!")
 		cd := makeClientData()
 		clt.SetData(ClientDataKey, cd)
+		cd.Lock()
+		go func() {
+			time.Sleep(time.Second)
+			cd.Unlock()
+		}()
 
 		return cd
 	}
@@ -142,4 +148,17 @@ func GetPAO(clt *minetest.Client) ActiveObjectPlayer {
 	}
 
 	return cdao
+}
+
+func ListAOs() map[mt.AOID]ActiveObject {
+	ActiveObjectsMu.RLock()
+	defer ActiveObjectsMu.RUnlock()
+
+	m := make(map[mt.AOID]ActiveObject, len(ActiveObjects))
+
+	for k, v := range ActiveObjects {
+		m[k] = v
+	}
+
+	return m
 }

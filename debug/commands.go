@@ -267,7 +267,7 @@ func init() {
 
 		rd, err := minetest.GetDetached(args[0], c)
 		if err != nil {
-			c.Log("Error: %s", err)
+			c.Logf("Error: %s", err)
 			return
 		}
 
@@ -275,7 +275,7 @@ func init() {
 
 		ack, err := d.AddClient(c)
 		if err != nil {
-			c.Log("Error: %s", err)
+			c.Logf("Error: %s", err)
 			return
 		}
 
@@ -382,6 +382,56 @@ func init() {
 
 	chat.RegisterChatCmd("fullpos", func(c *minetest.Client, args []string) {
 		chat.SendMsgf(c, mt.RawMsg, "Your pos is %+v", c.GetFullPos())
+	})
+
+	chat.RegisterChatCmd("fix_aos", func(c *minetest.Client, args []string) {
+		cd := ao.GetClientData(c)
+		if cd == nil {
+			chat.SendMsgf(c, mt.RawMsg, "you don't have ao.ClientData!")
+			return
+		}
+
+		cd.Lock()
+		defer cd.Unlock()
+
+		// reset map
+		cd.AOs = make(map[mt.AOID]struct{})
+		chat.SendMsgf(c, mt.RawMsg, "reset cd.AOs!")
+	})
+
+	chat.RegisterChatCmd("list_aos", func(c *minetest.Client, args []string) {
+		usage := func() { chat.SendMsg(c, "usage: list_aos local|global", mt.RawMsg) }
+
+		if len(args) != 1 {
+			usage()
+			return
+		}
+
+		switch args[0] {
+		case "local":
+			cd := ao.GetClientData(c)
+			cd.RLock()
+			aos := make([]mt.AOID, 0, len(cd.AOs))
+			for k := range cd.AOs {
+				aos = append(aos, k)
+			}
+
+			cd.RUnlock()
+
+			chat.SendMsgf(c, mt.RawMsg, "you locally have the following ids: %v", aos)
+
+		case "global":
+			aos := make([]mt.AOID, 0)
+
+			for id := range ao.ListAOs() {
+				aos = append(aos, id)
+			}
+
+			chat.SendMsgf(c, mt.RawMsg, "there are these ids globally: %v", aos)
+
+		default:
+			usage()
+		}
 	})
 
 	chat.RegisterChatCmd("dimension", func(c *minetest.Client, args []string) {
