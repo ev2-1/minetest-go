@@ -850,16 +850,29 @@ func init() {
 		Args: help.MustParseArgs(""),
 	})
 	chat.RegisterChatCmd("help", func(c *minetest.Client, args []string) {
-		texts := HelpTexts()
-		s := make([]string, len(texts))
-		var i int
-		for name, desc := range texts {
-			s[i] = fmt.Sprintf("%s: \n %s", name, strings.ReplaceAll(desc, "\n", "\n "))
+		if len(args) == 0 {
+			texts := HelpTexts()
+			s := make([]string, len(texts))
+			var i int
+			for name, desc := range texts {
+				s[i] = fmt.Sprintf("%s: \n %s", name, strings.ReplaceAll(desc, "\n", "\n "))
 
-			i++
+				i++
+			}
+
+			chat.SendMsg(c, strings.Join(s, "\n"), mt.NormalMsg)
+		} else {
+			h := help.GetHelp(args[0])
+			if h == nil {
+				chat.SendMsgf(c, mt.NormalMsg, "%s has no help")
+			} else {
+				chat.SendMsgf(c, mt.NormalMsg, "%s:\n %s arguments:\n  %s",
+					h.Name,
+					h.Desc,
+					strings.ReplaceAll(Args(h.Args), "\n", "\n  "),
+				)
+			}
 		}
-
-		chat.SendMsg(c, strings.Join(s, "\n"), mt.NormalMsg)
 	})
 }
 
