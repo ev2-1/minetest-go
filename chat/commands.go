@@ -13,7 +13,7 @@ import (
 
 var cmdPrefix = "/"
 
-func handleCmd(c *minetest.Client, msg string) {
+func HandleCmd(c *minetest.Client, msg string) {
 	msg = strings.TrimPrefix(msg, cmdPrefix)
 
 	args, err := shellwords.Parse(msg)

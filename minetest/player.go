@@ -210,7 +210,8 @@ func InitClient(c *Client) {
 		}
 	}
 
-	c.openSpecs = make(map[string]time.Time)
+	c.openSpecsT = make(map[string]time.Time)
+	c.openSpecs = make(map[string]*Formspec)
 	loaderName := DefaultMapLoader()
 	if loaderName == "" {
 		c.SendCmd(&mt.ToCltKick{

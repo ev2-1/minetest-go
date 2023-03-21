@@ -21,7 +21,7 @@ func init() {
 		if ok {
 			// check if has prefix:
 			if strings.HasPrefix(cmd.Msg, cmdPrefix) {
-				handleCmd(c, cmd.Msg)
+				HandleCmd(c, cmd.Msg)
 			} else {
 				BroadcastMsg(c.Name, cmd.Msg)
 			}

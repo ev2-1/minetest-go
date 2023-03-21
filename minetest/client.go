@@ -68,7 +68,8 @@ type Client struct {
 
 	//formspecs
 	openSpecsMu sync.RWMutex
-	openSpecs   map[string]time.Time
+	openSpecsT  map[string]time.Time
+	openSpecs   map[string]*Formspec
 
 	//         set by     registerd
 	mapLoader *Registerd[*Registerd[MapLoader]]

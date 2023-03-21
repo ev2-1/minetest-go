@@ -3,50 +3,44 @@ package minetest
 import (
 	"github.com/anon55555/mt"
 
-	"sync"
+	"fmt"
 	"time"
-)
-
-var (
-	formspecsMu sync.RWMutex
-	formspecs   = make(map[string]*Registerd[FormspecDef])
 )
 
 type FormSpecSubmitFunc func(c *Client, values map[string]string, edittime time.Duration, closed bool)
 
-type FormspecDef struct {
+type Formspec struct {
 	Name   string
 	Spec   string
 	Submit FormSpecSubmitFunc
 }
 
-func RegisterFormspec(spec FormspecDef) {
-	formspecsMu.Lock()
-	defer formspecsMu.Unlock()
+func (c *Client) RegisterFormspec(spec *Formspec) {
+	c.openSpecsMu.Lock()
+	defer c.openSpecsMu.Unlock()
 
-	formspecs[spec.Name] = &Registerd[FormspecDef]{Caller(1), spec}
+	c.openSpecs[spec.Name] = spec
 }
 
 // Returns formspec if registerd
 // returns nil if not
-func GetSpec(name string) (spec *Registerd[FormspecDef]) {
-	formspecsMu.RLock()
-	defer formspecsMu.RUnlock()
+func (c *Client) GetSpec(name string) (spec *Formspec) {
+	c.openSpecsMu.RLock()
+	defer c.openSpecsMu.RUnlock()
 
-	return formspecs[name]
+	return c.openSpecs[name]
 }
 
 // name is name of registerd FormspecDef
 // returns ErrInvalidFormspec if formspec is not registered
-func (c *Client) ShowSpec(name string) (<-chan struct{}, error) {
-	rspec := GetSpec(name)
-	if rspec == nil {
+func (c *Client) ShowSpec(spec *Formspec) (<-chan struct{}, error) {
+	if spec == nil {
 		return nil, ErrInvalidFormspec
 	}
 
 	ack, err := c.SendCmd(&mt.ToCltShowFormspec{
-		Formspec: rspec.Thing.Spec,
-		Formname: name,
+		Formspec: spec.Spec,
+		Formname: spec.Name,
 	})
 
 	if err != nil {
@@ -58,10 +52,21 @@ func (c *Client) ShowSpec(name string) (<-chan struct{}, error) {
 		c.openSpecsMu.Lock()
 		defer c.openSpecsMu.Unlock()
 
-		c.openSpecs[name] = time.Now()
+		c.openSpecsT[spec.Name] = time.Now()
+		c.openSpecs[spec.Name] = spec
 	}()
 
 	return ack, err
+}
+
+func (c *Client) ShowSpecf(rspec *Formspec, v ...any) (<-chan struct{}, error) {
+	spec := &Formspec{
+		Name:   rspec.Name,
+		Spec:   fmt.Sprintf(rspec.Spec, v...),
+		Submit: rspec.Submit,
+	}
+
+	return c.ShowSpec(spec)
 }
 
 func init() {
@@ -71,7 +76,7 @@ func init() {
 			return
 		}
 
-		def := GetSpec(cmd.Formname)
+		def := c.GetSpec(cmd.Formname)
 		if def == nil {
 			c.Logf("Client submitted for unknown formspec '%s'\n", cmd.Formname)
 			return
@@ -83,8 +88,7 @@ func init() {
 			m[field.Name] = field.Value
 		}
 
-		if def.Thing.Submit == nil {
-			c.Logf("Spec registerd at '%s' is nil\n", def.Path())
+		if def.Submit == nil {
 			return
 		}
 
@@ -92,7 +96,7 @@ func init() {
 		defer c.openSpecsMu.Unlock()
 		var t time.Duration = -1
 
-		oldtime, ok := c.openSpecs[cmd.Formname]
+		oldtime, ok := c.openSpecsT[cmd.Formname]
 		if ok {
 			t = time.Now().Sub(oldtime)
 		}
@@ -100,10 +104,10 @@ func init() {
 		//unopen for clt
 		if m["quit"] == "true" {
 			delete(c.openSpecs, cmd.Formname)
-			def.Thing.Submit(c, m, t, true)
+			def.Submit(c, m, t, true)
 			return
 		}
 
-		def.Thing.Submit(c, m, t, false)
+		def.Submit(c, m, t, false)
 	})
 }
