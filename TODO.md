@@ -8,8 +8,5 @@ This file contains things I plan on implementing / doing
       1. move ao_mgr to minetest
       2. move item_ao to minetest 
 - Sound
-- Chat
-  - Commands
-    - Help texts (w/ formspec version)
 - ao_mgr
   - fix clients not seeing one another
