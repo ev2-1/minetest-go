@@ -3,9 +3,14 @@
 # auth_nopass adds authentication only using FirstSRP
 github.com/ev2-1/minetest-go/auth_nopass
 
-# minetest map can parse minetest's `map.sqlite` files
-# located `$pwd/map.sqlite`
-github.com/ev2-1/minetest-go/map
+# minetest_mapdriver can parse minetest's `map.sqlite` files
+github.com/ev2-1/minetest-go/map/minetest_mapdriver
+
+# basic maploader in a 3x3 box around client
+github.com/ev2-1/minetest-go/map/loader_basic3x3
+
+# basic flatmap generator
+github.com/ev2-1/minetest-go/map/generator_flat
 
 # http media serves media in `$pwd/media` to clients using mth
 github.com/ev2-1/minetest-go/http_media
@@ -14,9 +19,8 @@ github.com/ev2-1/minetest-go/http_media
 # files located in: `$pwd/model_media`
 github.com/ev2-1/minetest-go/mt_media
 
-# json nodemeta loads nodemetadata from json files
-# files located in: `$pwd/nodedefs`
-github.com/ev2-1/minetest-go/json_nodemeta
+# json nodemeta loads nodemetadata and itemmetadata from json files
+github.com/ev2-1/minetest-go/json_meta
 
 # ao mgr manages active objects
 github.com/ev2-1/minetest-go/ao_mgr
@@ -28,4 +32,16 @@ github.com/ev2-1/minetest-go/basic_playerAO
 github.com/ev2-1/minetest-go/init
 
 # basic chat just broadcasts chatmessages to all players
+# also is library for ChatCmds
 github.com/ev2-1/minetest-go/chat
+
+# testing:
+github.com/ev2-1/minetest-go/debug
+github.com/ev2-1/minetest-go/hud_tools
+#github.com/ev2-1/minetest-go/tnt_ao
+
+
+github.com/ev2-1/minetest-go/item_ao
+
+#mcl/signs
+github.com/ev2-1/minetest-go/help_formspec

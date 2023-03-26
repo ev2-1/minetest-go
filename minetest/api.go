@@ -63,7 +63,7 @@ func GetBlk(p IntPos) *MapBlk {
 
 func getBlk(p IntPos) *MapBlk {
 	if ConfigVerbose() {
-		Loggers.Verbosef("GetBlk(%d,%d,%d, %s (%d))\n", 1, p.Pos[0], p.Pos[1], p.Pos[2], p.Dim, p.Dim)
+		Loggers.Verbosef("GetBlk(%s)\n", 1, p)
 	}
 
 	if err := tryCache(p); err != nil {
@@ -105,7 +105,7 @@ func GetNode(p IntPos) (node mt.Node, meta *mt.NodeMeta) {
 // SetNode sets a mt.Node and NodeMeta for a coordinate
 // If no NodeMeta is specified it WILL be overwritten
 func SetNode(p IntPos, node mt.Node, meta *mt.NodeMeta) {
-	Loggers.Verbosef("SetNode (%d,%d,%d) %s (%d) mt.Content(%d)", 1, p.Pos[0], p.Pos[1], p.Pos[2], p.Dim, p.Dim, node.Param0)
+	Loggers.Verbosef("SetNode (%s) mt.Content(%d)", 1, p, node.Param0)
 
 	blk, i := Pos2Blkpos(p)
 

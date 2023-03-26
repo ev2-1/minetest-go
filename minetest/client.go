@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,7 +44,7 @@ var UUIDNil UUID
 // A Client represents a client
 type Client struct {
 	mt.Peer
-	mu sync.RWMutex
+	sync.RWMutex
 
 	UUID UUID
 	Name string
@@ -88,15 +89,15 @@ func (c *Client) MapLoad() bool {
 }
 
 func (c *Client) GetMapLoader() *Registerd[*Registerd[MapLoader]] {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.RLock()
+	defer c.RUnlock()
 
 	return c.mapLoader
 }
 
 func (c *Client) SetMapLoader(loader *Registerd[MapLoader]) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.Lock()
+	defer c.Unlock()
 
 	c.mapLoader = &Registerd[*Registerd[MapLoader]]{
 		Caller(1),
@@ -168,16 +169,20 @@ func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 }
 
 func (c *Client) SetState(state ClientState) {
-	//	oldState := c.State
-	c.State = state
+	cmd.Lock()
+	defer c.Unlock()
 
-	//	if oldState != state {
-	//		updateState(c, oldState, state)
-	//	}
+	c.State = state
 }
 
+// Inserts space between each v (even if both are strings)
 func (c *Client) Log(v ...any) {
-	Loggers.Default(c.String()+fmt.Sprint(v...), 2)
+	var s string
+	for _, val := range v {
+		s += fmt.Sprintf("%v ", val)
+	}
+
+	Loggers.Default(c.String()+strings.TrimSuffix(s, " "), 2)
 }
 
 func handleClt(c *Client) {

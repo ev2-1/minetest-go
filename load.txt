@@ -38,3 +38,4 @@ github.com/ev2-1/minetest-go/debug
 github.com/ev2-1/minetest-go/item_ao
 
 #mcl/signs
+github.com/ev2-1/minetest-go/help_formspec

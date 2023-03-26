@@ -49,7 +49,7 @@ func tryCache(pos IntPos) error {
 // generates new if no Blk exists
 func loadIntoCache(pos IntPos) error {
 	if ConfigVerbose() {
-		Loggers.Verbosef("Loading (%d,%d,%d) %s (%d) into cache\n", 1, pos.Pos[0], pos.Pos[1], pos.Pos[2], pos.Dim, pos.Dim)
+		Loggers.Verbosef("Loading (%s) into cache\n", 1, pos)
 	}
 
 	dim := pos.Dim.Lookup()

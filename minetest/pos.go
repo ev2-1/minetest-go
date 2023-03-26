@@ -73,6 +73,12 @@ type IntPos struct {
 	Dim DimID
 }
 
+func (p IntPos) String() string {
+	return fmt.Sprintf("(%3d,%3d,%3d dim %s)",
+		p.Pos[0], p.Pos[1], p.Pos[2], p.Dim,
+	)
+}
+
 type Pos struct {
 	Pos, Vel   [3]float32
 	Pitch, Yaw float32
@@ -80,11 +86,24 @@ type Pos struct {
 	Dim DimID
 }
 
+func (p Pos) String() string {
+	return fmt.Sprintf("(%3.1f,%3.1f,%3.1f dim %s)",
+		p.Pos[0], p.Pos[1], p.Pos[2], p.Dim,
+	)
+}
+
 // PPos defines a PlayerPosition
 type PPos struct {
 	Pos
 
 	FOV80 uint8
+}
+
+func (p PPos) String() string {
+	return fmt.Sprintf("(%3.1f,%3.1f,%3.1f dim %s) FOV %d",
+		p.Pos.Pos[0], p.Pos.Pos[1], p.Pos.Pos[2], p.Pos.Dim,
+		p.Pos.Dim,
+	)
 }
 
 func (p Pos) IntPos() IntPos {
