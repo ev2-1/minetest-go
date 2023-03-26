@@ -48,7 +48,7 @@ func helpSpecSubmit(c *minetest.Client, values map[string]string, time time.Dura
 
 	cmd, ok := execMap[i]
 	if ok {
-		c.ShowSpecf(draftspec, cmd)
+		c.ShowSpecf(draftspec, escape(cmd), escape(cmd))
 		//TODO: execute
 
 		chat.SendMsgf(c, mt.NormalMsg, "Executing /%s", cmd)
@@ -62,7 +62,7 @@ func helpSpecSubmit(c *minetest.Client, values map[string]string, time time.Dura
 			cmd += fmt.Sprintf(" <%s (%s)>", arg.Name, arg.Type)
 		}
 
-		c.ShowSpecf(draftspec, escape(cmd))
+		c.ShowSpecf(draftspec, escape(cmd), escape(cmdhelp.Name))
 
 		chat.SendMsgf(c, mt.NormalMsg, "configuring /%s", cmdhelp.Name)
 		return
@@ -74,7 +74,7 @@ var draftspec = &minetest.Formspec{
 	Spec: `formspec_version[6]
 size[10.5,4]
 label[0.3,0.5;Draft Execute]
-field[0.6,1;9.2,0.8;command;;%s]
+field[0.6,1;9.2,0.8;command;%s;%s]
 button_exit[6.8,2.4;3,0.8;exit;Exit]
 button_exit[0.6,2.4;3,0.8;execute;Execute]`,
 	Submit: draftSpecSubmit,
@@ -82,7 +82,7 @@ button_exit[0.6,2.4;3,0.8;execute;Execute]`,
 
 func draftSpecSubmit(c *minetest.Client, values map[string]string, time time.Duration, closed bool) {
 	//Submit empty spec
-	if values["quit"] != "true" || values["command"] == "" {
+	if values["quit"] != "true" || values["command"] == "" || values["execute"] != "Execute" {
 		return
 	}
 
