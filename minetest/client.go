@@ -169,7 +169,7 @@ func (c *Client) SendCmd(cmd mt.Cmd) (ack <-chan struct{}, err error) {
 }
 
 func (c *Client) SetState(state ClientState) {
-	cmd.Lock()
+	c.Lock()
 	defer c.Unlock()
 
 	c.State = state
