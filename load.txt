@@ -18,9 +18,6 @@ github.com/ev2-1/minetest-go/mt_media
 # json nodemeta loads nodemetadata and itemmetadata from json files
 github.com/ev2-1/minetest-go/json_meta
 
-# ao mgr manages active objects
-github.com/ev2-1/minetest-go/ao_mgr
-
 # playerAO contains a player ActiveObject like the one found in mineclone
 github.com/ev2-1/minetest-go/basic_playerAO
 

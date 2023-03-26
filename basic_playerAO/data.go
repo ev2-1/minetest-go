@@ -4,14 +4,13 @@ import (
 	"github.com/ev2-1/minetest-go/minetest"
 
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/ao_mgr"
 
 	"image/color"
 	"sync"
 )
 
 func init() {
-	ao.RegisterPlayerMaker("mcl2", func(clt *minetest.Client, id mt.AOID) ao.ActiveObject {
+	minetest.RegisterPlayerMaker("mcl2", func(clt *minetest.Client, id mt.AOID) minetest.ActiveObject {
 		return &AOPlayer{
 			AOID: id,
 			Name: clt.Name,
@@ -31,17 +30,16 @@ type AOPlayer struct {
 
 // Implement ao.ActiveObjectRelevant
 func (player *AOPlayer) Relevant(clt *minetest.Client) bool {
-	cd := ao.GetClientData(clt)
-
 	aopos := player.GetPos()
 	cltpos := clt.GetPos()
 
+	cd := clt.AOData
 	cd.RLock()
 	defer cd.RUnlock()
 
 	return aopos.Dim == cltpos.Dim &&
 		cd.AOID != player.GetAO() &&
-		ao.Distance(aopos.Pos.Pos, cltpos.Pos.Pos) <= ao.RelevantDistance
+		minetest.Distance(aopos.Pos.Pos, cltpos.Pos.Pos) <= minetest.RelevantDistance
 }
 
 func (player *AOPlayer) Punch(*minetest.Client, *mt.ToSrvInteract) {}
@@ -65,10 +63,10 @@ func (player *AOPlayer) SetPos(p minetest.PPos) {
 	player.Pos = p
 	player.Unlock()
 
-	aopos := ao.PPos2AOPos(p).AOPos()
+	aopos := minetest.PPos2AOPos(p).AOPos()
 	aopos.Interpolate = true // if you do a ~360 it still doesn't spin around...
 
-	ao.BroadcastAOMsgs(player,
+	minetest.BroadcastAOMsgs(player,
 		&mt.AOCmdPos{
 			Pos: aopos,
 		},
@@ -90,15 +88,15 @@ func (player *AOPlayer) GetPos() minetest.PPos {
 
 func (player *AOPlayer) Clean() {}
 
-func (player *AOPlayer) AOInit(clt *minetest.Client) *ao.AOInit {
+func (player *AOPlayer) AOInit(clt *minetest.Client) *minetest.AOInit {
 	player.RLock()
 	defer player.RUnlock()
 
-	return &ao.AOInit{
+	return &minetest.AOInit{
 		Name:     player.Name,
 		IsPlayer: true,
 
-		AOPos: ao.PPos2AOPos(player.Pos),
+		AOPos: minetest.PPos2AOPos(player.Pos),
 		HP:    10,
 
 		AOMsgs: []mt.AOMsg{

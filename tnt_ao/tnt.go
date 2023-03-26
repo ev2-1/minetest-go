@@ -1,7 +1,6 @@
 package tnt_ao
 
 import (
-	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
 	"github.com/ev2-1/minetest-go/minetest/log"
@@ -16,13 +15,13 @@ import (
 
 func init() {
 	chat.RegisterChatCmd("spawn_tnt", func(c *minetest.Client, args []string) {
-		pos := ao.AOPos{Pos: c.GetPos().Pos.Pos}
+		pos := minetest.AOPos{Pos: c.GetPos().Pos.Pos}
 		chat.SendMsgf(c, mt.SysMsg, "Got pos: %v", pos)
 
 		_ao := MakeTNT(pos)
 		chat.SendMsgf(c, mt.SysMsg, "Made AO: %v", _ao)
 
-		id := ao.RegisterAO(_ao)
+		id := minetest.RegisterAO(_ao)
 		chat.SendMsgf(c, mt.SysMsg, "Got ID: %v", id)
 	})
 
@@ -38,11 +37,11 @@ func init() {
 			return
 		}
 
-		ao.RmAO(mt.AOID(id))
+		minetest.RmAO(mt.AOID(id))
 	})
 }
 
-func MakeTNT(pos ao.AOPos) *AOTNT {
+func MakeTNT(pos minetest.AOPos) *AOTNT {
 	return &AOTNT{
 		Pos: pos,
 
@@ -55,7 +54,7 @@ type AOTNT struct {
 
 	AOID mt.AOID
 
-	Pos ao.AOPos
+	Pos minetest.AOPos
 
 	SpawnTime time.Time
 }
@@ -70,7 +69,7 @@ func (tnt *AOTNT) SetAO(i mt.AOID) {
 func (tnt *AOTNT) Punch(c *minetest.Client, i *mt.ToSrvInteract) {
 	chat.SendMsgf(c, mt.NormalMsg, "kaboom")
 
-	ao.RmAO(tnt.AOID)
+	minetest.RmAO(tnt.AOID)
 }
 
 func (tnt *AOTNT) GetAO() mt.AOID {
@@ -80,14 +79,14 @@ func (tnt *AOTNT) GetAO() mt.AOID {
 	return tnt.AOID
 }
 
-func (tnt *AOTNT) SetAOPos(p ao.AOPos) {
+func (tnt *AOTNT) SetAOPos(p minetest.AOPos) {
 	tnt.Lock()
 	defer tnt.Unlock()
 
 	tnt.Pos = p
 }
 
-func (tnt *AOTNT) GetAOPos() ao.AOPos {
+func (tnt *AOTNT) GetAOPos() minetest.AOPos {
 	tnt.RLock()
 	defer tnt.RUnlock()
 
@@ -98,11 +97,11 @@ func (tnt *AOTNT) Clean() {
 	log.Verbosef("Removing TNT (aoid. %d)\n", tnt.AOID)
 }
 
-func (tnt *AOTNT) AOInit(c *minetest.Client) *ao.AOInit {
+func (tnt *AOTNT) AOInit(c *minetest.Client) *minetest.AOInit {
 	tnt.RLock()
 	defer tnt.RUnlock()
 
-	return &ao.AOInit{
+	return &minetest.AOInit{
 		AOPos: tnt.Pos,
 		HP:    10,
 

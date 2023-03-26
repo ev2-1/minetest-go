@@ -1,21 +1,20 @@
-package ao
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/minetest"
 
 	"sync"
 	"time"
 )
 
-type PlayerMaker func(clt *minetest.Client, id mt.AOID) ActiveObject
+type PlayerAOMaker func(clt *Client, id mt.AOID) ActiveObject
 
 var (
-	playerAOmaker   = make(map[string]PlayerMaker)
+	playerAOmaker   = make(map[string]PlayerAOMaker)
 	playerAOmakerMu sync.RWMutex
 )
 
-func RegisterPlayerMaker(name string, mk PlayerMaker) {
+func RegisterPlayerMaker(name string, mk PlayerAOMaker) {
 	playerAOmakerMu.Lock()
 	defer playerAOmakerMu.Unlock()
 
@@ -23,9 +22,9 @@ func RegisterPlayerMaker(name string, mk PlayerMaker) {
 }
 
 func init() {
-	minetest.RegisterLeaveHook(func(l *minetest.Leave) {
+	RegisterLeaveHook(func(l *Leave) {
 		go func() {
-			cd := GetClientData(l.Client)
+			cd := l.Client.AOData
 			cd.RLock()
 			defer cd.RUnlock()
 
@@ -33,9 +32,9 @@ func init() {
 		}()
 	})
 
-	minetest.RegisterJoinHook(initPlayerAO)
+	RegisterJoinHook(initPlayerAO)
 
-	minetest.RegisterPosUpdater(func(clt *minetest.Client, p *minetest.ClientPos, dt time.Duration) {
+	RegisterPosUpdater(func(clt *Client, p *ClientPos, dt time.Duration) {
 		a := GetPAO(clt)
 		if a == nil {
 			return
@@ -46,7 +45,7 @@ func init() {
 }
 
 // initPlayerAO initializes a players ActiveObject
-func initPlayerAO(clt *minetest.Client) {
+func initPlayerAO(clt *Client) {
 	clt.Logf("initializing Player AO\n")
 
 	id := getAOID()
@@ -74,8 +73,7 @@ func initPlayerAO(clt *minetest.Client) {
 	ao = mk(clt, id)
 
 	// set client to ignore AOID
-	cd := GetClientData(clt)
-
+	cd := clt.AOData
 	cd.Lock()
 	cd.AOID = id
 	cd.Unlock()
@@ -84,8 +82,7 @@ func initPlayerAO(clt *minetest.Client) {
 
 	go func() {
 		<-ack // wait for package to be acked
-		cd := GetClientData(clt)
-
+		cd := clt.AOData
 		cd.Lock()
 		defer cd.Unlock()
 		cd.Ready = true
@@ -94,20 +91,20 @@ func initPlayerAO(clt *minetest.Client) {
 	clt.Logf("Registered with AOID %d", id)
 }
 
-func GetPlayerAOmaker(clt *minetest.Client) (PlayerMaker, string) {
+func GetPlayerAOmaker(clt *Client) (PlayerAOMaker, string) {
 	cd, ok := clt.GetData("aomaker")
 	if !ok {
-		return playerAOmaker[minetest.GetConfigV("default-aomaker", "debug")], minetest.GetConfigV("default-aomaker", "debug")
+		return playerAOmaker[GetConfigV("default-aomaker", "debug")], GetConfigV("default-aomaker", "debug")
 	}
 
 	name, ok := cd.(string)
 	if !ok {
-		return playerAOmaker[minetest.GetConfigV("default-aomaker", "debug")], minetest.GetConfigV("default-aomaker", "debug")
+		return playerAOmaker[GetConfigV("default-aomaker", "debug")], GetConfigV("default-aomaker", "debug")
 	}
 
 	mk, ok := playerAOmaker[name]
 	if !ok {
-		return playerAOmaker[minetest.GetConfigV("default-aomaker", "debug")], minetest.GetConfigV("default-aomaker", "debug")
+		return playerAOmaker[GetConfigV("default-aomaker", "debug")], GetConfigV("default-aomaker", "debug")
 	}
 
 	return mk, name

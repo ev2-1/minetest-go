@@ -3,6 +3,7 @@ package minetest
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 var (
@@ -17,6 +18,9 @@ var (
 	ErrInvalidFormspec = errors.New("formspec is not registered")
 
 	ErrClientNotReady = errors.New("client not ready")
+
+	ErrClientDataNil = errors.New("client data unexpectedly nil")
+	ErrAOTimeout     = errors.New("ActiveObject timeout reached")
 )
 
 var (
@@ -45,4 +49,16 @@ func (r Registerd[T]) Blame(err error) error {
 		Err:   err,
 		Cause: r.Path(),
 	}
+}
+
+type MultiError struct {
+	Errs []error
+}
+
+func (err *MultiError) Error() string {
+	return strings.Join(strSlice(err.Errs), " & ")
+}
+
+func (merr *MultiError) Add(err error) {
+	merr.Errs = append(merr.Errs, err)
 }

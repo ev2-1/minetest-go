@@ -5,6 +5,7 @@ import (
 
 	"bytes"
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -206,4 +207,27 @@ func NodeMetasEqual(m1, m2 *mt.NodeMeta) bool {
 	}
 
 	return true
+}
+
+func Map2Slice[V comparable](m map[V]struct{}) []V {
+	s := make([]V, len(m))
+
+	var i int
+
+	for k := range m {
+		s[i] = k
+
+		i++
+	}
+
+	return s
+}
+
+func strSlice[V any](s []V) []string {
+	strs := make([]string, len(s))
+	for k := range strs {
+		strs[k] = fmt.Sprintf("%v", s[k])
+	}
+
+	return strs
 }

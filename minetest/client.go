@@ -74,6 +74,9 @@ type Client struct {
 
 	//         set by     registerd
 	mapLoader *Registerd[*Registerd[MapLoader]]
+
+	//active Object stuffs (conains own mutex)
+	AOData *AOData
 }
 
 func (c *Client) MapLoad() bool {

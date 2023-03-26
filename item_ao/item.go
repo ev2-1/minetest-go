@@ -2,7 +2,6 @@ package item_ao
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
 
@@ -34,7 +33,7 @@ func init() {
 			return
 		}
 
-		pos := ao.PPos2AOPos(c.GetPos())
+		pos := minetest.PPos2AOPos(c.GetPos())
 
 		aoid := SpawnItem(pos, args[0], count)
 		if aoid == 0 {
@@ -50,7 +49,7 @@ type ItemAO struct {
 
 	AOID mt.AOID
 
-	Pos ao.AOPos
+	Pos minetest.AOPos
 
 	Count int
 	Name  string
@@ -72,33 +71,33 @@ func (item *ItemAO) GetAO() mt.AOID {
 
 	return item.AOID
 }
-func (item *ItemAO) SetPos(p ao.AOPos) {
+func (item *ItemAO) SetPos(p minetest.AOPos) {
 	item.Lock()
 	item.Pos = p
 	item.Unlock()
 
 	item.Pos = p
 
-	ao.BroadcastAOMsgs(item,
+	minetest.BroadcastAOMsgs(item,
 		&mt.AOCmdPos{
 			Pos: item.Pos.AOPos(),
 		},
 	)
 }
 
-func (item *ItemAO) GetPos() ao.AOPos {
+func (item *ItemAO) GetPos() minetest.AOPos {
 	item.RLock()
 	defer item.RUnlock()
 
 	return item.Pos
 }
 
-func SpawnItem(p ao.AOPos, name string, cnt int) mt.AOID {
+func SpawnItem(p minetest.AOPos, name string, cnt int) mt.AOID {
 	// check name
 
 	p.Pos[1] += 0.15
 
-	return ao.RegisterAO(&ItemAO{
+	return minetest.RegisterAO(&ItemAO{
 		Pos: p,
 
 		Count: cnt,
@@ -123,16 +122,16 @@ func (item *ItemAO) Punch(clt *minetest.Client, i *mt.ToSrvInteract) {
 	item.Count -= int(added)
 	clt.Logf("Added %d, new cnt: %d\n", added, item.Count)
 	if item.Count == 0 {
-		ao.RmAO(item.AOID)
+		minetest.RmAO(item.AOID)
 	}
 }
 
 // compare: minetest-root/builtin/game/item_entity.lua:21
-func (item *ItemAO) AOInit(clt *minetest.Client) *ao.AOInit {
+func (item *ItemAO) AOInit(clt *minetest.Client) *minetest.AOInit {
 	item.RLock()
 	defer item.RUnlock()
 
-	return &ao.AOInit{
+	return &minetest.AOInit{
 		IsPlayer: false,
 
 		AOPos: item.Pos,

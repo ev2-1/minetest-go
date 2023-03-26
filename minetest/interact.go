@@ -8,27 +8,28 @@ import (
 
 func init() {
 	RegisterPktProcessor(func(c *Client, pkt *mt.Pkt) {
-		m, ok := pkt.Cmd.(*mt.ToSrvInteract)
+		i, ok := pkt.Cmd.(*mt.ToSrvInteract)
+		if !ok {
+			return
+		}
 
-		if ok {
-			interact(c, m)
+		switch pt := i.Pointed.(type) {
+		case *mt.PointedNode:
+			interactNode(c, i, pt)
+
+		case *mt.PointedAO:
+			interactAO(c, i, pt)
 		}
 	})
 }
 
-func interact(c *Client, i *mt.ToSrvInteract) {
+func interactNode(c *Client, i *mt.ToSrvInteract, pt *mt.PointedNode) {
 	if ConfigVerbose() {
 		c.Logf("Interact: %s\n", i.Action)
 	}
 
 	switch i.Action {
 	case mt.Dig: // or hit
-		// get pointed node
-		pt, ok := i.Pointed.(*mt.PointedNode)
-		if !ok {
-			return
-		}
-
 		ipos := &IntPos{pt.Under, c.GetPos().Dim}
 		c.setDigPos(ipos)
 
@@ -36,12 +37,6 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		c.setDigPos(nil)
 
 	case mt.Dug:
-		pt, ok := i.Pointed.(*mt.PointedNode)
-		if !ok {
-			c.Logf("[WARN] tried to Dug %T!\n", pt)
-			return
-		}
-
 		ptpos := pt.Under
 
 		pos, start := c.DigPos()
@@ -101,13 +96,6 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 		}
 
 	case mt.Place:
-		// get pointed node
-		pt, ok := i.Pointed.(*mt.PointedNode)
-		if !ok {
-			c.Logf("[WARN] tried to Place: on %T!\n", pt)
-			return
-		}
-
 		dim := c.GetPos().Dim
 		pos := pt.Above
 		blkpos, _ := mt.Pos2Blkpos(pos)
@@ -165,4 +153,30 @@ func interact(c *Client, i *mt.ToSrvInteract) {
 
 		def.Thing.OnActivate(c, stack, i)
 	}
+}
+
+func interactAO(c *Client, i *mt.ToSrvInteract, ao *mt.PointedAO) {
+	if i.Action != mt.Dig { // unexpected
+		c.Logf("Unexpected interaction with AO(%d): %s\n", ao.ID, i.Action)
+
+		return
+	}
+
+	_ao := GetAO(ao.ID)
+
+	// get corresponding AO
+	// check if client has AO:
+	if !HasAO(c, ao.ID) {
+		c.Logf("Unexpeted interaction with AO(%d) client does not have AO! (ao is type %T)", ao.ID, _ao)
+
+		return
+	}
+
+	if _ao == nil {
+		c.Logf("Client either had <nil> AO or interacted with invalid AO")
+
+		return
+	}
+
+	_ao.Punch(c, i)
 }

@@ -2,7 +2,6 @@ package debug
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/ao_mgr"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/chat/help"
 	"github.com/ev2-1/minetest-go/minetest"
@@ -450,7 +449,7 @@ func init() {
 		Args: help.MustParseArgs(""),
 	})
 	chat.RegisterChatCmd("fix_aos", func(c *minetest.Client, args []string) {
-		cd := ao.GetClientData(c)
+		cd := c.AOData
 		if cd == nil {
 			chat.SendMsgf(c, mt.RawMsg, "you don't have ao.ClientData!")
 			return
@@ -478,7 +477,7 @@ func init() {
 
 		switch args[0] {
 		case "local":
-			cd := ao.GetClientData(c)
+			cd := c.AOData
 			cd.RLock()
 			aos := make([]mt.AOID, 0, len(cd.AOs))
 			for k := range cd.AOs {
@@ -492,7 +491,7 @@ func init() {
 		case "global":
 			aos := make([]mt.AOID, 0)
 
-			for id := range ao.ListAOs() {
+			for id := range minetest.ListAOs() {
 				aos = append(aos, id)
 			}
 
@@ -641,7 +640,7 @@ func init() {
 		Args: help.MustParseArgs(""),
 	})
 	chat.RegisterChatCmd("aoid", func(c *minetest.Client, args []string) {
-		chat.SendMsgf(c, mt.RawMsg, "Your AOID is %d", ao.GetPAOID(c))
+		chat.SendMsgf(c, mt.RawMsg, "Your AOID is %d", minetest.GetPAOID(c))
 	})
 
 	help.RegisterHelp("savedata", &help.Help{

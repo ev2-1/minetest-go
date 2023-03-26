@@ -1,12 +1,42 @@
-package ao
+package minetest
 
 import (
 	"github.com/anon55555/mt"
-	"github.com/ev2-1/minetest-go/minetest"
 
 	"sync"
 	"time"
 )
+
+const (
+	LowestAOID  mt.AOID = (1)
+	HighestAOID mt.AOID = (65534) // one lower than largest value
+)
+
+var (
+	ActiveObjectsMu sync.RWMutex
+	ActiveObjects   = make(map[mt.AOID]ActiveObject)
+)
+
+// getAOID returns next free aoid
+func getAOID() mt.AOID {
+	ActiveObjectsMu.RLock()
+	defer ActiveObjectsMu.RUnlock()
+
+	for id := LowestAOID; id < HighestAOID; id++ {
+		if _, ok := ActiveObjects[id]; !ok {
+			return id
+		}
+	}
+
+	panic("No free AOIDs left!")
+}
+
+func registerAO(ao ActiveObject) {
+	ActiveObjectsMu.Lock()
+	defer ActiveObjectsMu.Unlock()
+
+	ActiveObjects[ao.GetAO()] = ao
+}
 
 // ActiveObject
 type ActiveObject interface {
@@ -18,9 +48,9 @@ type ActiveObject interface {
 	GetAO() mt.AOID
 
 	//AOInit should return Initialisation data for the AO
-	AOInit(*minetest.Client) *AOInit
+	AOInit(*Client) *AOInit
 
-	Punch(clt *minetest.Client, i *mt.ToSrvInteract)
+	Punch(clt *Client, i *mt.ToSrvInteract)
 
 	//is called when removing AO
 	Clean()
@@ -31,8 +61,8 @@ type ActiveObjectPlayer interface {
 	ActiveObject
 
 	//GetPos should return the position
-	GetPos() minetest.PPos
-	SetPos(minetest.PPos)
+	GetPos() PPos
+	SetPos(PPos)
 }
 
 // ActiveObjectAPIAOPos specifies a standard interface to work with Positions of AOs
@@ -58,14 +88,14 @@ type ActiveObjectRelevant interface {
 
 	// Tick gets called when client is evaluating relevante of AO
 	// true: relevant and will be added; false: won't
-	Relevant(c *minetest.Client) bool
+	Relevant(c *Client) bool
 }
 
 type AOPos struct {
 	Pos [3]float32
 	Rot [3]float32
 
-	Dim minetest.DimID
+	Dim DimID
 }
 
 func (aopos AOPos) AOPos() (pos mt.AOPos) {
@@ -100,15 +130,15 @@ func (i *AOInit) AOInitData(id mt.AOID) mt.AOInitData {
 	}
 }
 
-func makeClientData() *ClientData {
-	return &ClientData{
+func makeAOData() *AOData {
+	return &AOData{
 		AOs: make(map[mt.AOID]struct{}),
 
 		Age: time.Now(),
 	}
 }
 
-type ClientData struct {
+type AOData struct {
 	sync.RWMutex
 
 	Ready bool
@@ -121,6 +151,6 @@ type ClientData struct {
 	Age time.Time
 }
 
-func (cd *ClientData) age() time.Duration {
+func (cd *AOData) age() time.Duration {
 	return time.Now().Sub(cd.Age)
 }
