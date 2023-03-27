@@ -4,6 +4,7 @@ import (
 	"github.com/anon55555/mt"
 	"github.com/ev2-1/minetest-go/chat"
 	"github.com/ev2-1/minetest-go/minetest"
+	"github.com/ev2-1/minetest-go/minetest/log"
 
 	"image/color"
 	"math"
@@ -11,7 +12,41 @@ import (
 	"sync"
 )
 
+const DropDistance float32 = 12
+const a = math.Pi / 180
+
+func getEyeHeight(clt *minetest.Client) float32 {
+	data := clt.AOData
+	data.RLock()
+	defer data.RUnlock()
+
+	return data.SelfProps.EyeHeight
+}
+
 func init() {
+	minetest.RegisterDropHook(func(clt *minetest.Client, stack mt.Stack, act *minetest.InvActionDrop) mt.Stack {
+		apos := clt.GetPos().AOPos()
+		pos := apos
+
+		pos.Pos[1] += getEyeHeight(clt) * 10
+
+		pos.Pos[0] += -minetest.Sin32(a*pos.Rot[1]) * DropDistance
+		pos.Pos[2] += minetest.Cos32(a*pos.Rot[1]) * DropDistance
+
+		//		pos.Pos[1] += -minetest.Sin32(a*pos.Rot[0]) * DropDistance
+
+		pos.Rot = [3]float32{}
+
+		clt.Logf("Dropped %d %s's %v -> %v\n", act.Count, stack.Name, apos, pos)
+
+		aoid := SpawnItem(pos, stack.Name, int(act.Count))
+		if aoid == 0 {
+			log.Warnf("Couln't drop '%s' got aoid %d\n", stack.Name, aoid)
+		}
+
+		return stack
+	})
+
 	chat.RegisterChatCmd("spawn_item", func(c *minetest.Client, args []string) {
 		usage := func() {
 			chat.SendMsgf(c, mt.NormalMsg, "Usage: spawn_item <item> [count]")
@@ -33,7 +68,7 @@ func init() {
 			return
 		}
 
-		pos := minetest.PPos2AOPos(c.GetPos())
+		pos := c.GetPos().AOPos()
 
 		aoid := SpawnItem(pos, args[0], count)
 		if aoid == 0 {
