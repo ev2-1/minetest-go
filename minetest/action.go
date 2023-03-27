@@ -38,6 +38,10 @@ func (act *InvActionDrop) Apply(c *Client) (_ <-chan struct{}, err error) {
 		c.Logf("[INV] %s", act.String())
 	}
 
+	if act.Count == 0 {
+		act.Count = 65535
+	}
+
 	var fromInv RWInv
 
 	// collect inventory
@@ -55,20 +59,20 @@ func (act *InvActionDrop) Apply(c *Client) (_ <-chan struct{}, err error) {
 	}
 
 	// Ensure stack exists
-	fromStack, ok := fromInvList.GetStack(act.From.Stack)
+	stack, ok := fromInvList.GetStack(act.From.Stack)
 	if !ok {
 		return nil, ErrInvalidStack
 	}
 
 	// ensure quantity
-	if fromStack.Count < act.Count {
-		Loggers.Infof("[%s] Insufficient stack count (%d instead of %d)", 1, c, act.Count, fromStack.Count)
-		act.Count = fromStack.Count
+	if stack.Count < act.Count {
+		Loggers.Infof("[%s] Insufficient stack count (%d instead of %d)", 1, c, act.Count, stack.Count)
+		act.Count = stack.Count
 	}
 
 	// Drop: TODO: make item actually drop though magic
-	fromStack.Count -= act.Count
-	fromInvList.SetStack(act.From.Stack, fromStack)
+	stack.Count -= act.Count
+	fromInvList.SetStack(act.From.Stack, stack)
 
 	fromInv.Set(act.From.Name, fromInvList)
 
@@ -79,6 +83,13 @@ func (act *InvActionDrop) Apply(c *Client) (_ <-chan struct{}, err error) {
 		c.Logf("Error: %s", err)
 		return
 	}
+
+	//Drop Hooks
+	dropHooksMu.RLock()
+	for h := range dropHooks {
+		stack = h.Thing(c, stack, act)
+	}
+	defer dropHooksMu.RUnlock()
 
 	return act.From.SendUpdate(str, c)
 }

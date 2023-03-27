@@ -121,10 +121,10 @@ func IDAOMsgs(id mt.AOID, msgs ...mt.AOMsg) (s []mt.IDAOMsg) {
 	return s
 }
 
-func PPos2AOPos(ppos PPos) AOPos {
+func (ppos PPos) AOPos() AOPos {
 	return AOPos{
 		Pos: ppos.Pos.Pos,
-		Rot: mt.Vec{1: ppos.Pos.Yaw},
+		Rot: mt.Vec{0: ppos.Pos.Pitch, 1: ppos.Pos.Yaw},
 
 		Dim: ppos.Dim,
 	}

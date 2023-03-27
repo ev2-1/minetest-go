@@ -25,6 +25,10 @@ func init() {
 	RegisterLeaveHook(func(l *Leave) {
 		go func() {
 			cd := l.Client.AOData
+			if cd == nil {
+				return
+			}
+
 			cd.RLock()
 			defer cd.RUnlock()
 
@@ -55,11 +59,14 @@ func initPlayerAO(clt *Client) {
 
 	//initialize self
 	ao := mk(clt, 0)
+
+	selfinit := ao.AOInit(clt)
+
 	ack, err := clt.SendCmd(&mt.ToCltAORmAdd{
 		Add: []mt.AOAdd{
 			mt.AOAdd{
 				ID:       0,
-				InitData: ao.AOInit(clt).AOInitData(0),
+				InitData: selfinit.AOInitData(0),
 			},
 		},
 	})
@@ -72,10 +79,20 @@ func initPlayerAO(clt *Client) {
 	//for the others
 	ao = mk(clt, id)
 
+	var selfprops mt.AOProps
+	for _, msg := range selfinit.AOMsgs {
+		if m, ok := msg.(*mt.AOCmdProps); ok {
+			selfprops = m.Props
+
+			break
+		}
+	}
+
 	// set client to ignore AOID
 	cd := clt.AOData
 	cd.Lock()
 	cd.AOID = id
+	cd.SelfProps = selfprops
 	cd.Unlock()
 
 	registerAO(ao)

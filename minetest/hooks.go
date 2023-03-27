@@ -72,6 +72,25 @@ func RegisterLeaveHook(h LeaveHook) HookRef[Registerd[LeaveHook]] {
 	return ref
 }
 
+type DropHook func(clt *Client, stack mt.Stack, act *InvActionDrop) mt.Stack
+
+var (
+	dropHooksMu sync.RWMutex
+	dropHooks   = make(map[*Registerd[DropHook]]struct{})
+)
+
+func RegisterDropHook(h DropHook) HookRef[Registerd[DropHook]] {
+	dropHooksMu.Lock()
+	defer dropHooksMu.Unlock()
+
+	r := &Registerd[DropHook]{Caller(1), h}
+	ref := HookRef[Registerd[DropHook]]{&dropHooksMu, dropHooks, r}
+
+	dropHooks[r] = struct{}{}
+
+	return ref
+}
+
 type JoinHook func(*Client)
 
 var (

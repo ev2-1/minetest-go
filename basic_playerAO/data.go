@@ -63,8 +63,8 @@ func (player *AOPlayer) SetPos(p minetest.PPos) {
 	player.Pos = p
 	player.Unlock()
 
-	aopos := minetest.PPos2AOPos(p).AOPos()
-	aopos.Interpolate = true // if you do a ~360 it still doesn't spin around...
+	aopos := p.AOPos().AOPos()
+	aopos.Interpolate = true // if you do a ~360 it still doesn't animate the spin...
 
 	minetest.BroadcastAOMsgs(player,
 		&mt.AOCmdPos{
@@ -96,7 +96,7 @@ func (player *AOPlayer) AOInit(clt *minetest.Client) *minetest.AOInit {
 		Name:     player.Name,
 		IsPlayer: true,
 
-		AOPos: minetest.PPos2AOPos(player.Pos),
+		AOPos: player.Pos.AOPos(),
 		HP:    10,
 
 		AOMsgs: []mt.AOMsg{

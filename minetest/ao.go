@@ -146,7 +146,8 @@ type AOData struct {
 	AOs map[mt.AOID]struct{}
 
 	//is the clients AOID (client self does not have)
-	AOID mt.AOID
+	AOID      mt.AOID
+	SelfProps mt.AOProps // contains AOInit send to self (for future reference)
 
 	Age time.Time
 }
