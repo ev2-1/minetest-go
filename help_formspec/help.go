@@ -87,11 +87,7 @@ func init() {
 	chat.RegisterChatCmd("helpspec", func(clt *minetest.Client, args []string) {
 		InitTable()
 
-		//cmds := chat.ChatCmds()
-		clt.Log("spec", table.Spec())
 		clt.ShowSpecf(helpspec, table.Spec())
-
-		//		clt.ShowSpecf(helpspec, "a,0,c,d,e,1,g,h,i,1,k,l,m,g")
 	})
 }
 
